@@ -9,14 +9,14 @@ import model as CNNModel
 
 
 def key_func(sample):
-    feature, target, score = sample
+    feature, target, score = sample[1]
     return score
 
 
-def select_n_best_samples(model, optimizer, train_iter, n_samples, args):
+def select_n_best_samples(model, optimizer, train_iter, n_samples, already_selected, args):
     sample_scores = []
     completed = 0
-    for batch in train_iter:
+    for b_index, batch in enumerate(train_iter):
         feature, target = batch.text, batch.label
         feature.data.t_(), target.data.sub_(1)  # batch first, index align
 
@@ -24,11 +24,18 @@ def select_n_best_samples(model, optimizer, train_iter, n_samples, args):
             feature, target = feature.cuda(), target.cuda()
 
         for s_index, sentence in enumerate(feature):
+            if(b_index * args.batch_size + s_index in already_selected):
+                print("WE ARE PASSING ")
+                pass
+            optimizer.zero_grad()
             output = model(sentence.unsqueeze(0))
             score = 0
+            for index, k in enumerate(output.data[0]):
+                f_target = torch.autograd.Variable(torch.LongTensor([index]))
 
-            for index, k in enumerate(output):
-                loss = F.cross_entropy(output, torch.autograd.Variable(torch.LongTensor([index])))
+                if args.cuda:
+                    f_target = f_target.cuda()
+                loss = F.cross_entropy(output, f_target)
                 loss.backward(retain_graph=True)
 
                 best_grad = -999
@@ -37,19 +44,30 @@ def select_n_best_samples(model, optimizer, train_iter, n_samples, args):
                     grad_max = grad.max().data[0]
                     if grad_max > best_grad:
                         best_grad = grad_max
-                score = score + k * best_grad
+                score = score + k * abs(best_grad)
 
-            sample_scores.append((sentence, target[s_index], 0))
+            # # print(score)
+
+            sample_scores.append((sentence, target[s_index], score))
             completed = completed + 1
-        # if completed > 1200:
-            # break
-        print("Done with {} of {}".format(completed, args.batch_size * len(train_iter)), end="\r")
-    best_n_samples = heapq.nlargest(n_samples, sample_scores, key_func)
-    return best_n_samples
+        # if completed > 100:
+        #     break
+
+        print("Selection process: {0:.2f}% completed".format(
+            100 * (completed / (args.batch_size * len(train_iter)))), end="\r")
+    best_n_samples = heapq.nlargest(
+        n_samples, enumerate(sample_scores), key_func)
+    delete_indices = [s[0] for s in best_n_samples]
+    # for i in delete_indices:
+    #     print(sample_scores[i][2], ' '.join(train_iter.data()[i].text))
+
+    return ([s[1] for s in best_n_samples], delete_indices)
 
 
 def active_train(train_iter, dev_iter, model, args):
     torch.set_printoptions(profile="full")
+
+    already_selected = []
     if args.cuda:
         model.cuda()
 
@@ -69,9 +87,30 @@ def active_train(train_iter, dev_iter, model, args):
     for i in range(args.batch_size):
         feature_matrix = []
         target_matrix = []
-        n_best_samples = select_n_best_samples(
-            model, optimizer, train_iter, args.batch_size, args)
+        n_best_samples, delete_indices = select_n_best_samples(
+            model, optimizer, train_iter, args.batch_size, already_selected, args)
+        already_selected.extend(delete_indices)
+
+        max_length = 0
+        # for feature, target, s in n_best_samples:
+        #     sentence = [x.data[0] for x in feature]
+        #     max_length = max(max_length, len(sentence))
+        #
+        #     feature_matrix.append(sentence)
+        #     target_matrix.append(target.data[0])
+        #
+        #
+        # for sentence in feature_matrix:
+        #     for i in range(max_length - len(sentence)):
+        #         sentence.append(1)
+        #
+        # t1 = torch.autograd.Variable(torch.LongTensor(feature_matrix))
+        # t2 = torch.autograd.Variable(torch.LongTensor(target_matrix))
+        #
+        # train_set.append((t1, t2, 0))
+
         train_set.extend(n_best_samples)
+
         # Reset the model and train again
         model = CNNModel.CNN_Text(args)
         print("Selected 25 best samples. Training")
@@ -90,21 +129,25 @@ def active_train(train_iter, dev_iter, model, args):
 def train(train_iter, model, args):
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     model.train()
-    for sample in train_iter:
-        feature, target, score = sample
 
-        if args.cuda:
-            feature, target = feature.cuda(), target.cuda()
+    if args.cuda:
+        model.cuda()
+    for i in range(args.epochs):
+        for sample in train_iter:
+            feature, target, score = sample
 
-        # If we have samples of size 1, unsqueeze it to [1 x Y] dimension
-        if (len(feature.size()) == 1):
-            feature = feature.unsqueeze(0)
+            if args.cuda:
+                feature, target = feature.cuda(), target.cuda()
 
-        optimizer.zero_grad()
-        output = model(feature)
-        loss = F.cross_entropy(output, target)
-        loss.backward()
-        optimizer.step()
+            # If we have samples of size 1, unsqueeze it to [1 x Y] dimension
+            if (len(feature.size()) == 1):
+                feature = feature.unsqueeze(0)
+
+            optimizer.zero_grad()
+            output = model(feature)
+            loss = F.cross_entropy(output, target)
+            loss.backward()
+            optimizer.step()
 
 
 def eval(data_iter, model, args):
