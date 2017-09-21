@@ -24,7 +24,7 @@ class  CNN_Text(nn.Module):
         self.conv15 = nn.Conv2d(Ci, Co, (5, D))
         '''
         self.dropout = nn.Dropout(args.dropout)
-        self.fc1 = nn.Linear(len(Ks)*Co, C)
+        # self.fc1 = nn.Linear(len(Ks)*Co, C)
         self.fc2 = nn.Softmax()
 
     def conv_and_pool(self, x, conv):
@@ -55,7 +55,7 @@ class  CNN_Text(nn.Module):
         x = torch.cat((x1, x2, x3), 1) # (N,len(Ks)*Co)
         '''
         x = self.dropout(x) # (N,len(Ks)*Co)
-        x = self.fc1(x) # (N,C)
+        # x = self.fc1(x) # (N,C)
         x = self.fc2(x)
 
         return x

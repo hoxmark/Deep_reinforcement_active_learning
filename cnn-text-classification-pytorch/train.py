@@ -1,3 +1,7 @@
+
+from __future__ import division
+import copy
+import math
 import numpy
 import heapq
 import os
@@ -16,14 +20,28 @@ def key_func(sample):
 def select_n_best_samples(model, optimizer, train_iter, n_samples, already_selected, args):
     sample_scores = []
     completed = 0
+    slide_n = 500
+    batch_scores = [0 for i in range(slide_n)]
+
     for b_index, batch in enumerate(train_iter):
         feature, target = batch.text, batch.label
         feature.data.t_(), target.data.sub_(1)  # batch first, index align
 
         if args.cuda:
+            model.cuda()
             feature, target = feature.cuda(), target.cuda()
+        # model_copy = model
+
+        # model_copy = CNNModel.CNN_Text(args)
+        # model_copy.load_state_dict(copy.deepcopy(model.state_dict()))
+        #
+        # if(args.cuda):
+        #     model_copy.cuda()
 
         for s_index, sentence in enumerate(feature):
+
+            # model_copy = model
+
             if(b_index * args.batch_size + s_index in already_selected):
                 print("WE ARE PASSING ")
                 pass
@@ -31,35 +49,34 @@ def select_n_best_samples(model, optimizer, train_iter, n_samples, already_selec
             output = model(sentence.unsqueeze(0))
             score = 0
             for index, k in enumerate(output.data[0]):
-                f_target = torch.autograd.Variable(torch.LongTensor([index]))
+                # f_target = torch.autograd.Variable(torch.LongTensor([index]))
+                #
+                # if args.cuda:
+                #     f_target = f_target.cuda()
+                # loss = F.cross_entropy(output, f_target)
+                # loss.backward(retain_graph=True)
+                #
+                # best_grad = -999
+                # for word in sentence:
+                #     grad = model_copy.embed.weight.grad[word]
+                #     grad_max = grad.max().data[0]
+                #     if grad_max > best_grad:
+                #         best_grad = grad_max
+                # score = score + k * abs(best_grad)
+                # print(k)
+                score = score + k * math.log(k)
 
-                if args.cuda:
-                    f_target = f_target.cuda()
-                loss = F.cross_entropy(output, f_target)
-                loss.backward(retain_graph=True)
-
-                best_grad = -999
-                for word in sentence:
-                    grad = model.embed.weight.grad[word]
-                    grad_max = grad.max().data[0]
-                    if grad_max > best_grad:
-                        best_grad = grad_max
-                score = score + k * abs(best_grad)
-
-            # # print(score)
-
-            sample_scores.append((sentence, target[s_index], score))
+            sample_scores.append((sentence, target[s_index], score * -1))
+            batch_scores.pop(0)
+            batch_scores.append(score)
             completed = completed + 1
-        # if completed > 100:
-        #     break
+        print("Sliding average: {}".format(sum(batch_scores) / slide_n))
 
         print("Selection process: {0:.2f}% completed".format(
             100 * (completed / (args.batch_size * len(train_iter)))), end="\r")
     best_n_samples = heapq.nlargest(
         n_samples, enumerate(sample_scores), key_func)
     delete_indices = [s[0] for s in best_n_samples]
-    # for i in delete_indices:
-    #     print(sample_scores[i][2], ' '.join(train_iter.data()[i].text))
 
     return ([s[1] for s in best_n_samples], delete_indices)
 
@@ -74,16 +91,19 @@ def active_train(train_iter, dev_iter, model, args):
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
     train_set = []
+
+    # Add some random data to begin with
     for index, batch in enumerate(train_iter):
+        if index > 1:
+            break
         feature, target = batch.text, batch.label
         feature.data.t_(), target.data.sub_(1)  # batch first, index align
         train_set.append((feature, target, 0))
-        break
 
     print("Length of train set: ", len(train_set))
-    train(train_set, model, args)
+    train(train_set, model, args, dev_iter)
     print("Finished with random sample training")
-    eval(dev_iter, model, args)
+    # eval(dev_iter, model, args)
     for i in range(args.batch_size):
         feature_matrix = []
         target_matrix = []
@@ -92,33 +112,32 @@ def active_train(train_iter, dev_iter, model, args):
         already_selected.extend(delete_indices)
 
         max_length = 0
-        # for feature, target, s in n_best_samples:
-        #     sentence = [x.data[0] for x in feature]
-        #     max_length = max(max_length, len(sentence))
-        #
-        #     feature_matrix.append(sentence)
-        #     target_matrix.append(target.data[0])
-        #
-        #
-        # for sentence in feature_matrix:
-        #     for i in range(max_length - len(sentence)):
-        #         sentence.append(1)
-        #
-        # t1 = torch.autograd.Variable(torch.LongTensor(feature_matrix))
-        # t2 = torch.autograd.Variable(torch.LongTensor(target_matrix))
-        #
-        # train_set.append((t1, t2, 0))
+        for feature, target, s in n_best_samples:
+            sentence = [x.data[0] for x in feature]
+            max_length = max(max_length, len(sentence))
 
-        train_set.extend(n_best_samples)
+            feature_matrix.append(sentence)
+            target_matrix.append(target.data[0])
+
+        for sentence in feature_matrix:
+            for i in range(max_length - len(sentence)):
+                sentence.append(1)
+
+        t1 = torch.autograd.Variable(torch.LongTensor(feature_matrix))
+        t2 = torch.autograd.Variable(torch.LongTensor(target_matrix))
+
+        train_set.append((t1, t2, 0))
+
+        # train_set.extend(n_best_samples)
 
         # Reset the model and train again
-        model = CNNModel.CNN_Text(args)
-        print("Selected 25 best samples. Training")
+        # model = CNNModel.CNN_Text(args)
+        print("Selected {} best samples. Training".format(args.batch_size))
         print("Length of train set: ", len(train_set))
-        train(train_set, model, args)
+        train(train_set, model, args, dev_iter)
         print("Finished training ")
 
-        eval(dev_iter, model, args)
+        # eval(dev_iter, model, args)
         if not os.path.isdir(args.save_dir):
             os.makedirs(args.save_dir)
         save_prefix = os.path.join(args.save_dir, 'snapshot')
@@ -126,7 +145,7 @@ def active_train(train_iter, dev_iter, model, args):
         torch.save(model, save_path)
 
 
-def train(train_iter, model, args):
+def train(train_iter, model, args, dev_iter):
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     model.train()
 
@@ -139,7 +158,8 @@ def train(train_iter, model, args):
             if args.cuda:
                 feature, target = feature.cuda(), target.cuda()
 
-            # If we have samples of size 1, unsqueeze it to [1 x Y] dimension
+            # If we have samples of size 1, unsqueeze it to [1 x len(feature)]
+            # dimension
             if (len(feature.size()) == 1):
                 feature = feature.unsqueeze(0)
 
@@ -148,6 +168,9 @@ def train(train_iter, model, args):
             loss = F.cross_entropy(output, target)
             loss.backward()
             optimizer.step()
+        if i % 50 == 0:
+            print("Batch {}: ".format(i * len(train_iter) * args.batch_size))
+            eval(dev_iter, model, args)
 
 
 def eval(data_iter, model, args):
@@ -182,6 +205,7 @@ def predict(text, model, text_field, label_feild):
     # text = text_field.tokenize(text)
     text = text_field.preprocess(text)
     text = [[text_field.vocab.stoi[x] for x in text]]
+    print(text)
     x = text_field.tensor_type(text)
     x = autograd.Variable(x, volatile=True)
     print(x)
