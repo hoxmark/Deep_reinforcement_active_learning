@@ -16,7 +16,7 @@ class  CNN_Text(nn.Module):
         Ks = args.kernel_sizes
 
         self.embed = nn.Embedding(V, D)
-        #self.convs1 = [nn.Conv2d(Ci, Co, (K, D)) for K in Ks]
+        # self.convs1 = [nn.Conv2d(Ci, Co, (K, D)) for K in Ks]
         self.convs1 = nn.ModuleList([nn.Conv2d(Ci, Co, (K, D)) for K in Ks])
         '''
         self.conv13 = nn.Conv2d(Ci, Co, (3, D))
@@ -24,8 +24,9 @@ class  CNN_Text(nn.Module):
         self.conv15 = nn.Conv2d(Ci, Co, (5, D))
         '''
         self.dropout = nn.Dropout(args.dropout)
-        # self.fc1 = nn.Linear(len(Ks)*Co, C)
+        self.fc1 = nn.Linear(len(Ks)*Co, C)
         self.fc2 = nn.Softmax()
+        # nn.Con
 
     def conv_and_pool(self, x, conv):
         x = F.relu(conv(x)).squeeze(3) #(N,Co,W)
@@ -37,7 +38,7 @@ class  CNN_Text(nn.Module):
         x = self.embed(x) # (N,W,D)
 
         if self.args.static:
-            x = Variable(x)
+            x = torch.autograd.Variable(x)
 
         x = x.unsqueeze(1) # (N,Ci,W,D)
 
@@ -55,7 +56,7 @@ class  CNN_Text(nn.Module):
         x = torch.cat((x1, x2, x3), 1) # (N,len(Ks)*Co)
         '''
         x = self.dropout(x) # (N,len(Ks)*Co)
-        # x = self.fc1(x) # (N,C)
+        x = self.fc1(x) # (N,C)
         x = self.fc2(x)
 
         return x
