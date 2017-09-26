@@ -61,14 +61,22 @@ def mr(text_field, label_field, **kargs):
                                 (train_data, dev_data),
                                 batch_sizes=(args.batch_size, len(dev_data)),
                                 **kargs)
-    return train_iter, dev_iter
+
+    train_array = []
+    for batch in train_iter:
+        feature, target = batch.text, batch.label
+        feature.data.t_(), target.data.sub_(1)  # batch first, index align
+        train_array.append((feature, target))
+        
+    return train_array, dev_iter
+
 
 
 # load data
 print("\nLoading data...")
 text_field = data.Field(lower=True)
 label_field = data.Field(sequential=False)
-train_iter, dev_iter = mr(text_field, label_field, device=-1, repeat=False)
+train_array, dev_array = mr(text_field, label_field, device=-1, repeat=False)
 #train_iter, dev_iter, test_iter = sst(text_field, label_field, device=-1, repeat=False)
 
 
@@ -110,4 +118,4 @@ elif args.test :
         print("\nSorry. The test dataset doesn't  exist.\n")
 else :
     print()
-    train.active_train(train_iter, dev_iter, cnn, args, text_field)
+    train.active_train(train_array, dev_array, cnn, args, text_field)
