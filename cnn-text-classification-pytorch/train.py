@@ -12,6 +12,8 @@ import torch
 import torch.autograd as autograd
 import torch.nn.functional as F
 import model as CNNModel
+import torchtext.data as data
+print(data)
 
 
 def key_func2(t):
@@ -29,16 +31,17 @@ def select_n_best_samples(model, optimizer, train_iter, n_samples, already_selec
     completed = 0
     slide_n = 500
     print_every = 500
-    batch_scores = [0 for i in range(slide_n)]
+    sliding_scores = [0 for i in range(slide_n)]
     num_1 = 0
     num_0 = 0
-    # total_tensor = torch.FloatTensor(len(train_iter) * args.batch_size, 44).zero_()
 
     all_tensor = []
 
     max_len = 0
 
     for b_index, batch in enumerate(train_iter):
+        if b_index == 1:
+            break
         feature, target = batch.text, batch.label
         feature.data.t_(), target.data.sub_(1)  # batch first, index align
 
@@ -53,30 +56,31 @@ def select_n_best_samples(model, optimizer, train_iter, n_samples, already_selec
 
         for index, score in enumerate(output):
             if((b_index, index) in already_selected):
-                # print("SKIPPING")
                 pass
-            # all_tensor.append([x for x in feature.data[index]])
+            # Add the current tensor to the array of all tensors
             all_tensor.append(feature.data[index])
-            # print(len(feature.data[index]))
-            max_len = max(len(feature.data[index]), max_len)
             sample_scores.append(
                 (b_index, index, target.data[index], score.data[0]))
-            batch_scores.pop(0)
-            batch_scores.append(score.data[0])
+            # Sliding average
+            sliding_scores.pop(0)
+            sliding_scores.append(score.data[0])
         completed += 1
 
         if b_index % print_every == 0:
-            print("Sliding average: {}".format(sum(batch_scores) / slide_n))
+            print("Sliding average: {}".format(sum(sliding_scores) / slide_n))
+
         print("Selection process: {0:.2f}% completed".format(
             100 * (completed / len(train_iter))), end="\r")
 
+    # Select top n from sample_scores
     best_n_indexes = heapq.nlargest(n_samples, sample_scores, key_func2)
     # best_n_indexes = random.sample(sample_scores, n_samples)
 
+    # Arrays to create a tensors from
     ret_batch = []
     ret_batch_target = []
 
-
+    max_len = 0
     for b_index, index, target, score in best_n_indexes:
         if target == 1:
             num_1 += 1
@@ -84,27 +88,44 @@ def select_n_best_samples(model, optimizer, train_iter, n_samples, already_selec
             num_0 += 1
 
         i = args.batch_size * b_index + index
-        # ones = torch.ones(max_len - len(all_tensor[i]))
-        ones = [1 for x in range(max_len - len(all_tensor[i]))]
-        ones = torch.LongTensor(ones)
-        if args.cuda:
-            ones = ones.cuda()
-        all_tensor[i] = torch.cat([all_tensor[i], ones])
 
-        ret_batch.append(all_tensor[i])
-        # print(len(all_tensor[i]))
+        cur_len = 0
+        for v_index, value in reversed(list(enumerate(all_tensor[i]))):
+            if value != 1:
+                cur_len = v_index
+                break
+
+        max_len = max(cur_len, max_len)
+
+    # Slice or pad, depending on the length of the tensor
+    for b_index, index, target, score in best_n_indexes:
+        i = args.batch_size * b_index + index
+
+        # If the tensor is too short, pad it
+        if(len(all_tensor[i]) < max_len):
+            padding = [1 for x in range(max_len - len(all_tensor[i]))]
+            padding = torch.LongTensor(padding)
+            if args.cuda:
+                padding = padding.cuda()
+            all_tensor[i] = torch.cat([all_tensor[i], padding])
+
+        # Else remove all 1's at the end
+        else:
+            all_tensor[i] = all_tensor[i][0:max_len]
+
+        ret_batch.append(torch.autograd.Variable(all_tensor[i]))
         ret_batch_target.append(target)
 
-        # torch.nn.functional.pad
+    # print(ret_batch)
     print("0's: {}, 1's: {}".format(num_0, num_1))
     ret_batch_target = torch.LongTensor(ret_batch_target)
     if args.cuda:
         ret_batch_target = ret_batch_target.cuda()
 
     ret_batch = torch.stack(ret_batch, dim=0)
-    # print(ret_batch)
+    ret_batch_target = torch.autograd.Variable(ret_batch_target)
 
-    return torch.autograd.Variable(ret_batch), torch.autograd.Variable(ret_batch_target), [(b_index, index) for b_index, index, target, score in best_n_indexes]
+    return ret_batch, ret_batch_target, [(b_index, index) for b_index, index, target, score in best_n_indexes]
 
 
 def active_train(train_iter, dev_iter, model, args, text_field):
@@ -118,20 +139,20 @@ def active_train(train_iter, dev_iter, model, args, text_field):
 
     train_set = []
 
-
     # Add some random data to begin with
+    # train_iter2 = copy.deepcopy(train_iter)
     for index, batch in enumerate(train_iter):
         if index == 1:
             break
         feature, target = batch.text, batch.label
         feature.data.t_(), target.data.sub_(1)  # batch first, index align
         train_set.append((feature, target, 0))
+
     for i in range(20):
         t1, t2, added_indices = select_n_best_samples(
             model, optimizer, train_iter, args.batch_size, already_selected, args, text_field)
         train_set.append((t1, t2, 0))
         already_selected.extend(added_indices)
-
 
         # Reset the model and train again
         model = CNNModel.CNN_Text(args)
@@ -154,8 +175,10 @@ def train(train_iter, model, args, dev_iter):
     if args.cuda:
         model.cuda()
     for i in range(args.epochs):
-        for sample in train_iter:
-            feature, target, score = sample
+        for batch in train_iter:
+            feature, target, score = batch
+
+            # print(feature)
 
             if args.cuda:
                 feature, target = feature.cuda(), target.cuda()
