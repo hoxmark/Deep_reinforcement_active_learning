@@ -10,6 +10,8 @@ __pycache__/
 
 # C extensions
 *.so
+.vscode/
+cnn-text-classification-pytorch/logs/
 
 # Distribution / packaging
 .Python
