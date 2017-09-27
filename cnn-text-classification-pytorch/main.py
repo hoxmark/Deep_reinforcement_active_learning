@@ -9,7 +9,6 @@ import model
 import train
 import mydatasets
 
-
 parser = argparse.ArgumentParser(description='CNN text classificer')
 # learning
 parser.add_argument('-lr', type=float, default=0.001, help='initial learning rate [default: 0.001]')
@@ -25,8 +24,8 @@ parser.add_argument('-shuffle', action='store_true', default=False, help='shuffl
 parser.add_argument('-dropout', type=float, default=0.5, help='the probability for dropout [default: 0.5]')
 parser.add_argument('-max-norm', type=float, default=3.0, help='l2 constraint of parameters [default: 3.0]')
 parser.add_argument('-embed-dim', type=int, default=300, help='number of embedding dimension [default: 128]')
-parser.add_argument('-kernel-num', type=int, default=50, help='number of each kind of kernel')
-parser.add_argument('-kernel-sizes', type=str, default='3,4,5', help='comma-separated kernel size to use for convolution')
+parser.add_argument('-kernel-num', type=int, default=100, help='number of each kind of kernel')
+parser.add_argument('-kernel-sizes', type=str, default='7,7,7,7', help='comma-separated kernel size to use for convolution')
 parser.add_argument('-static', action='store_true', default=False, help='fix the embedding')
 # device
 parser.add_argument('-device', type=int, default=-1, help='device to use for iterate data, -1 mean cpu [default: -1]')
@@ -49,7 +48,14 @@ def sst(text_field, label_field,  **kargs):
                                                      len(dev_data),
                                                      len(test_data)),
                                         **kargs)
-    return train_iter, dev_iter, test_iter
+    # return train_iter, dev_iter, test_iter
+    train_array = []
+    for batch in train_iter:
+        feature, target = batch.text, batch.label
+        feature.data.t_(), target.data.sub_(1)  # batch first, index align
+        train_array.append((feature, target))
+
+    return train_array, dev_iter
 
 
 # load MR dataset
@@ -67,7 +73,7 @@ def mr(text_field, label_field, **kargs):
         feature, target = batch.text, batch.label
         feature.data.t_(), target.data.sub_(1)  # batch first, index align
         train_array.append((feature, target))
-        
+
     return train_array, dev_iter
 
 
@@ -77,7 +83,6 @@ print("\nLoading data...")
 text_field = data.Field(lower=True)
 label_field = data.Field(sequential=False)
 train_array, dev_array = mr(text_field, label_field, device=-1, repeat=False)
-#train_iter, dev_iter, test_iter = sst(text_field, label_field, device=-1, repeat=False)
 
 
 
