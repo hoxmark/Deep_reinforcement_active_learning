@@ -3,9 +3,15 @@ import sys
 import torch
 import torch.autograd as autograd
 import torch.nn.functional as F
+import logger
+
+def to_np(x):
+    return x.data.cpu().numpy()
 
 
 def train(train_iter, dev_iter, model, args):
+    lg = logger.Logger('./logs/orginal2')
+
     if args.cuda:
         model.cuda()
 
@@ -48,6 +54,13 @@ def train(train_iter, dev_iter, model, args):
                 save_prefix = os.path.join(args.save_dir, 'snapshot')
                 save_path = '{}_steps{}.pt'.format(save_prefix, steps)
                 torch.save(model, save_path)
+            
+            lg.scalar_summary("eval-acc", accuracy, steps)
+            lg.scalar_summary("eval-loss", loss.data[0], steps)
+            for tag, value in model.named_parameters():
+                tag = tag.replace('.', '/')
+                lg.histo_summary(tag, to_np(value), steps)
+                lg.histo_summary(tag+'/grad', to_np(value.grad), steps)
 
 
 def eval(data_iter, model, args):
