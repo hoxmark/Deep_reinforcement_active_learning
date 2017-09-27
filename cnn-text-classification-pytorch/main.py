@@ -28,7 +28,7 @@ parser.add_argument('-kernel-num', type=int, default=100, help='number of each k
 parser.add_argument('-kernel-sizes', type=str, default='7,7,7,7', help='comma-separated kernel size to use for convolution')
 parser.add_argument('-static', action='store_true', default=False, help='fix the embedding')
 # device
-parser.add_argument('-device', type=int, default=-1, help='device to use for iterate data, -1 mean cpu [default: -1]')
+parser.add_argument('-device', type=int, default=0, help='Cuda device to run on')
 parser.add_argument('-no-cuda', action='store_true', default=False, help='disable the gpu' )
 # option
 parser.add_argument('-snapshot', type=str, default=None, help='filename of model snapshot [default: None]')
@@ -109,7 +109,7 @@ else :
         print("Sorry, This snapshot doesn't exist."); exit()
 
 if args.cuda:
-    cnn = cnn.cuda()
+    cnn = cnn.cuda(args.device)
 
 
 # train or predict

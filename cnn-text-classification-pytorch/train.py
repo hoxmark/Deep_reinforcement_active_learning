@@ -23,7 +23,7 @@ def key_func(sample):
 
 
 def select_n_best_samples(model, train_array, n_samples, args):
-    # model.eval()
+    model.eval()
     sample_scores = []
     completed = 0
     slide_n = 500
@@ -36,8 +36,8 @@ def select_n_best_samples(model, train_array, n_samples, args):
 
     for b_index, (feature, target) in enumerate(train_array):
         if args.cuda:
-            model.cuda()
-            feature, target = feature.cuda(), target.cuda()
+            model.cuda(args.device)
+            feature, target = feature.cuda(args.device), target.cuda(args.device)
         output = model(feature)
         output = torch.mul(output, torch.log(output))
         output = torch.sum(output, dim=1)
@@ -54,8 +54,7 @@ def select_n_best_samples(model, train_array, n_samples, args):
             100 * (completed / len(train_array))), end="\r")
 
     print("\n")
-    best_n_indexes = [n[0] for n in heapq.nlargest(
-        n_samples, enumerate(sample_scores), key=lambda x: x[1])]
+    best_n_indexes = [n[0] for n in heapq.nlargest(n_samples, enumerate(sample_scores), key=lambda x: x[1])]
     # best_n_indexes = [n[0] for n in random.sample(list(enumerate(sample_scores)), args.batch_size)]
 
     batch_features = []
@@ -89,14 +88,14 @@ def batchify(features, args):
 
     for feature in features:
         if args.cuda:
-            feature = feature.cuda()
+            feature = feature.cuda(args.device)
 
         if(len(feature) < max_len):
             padding = [1 for x in range(max_len - len(feature))]
             padding = torch.LongTensor(padding)
 
             if args.cuda:
-                padding = padding.cuda()
+                padding = padding.cuda(args.device)
             feature = torch.cat([feature, padding])
         else:
             feature = feature[0:max_len]
@@ -112,11 +111,11 @@ def active_train(train_array, dev_array, model, args, text_field):
     model = CNNModel.CNN_Text(args)
 
     if args.cuda:
-        model = model.cuda()
+        model = model.cuda(args.device)
 
     already_selected = []
     if args.cuda:
-        model.cuda()
+        model.cuda(args.device)
 
     optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
 
@@ -126,7 +125,7 @@ def active_train(train_array, dev_array, model, args, text_field):
     train_set.append((batchify(init_batch_feature, args), init_batch_targets))
 
     train(train_set, model, args, dev_array)
-    eval(dev_array, model, args)
+    eval(dev_array, model, args, len(train_set))
 
     for i in range(25):
         t1, t2, train_array = select_n_best_samples(
@@ -135,7 +134,11 @@ def active_train(train_array, dev_array, model, args, text_field):
 
         print("Length of train set: {}".format(len(train_set)))
 
-        model = CNNModel.CNN_Text(args)
+        # model = CNNModel.CNN_Text(args)
+
+        if args.cuda:
+            model.cuda()
+        model.train()
         train(train_set, model, args, dev_array)
         eval(dev_array, model, args, len(train_set))
     # if not os.path.isdir(args.save_dir):
@@ -146,20 +149,19 @@ def active_train(train_array, dev_array, model, args, text_field):
 
 
 def train(train_array, model, args, dev_array):
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     model.train()
-
+    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
     steps = 0
 
     if args.cuda:
-        model.cuda()
+        model.cuda(args.device)
     for i in range(args.epochs):
         for feature, target in train_array:
             # print(feature)
             # print(target)
 
             if args.cuda:
-                feature, target = feature.cuda(), target.cuda()
+                feature, target = feature.cuda(args.device), target.cuda(args.device)
 
             optimizer.zero_grad()
             output = model(feature)
@@ -181,7 +183,7 @@ def eval(data_iter, model, args, step):
         feature, target = batch.text, batch.label
         feature.data.t_(), target.data.sub_(1)  # batch first, index align
         if args.cuda:
-            feature, target = feature.cuda(), target.cuda()
+            feature, target = feature.cuda(args.device), target.cuda(args.device)
 
         logit = model(feature)
         loss = F.cross_entropy(logit, target, size_average=False)
