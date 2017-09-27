@@ -12,7 +12,7 @@ import torch
 import torch.autograd as autograd
 import torch.nn.functional as F
 import model as CNNModel
-
+import logger
 
 def key_func2(t):
     b_index, index, target, score = t
@@ -107,7 +107,7 @@ def batchify(features, args):
 
 
 def active_train(train_array, dev_array, model, args, text_field):
-    torch.set_printoptions(profile="full")
+    torch.set_printoptions(profile="full")    
 
     model = CNNModel.CNN_Text(args)
 
@@ -134,7 +134,7 @@ def active_train(train_array, dev_array, model, args, text_field):
         model = CNNModel.CNN_Text(args)
         print("\nLength of train set: {} \n".format(len(train_set)))
         train(train_set, model, args, dev_array)
-        eval(dev_array, model, args)
+        eval(dev_array, model, args, len(train_set))
     # if not os.path.isdir(args.save_dir):
     # os.makedirs(args.save_dir)
     # save_prefix = os.path.join(args.save_dir, 'snapshot')
@@ -165,12 +165,14 @@ def train(train_array, model, args, dev_array):
             optimizer.step()
             steps += 1
             if steps % 20 == 0:
-                eval(dev_array, model, args)
+                eval(dev_array, model, args, -1)
     print("\n")
 
+def to_np(x):
+    return x.data.cpu().numpy()
 
-
-def eval(data_iter, model, args):
+def eval(data_iter, model, args, step): 
+    lg = logger.Logger('./logs')
     model.eval()
     corrects, avg_loss = 0, 0
     for batch in data_iter:
@@ -190,6 +192,13 @@ def eval(data_iter, model, args):
     avg_loss = avg_loss/size
     accuracy = 100.0 * corrects/size
     model.train()
+    if (step != -1):        
+        lg.scalar_summary("eval-acc", accuracy, step+1)
+        lg.scalar_summary("eval-loss", avg_loss, step+1)
+        for tag, value in model.named_parameters():
+            tag = tag.replace('.', '/')
+            lg.histo_summary(tag, to_np(value), step+1)
+            lg.histo_summary(tag+'/grad', to_np(value.grad), step+1)
     print('Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})'.format(avg_loss,
                                                                        accuracy,
                                                                        corrects,
