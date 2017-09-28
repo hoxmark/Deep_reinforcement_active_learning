@@ -8,6 +8,7 @@ import torchtext.datasets as datasets
 import model
 import train
 import mydatasets
+import logger
 
 parser = argparse.ArgumentParser(description='CNN text classificer')
 # learning
@@ -24,7 +25,7 @@ parser.add_argument('-shuffle', action='store_true', default=False, help='shuffl
 parser.add_argument('-dropout', type=float, default=0.5, help='the probability for dropout [default: 0.5]')
 parser.add_argument('-max-norm', type=float, default=3.0, help='l2 constraint of parameters [default: 3.0]')
 parser.add_argument('-embed-dim', type=int, default=300, help='number of embedding dimension [default: 128]')
-parser.add_argument('-kernel-num', type=int, default=100, help='number of each kind of kernel')
+parser.add_argument('-kernel-num', type=int, default=50, help='number of each kind of kernel')
 parser.add_argument('-kernel-sizes', type=str, default='7,7,7,7', help='comma-separated kernel size to use for convolution')
 parser.add_argument('-static', action='store_true', default=False, help='fix the embedding')
 # device
@@ -36,6 +37,14 @@ parser.add_argument('-predict', type=str, default=None, help='predict the senten
 parser.add_argument('-test', action='store_true', default=False, help='train or test')
 args = parser.parse_args()
 
+lg = logger.Logger('./logs/batch_size={},date={},kernel_number={},kernel={},static={},dropout={}'.format(
+    args.batch_size,
+    datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+    str([int(k) for k in args.kernel_sizes.split(',')]),
+    str(args.static),
+    str(args.kernel_num),
+    str(args.dropout)
+    ))
 
 # load SST dataset
 def sst(text_field, label_field,  **kargs):
@@ -123,4 +132,4 @@ elif args.test :
         print("\nSorry. The test dataset doesn't  exist.\n")
 else :
     print()
-    train.active_train(train_array, dev_array, cnn, args, text_field)
+    train.active_train(train_array, dev_array, cnn, args, text_field, lg)

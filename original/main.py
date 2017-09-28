@@ -8,7 +8,7 @@ import torchtext.datasets as datasets
 import model
 import train
 import mydatasets
-
+import logger
 
 parser = argparse.ArgumentParser(description='CNN text classificer')
 # learning
@@ -36,6 +36,15 @@ parser.add_argument('-snapshot', type=str, default=None, help='filename of model
 parser.add_argument('-predict', type=str, default=None, help='predict the sentence given')
 parser.add_argument('-test', action='store_true', default=False, help='train or test')
 args = parser.parse_args()
+
+lg = logger.Logger('./logs/batch_size={},date={},kernel_number={},kernel={},static={},dropout={}'.format(
+    args.batch_size, 
+    datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'), 
+    str([int(k) for k in args.kernel_sizes.split(',')]),
+    str(args.static), 
+    str(args.kernel_num),
+    str(args.dropout)
+    ))
 
 
 # load SST dataset
@@ -109,4 +118,4 @@ elif args.test :
         print("\nSorry. The test dataset doesn't  exist.\n")
 else :
     print()
-    train.train(train_iter, dev_iter, cnn, args)
+    train.train(train_iter, dev_iter, cnn, args, lg)

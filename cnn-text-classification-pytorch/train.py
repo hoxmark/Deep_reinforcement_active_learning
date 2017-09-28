@@ -11,6 +11,7 @@ import torch.autograd as autograd
 import torch.nn.functional as F
 import model as CNNModel
 import logger
+import datetime
 
 def key_func2(t):
     b_index, index, target, score = t
@@ -105,7 +106,7 @@ def batchify(features, args):
     return batch_tensor
 
 
-def active_train(train_array, dev_array, model, args, text_field):
+def active_train(train_array, dev_array, model, args, text_field, lg):
     torch.set_printoptions(profile="full")
 
     model = CNNModel.CNN_Text(args)
@@ -140,7 +141,7 @@ def active_train(train_array, dev_array, model, args, text_field):
             model.cuda()
         model.train()
         train(train_set, model, args, dev_array)
-        eval(dev_array, model, args, len(train_set))
+        eval(dev_array, model, args, len(train_set), lg)
     # if not os.path.isdir(args.save_dir):
     # os.makedirs(args.save_dir)
     # save_prefix = os.path.join(args.save_dir, 'snapshot')
@@ -169,14 +170,14 @@ def train(train_array, model, args, dev_array):
             loss.backward()
             optimizer.step()
             steps += 1
-        eval(dev_array, model, args, -1)
+            if steps % 20 == 0:
+                eval(dev_array, model, args, -1, None)
     print("\n")
 
 def to_np(x):
     return x.data.cpu().numpy()
 
-def eval(data_iter, model, args, step):
-    lg = logger.Logger('./logs')
+def eval(data_iter, model, args, step, lg):
     model.eval()
     corrects, avg_loss = 0, 0
     for batch in data_iter:
