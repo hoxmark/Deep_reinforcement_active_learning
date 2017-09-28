@@ -9,8 +9,8 @@ def to_np(x):
     return x.data.cpu().numpy()
 
 
-def train(train_iter, dev_iter, model, args):
-    lg = logger.Logger('./logs/orginal2')
+def train(train_iter, dev_iter, model, args, lg):
+    # lg = logger.Logger('./logs/orginal2')
 
     if args.cuda:
         model.cuda()
