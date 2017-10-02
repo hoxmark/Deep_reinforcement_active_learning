@@ -102,7 +102,6 @@ def select_n_best_samples(model, data, params):
         print("Selection process: {0:.2f}% completed ".format(
             100 * (completed / (len(data["train_x"]) / params["BATCH_SIZE"]))), end="\r")
 
-    print("\n")
     best_n_indexes = [n[0] for n in heapq.nlargest(params["BATCH_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
     # best_n_indexes = [n[0] for n in random.sample(list(enumerate(sample_scores)), params["BATCH_SIZE"])]
 
@@ -161,6 +160,7 @@ def train(data, params):
         t1, t2, ret_array = select_n_best_samples(model, data, params)
         train_array.append((t1, t2))
         #
+        print("\n")
         if params["RESET"]:
             model = CNN(**params)
             if params["CUDA"]:
@@ -172,7 +172,6 @@ def train(data, params):
                 optimizer.zero_grad()
                 model.train()
                 pred = model(feature)
-                # print(pred)
                 loss = criterion(pred, target)
                 loss.backward()
                 optimizer.step()
@@ -181,48 +180,45 @@ def train(data, params):
                 if model.fc.weight.norm().data[0] > params["NORM_LIMIT"]:
                     model.fc.weight.data = model.fc.weight.data * params["NORM_LIMIT"] / model.fc.weight.data.norm()
 
-        test_acc = test(data, model, params)
-        dev_acc = test(data, model, params, mode="dev")
-        print("ecpoch {}: test_acc: {}".format(e,test_acc))
-        print("ecpoch {}: dev_acc: {}".format(e,dev_acc))
-
-    # test_acc = test(data, model, params)
-    # print("test_acc:", test_acc)
-
-        # if params["EARLY_STOPPING"] and dev_acc <= pre_dev_acc:
-        #     print("early stopping by dev_acc!")
-        #     break
-        # else:
-        #     pre_dev_acc = dev_acc
-        #
-        # if test_acc > max_test_acc:
-        #     max_test_acc = test_acc
-        #     best_model = copy.deepcopy(model)
-
+        test(data, model, params, mode="dev")
     best_model = {}
     return best_model
 
 def test(data, model, params, mode="test"):
     model.eval()
-    model.cuda(params["DEVICE"])
+    if params["CUDA"]:
+        model.cuda(params["DEVICE"])
 
-    if mode == "dev":
-        x, y = data["dev_x"], data["dev_y"]
-    elif mode == "test":
-        x, y = data["test_x"], data["test_y"]
+    corrects, avg_loss = 0, 0
+    for i in range(0, len(data["dev_x"]), params["BATCH_SIZE"]):
+        batch_range = min(params["BATCH_SIZE"], len(data["dev_x"]) - i)
 
-    x = [[data["word_to_idx"][w] if w in data["vocab"] else params["VOCAB_SIZE"] for w in sent] +
-         [params["VOCAB_SIZE"] + 1] * (params["MAX_SENT_LEN"] - len(sent))
-         for sent in x]
+        feature = [[data["word_to_idx"][w] for w in sent] +
+                   [params["VOCAB_SIZE"] + 1] * (params["MAX_SENT_LEN"] - len(sent))
+                   for sent in data["dev_x"][i:i + batch_range]]
+        target = [data["classes"].index(c) for c in data["dev_y"][i:i + batch_range]]
 
-    x = Variable(torch.LongTensor(x)).cuda(params["DEVICE"])
-    y = [data["classes"].index(c) for c in y]
+        feature = Variable(torch.LongTensor(feature))
+        target = Variable(torch.LongTensor(target))
+        if params["CUDA"]:
+            feature = feature.cuda(params["DEVICE"])
+            target = target.cuda(params["DEVICE"])
 
-    pred = np.argmax(model(x).cpu().data.numpy(), axis=1)
-    acc = sum([1 if p == y else 0 for p, y in zip(pred, y)]) / len(pred)
+        logit = model(feature)
+        loss = torch.nn.functional.cross_entropy(logit, target, size_average=False)
 
-    return acc
+        avg_loss += loss.data[0]
+        corrects += (torch.max(logit, 1)
+                     [1].view(target.size()).data == target.data).sum()
 
+    size = len(data["dev_x"])
+    avg_loss = avg_loss / size
+    accuracy = 100.0 * corrects / size
+    print('Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})\n'.format(avg_loss,
+                                                                  accuracy,
+                                                                  corrects,
+                                                                  size))
+    # return accuracy
 
 def main():
     parser = argparse.ArgumentParser(description="-----[CNN-classifier]-----")
