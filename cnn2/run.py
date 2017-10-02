@@ -1,6 +1,8 @@
 from model import CNN
 import utils
 import heapq, random
+import logger
+import datetime
 
 from torch.autograd import Variable
 import torch
@@ -12,6 +14,9 @@ from gensim.models.keyedvectors import KeyedVectors
 import numpy as np
 import argparse
 import copy
+
+def to_np(x):
+    return x.data.cpu().numpy()
 
 def batchify(features, params):
     features = sorted(features, key=lambda x: len(x))
@@ -121,7 +126,7 @@ def select_n_best_samples(model, data, params):
 
     return batch_feature, batch_target, []
 
-def train(data, params):
+def train(data, params, lg):
     if params["MODEL"] != "rand":
         # load word2vec
         print("loading word2vec...")
@@ -225,6 +230,7 @@ def main():
     parser.add_argument("--mode", default="train", help="train: train (with test) a model / test: test saved models")
     parser.add_argument("--model", default="rand", help="available models: rand, static, non-static, multichannel")
     parser.add_argument("--dataset", default="TREC", help="available datasets: MR, TREC")
+    parser.add_argument('--batch-size', type=int, default=64, help='batch size for training [default: 64]')
     parser.add_argument("--save_model", default="F", help="whether saving model or not (T/F)")
     parser.add_argument("--early_stopping", default="F", help="whether to apply early stopping(T/F)")
     parser.add_argument("--epoch", default=100, type=int, help="number of max epoch")
@@ -251,7 +257,7 @@ def main():
         "EPOCH": options.epoch,
         "LEARNING_RATE": options.learning_rate,
         "MAX_SENT_LEN": max([len(sent) for sent in data["train_x"] + data["dev_x"] + data["test_x"]]),
-        "BATCH_SIZE": 25,
+        "BATCH_SIZE": options.batch_size,
         "WORD_DIM": 300,
         "VOCAB_SIZE": len(data["vocab"]),
         "CLASS_SIZE": len(data["classes"]),
@@ -266,13 +272,26 @@ def main():
     }
     params["CUDA"] = (not params["NO_CUDA"]) and torch.cuda.is_available(); del params["NO_CUDA"]
 
+    lg = logger.Logger('./logs/cnn2/batch_size={},date={},FILTERS={},FILTER_NUM={},WORD_DIM={},MODEL={},DROPOUT_PROB={},NORM_LIMIT={},EVAL={},RESET={}'.format(
+        params["BATCH_SIZE"],
+        datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+        str(params["FILTERS"]),
+        str(params["FILTER_NUM"]),
+        str(params["WORD_DIM"]),
+        str(params["MODEL"]),
+        str(params["DROPOUT_PROB"]),
+        str(params["NORM_LIMIT"]),
+        str(params["EVAL"]),
+        str(params["RESET"])
+        ))
+
     print("=" * 20 + "INFORMATION" + "=" * 20)
     for key, value in params.items():
         print("{}: {}".format(key.upper(), value))
 
     if options.mode == "train":
         print("=" * 20 + "TRAINING STARTED" + "=" * 20)
-        model = train(data, params)
+        model = train(data, params, lg)
         if params["SAVE_MODEL"]:
             utils.save_model(model, params)
         print("=" * 20 + "TRAINING FINISHED" + "=" * 20)
