@@ -104,8 +104,8 @@ def select_n_best_samples(model, data, params):
             # sample_scores.append(0)
         completed += 1
 
-        print("Selection process: {0:.2f}% completed ".format(
-            100 * (completed / (len(data["train_x"]) / params["BATCH_SIZE"]))), end="\r")
+        print("Selection process: {0:.0f}% completed ".format(
+            100 * (completed / (len(data["train_x"]) // params["BATCH_SIZE"] + 1))), end="\r")
 
     best_n_indexes = [n[0] for n in heapq.nlargest(params["BATCH_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
     # best_n_indexes = [n[0] for n in random.sample(list(enumerate(sample_scores)), params["BATCH_SIZE"])]
