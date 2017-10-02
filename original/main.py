@@ -38,10 +38,10 @@ parser.add_argument('-test', action='store_true', default=False, help='train or 
 args = parser.parse_args()
 
 lg = logger.Logger('./logs/batch_size={},date={},kernel_number={},kernel={},static={},dropout={}'.format(
-    args.batch_size, 
-    datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'), 
+    args.batch_size,
+    datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
     str([int(k) for k in args.kernel_sizes.split(',')]),
-    str(args.static), 
+    str(args.static),
     str(args.kernel_num),
     str(args.dropout)
     ))

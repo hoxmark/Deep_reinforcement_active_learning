@@ -24,9 +24,9 @@ parser.add_argument('-shuffle', action='store_true', default=False, help='shuffl
 # model
 parser.add_argument('-dropout', type=float, default=0.5, help='the probability for dropout [default: 0.5]')
 parser.add_argument('-max-norm', type=float, default=3.0, help='l2 constraint of parameters [default: 3.0]')
-parser.add_argument('-embed-dim', type=int, default=300, help='number of embedding dimension [default: 128]')
+parser.add_argument('-embed-dim', type=int, default=128, help='number of embedding dimension [default: 128]')
 parser.add_argument('-kernel-num', type=int, default=50, help='number of each kind of kernel')
-parser.add_argument('-kernel-sizes', type=str, default='7,7,7,7', help='comma-separated kernel size to use for convolution')
+parser.add_argument('-kernel-sizes', type=str, default='3,4,5', help='comma-separated kernel size to use for convolution')
 parser.add_argument('-static', action='store_true', default=False, help='fix the embedding')
 # device
 parser.add_argument('-device', type=int, default=0, help='Cuda device to run on')
@@ -35,15 +35,22 @@ parser.add_argument('-no-cuda', action='store_true', default=False, help='disabl
 parser.add_argument('-snapshot', type=str, default=None, help='filename of model snapshot [default: None]')
 parser.add_argument('-predict', type=str, default=None, help='predict the sentence given')
 parser.add_argument('-test', action='store_true', default=False, help='train or test')
+parser.add_argument('-batchnorm', action='store_true', default=False, help='Run batch normalization')
+parser.add_argument('-eval', action='store_true', default=False, help='Run eval() in selection')
+parser.add_argument('-reset', action='store_true', default=False, help='Reset model after each selection/train')
 args = parser.parse_args()
 
-lg = logger.Logger('./logs/batch_size={},date={},kernel_number={},kernel={},static={},dropout={}'.format(
+lg = logger.Logger('./logs/batch_size={},date={},kernel_number={},kernel={},embed_dim={},static={},dropout={},batchnorm={},eval={},reset={}'.format(
     args.batch_size,
     datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-    str([int(k) for k in args.kernel_sizes.split(',')]),
-    str(args.static),
     str(args.kernel_num),
-    str(args.dropout)
+    str([int(k) for k in args.kernel_sizes.split(',')]),
+    str(args.embed_dim),
+    str(args.static),
+    str(args.dropout),
+    str(args.batchnorm),
+    str(args.eval),
+    str(args.reset)
     ))
 
 # load SST dataset
@@ -92,6 +99,9 @@ print("\nLoading data...")
 text_field = data.Field(lower=True)
 label_field = data.Field(sequential=False)
 train_array, dev_array = mr(text_field, label_field, device=-1, repeat=False)
+# print(text_field.eos_token)
+# print(text_field.init_token)
+# print(text_field)
 
 
 
@@ -131,5 +141,4 @@ elif args.test :
     except Exception as e:
         print("\nSorry. The test dataset doesn't  exist.\n")
 else :
-    print()
     train.active_train(train_array, dev_array, cnn, args, text_field, lg)

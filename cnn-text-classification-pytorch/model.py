@@ -19,6 +19,10 @@ class CNN_Text(nn.Module):
         self.embed = nn.Embedding(V, D)
         # self.convs1 = [nn.Conv2d(Ci, Co, (K, D)) for K in Ks]
         self.convs1 = nn.ModuleList([nn.Conv2d(Ci, Co, (K, D)) for K in Ks])
+
+        if args.batchnorm:
+            self.batchnorm = nn.BatchNorm2d(Co)
+
         '''
         self.conv13 = nn.Conv2d(Ci, Co, (3, D))
         self.conv14 = nn.Conv2d(Ci, Co, (4, D))
@@ -41,12 +45,13 @@ class CNN_Text(nn.Module):
 
         x = x.unsqueeze(1)  # (N,Ci,W,D)
 
-        x = [F.relu(conv(x)).squeeze(3)
-             for conv in self.convs1]  # [(N,Co,W), ...]*len(Ks)
+        if self.args.batchnorm:
+            x = [F.relu(self.batchnorm(conv(x))).squeeze(3)for conv in self.convs1]  # [(N,Co,W), ...]*len(Ks)
+        else:
+            x = [F.relu(conv(x)).squeeze(3) for conv in self.convs1]  # [(N,Co,W), ...]*len(Ks)
 
         x = [F.max_pool1d(i, i.size(2)).squeeze(2)
              for i in x]  # [(N,Co), ...]*len(Ks)
-
         x = torch.cat(x, 1)
 
         '''

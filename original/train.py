@@ -54,7 +54,7 @@ def train(train_iter, dev_iter, model, args, lg):
                 save_prefix = os.path.join(args.save_dir, 'snapshot')
                 save_path = '{}_steps{}.pt'.format(save_prefix, steps)
                 torch.save(model, save_path)
-            
+
             lg.scalar_summary("eval-acc", accuracy, steps)
             lg.scalar_summary("eval-loss", loss.data[0], steps)
             for tag, value in model.named_parameters():

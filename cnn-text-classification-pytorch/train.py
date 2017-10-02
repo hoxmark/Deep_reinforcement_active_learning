@@ -24,7 +24,8 @@ def key_func(sample):
 
 
 def select_n_best_samples(model, train_array, n_samples, args):
-    model.eval()
+    if args.eval:
+        model.eval()
     sample_scores = []
     completed = 0
     slide_n = 500
@@ -75,6 +76,10 @@ def select_n_best_samples(model, train_array, n_samples, args):
 
 
 def batchify(features, args):
+    # features.sort(key=)
+    features = sorted(features, key=lambda x: len(x))
+    # print(features)
+
     max_len = 0
     batch_matrix = []
 
@@ -104,6 +109,7 @@ def batchify(features, args):
 
     batch_tensor = torch.stack(batch_matrix, dim=0)
     return batch_tensor
+    # return torch.nn.utils.rnn.pack_padded_sequence(features, [len(x) for x in features])
 
 
 def active_train(train_array, dev_array, model, args, text_field, lg):
@@ -118,7 +124,7 @@ def active_train(train_array, dev_array, model, args, text_field, lg):
     if args.cuda:
         model.cuda(args.device)
 
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    # torch.optim.
 
     train_set = []
     # for i in range(21):
@@ -126,19 +132,22 @@ def active_train(train_array, dev_array, model, args, text_field, lg):
     train_set.append((batchify(init_batch_feature, args), init_batch_targets))
 
     train(train_set, model, args, dev_array)
-    eval(dev_array, model, args, len(train_set))
+    eval(dev_array, model, args, len(train_set), lg)
 
     for i in range(25):
         t1, t2, train_array = select_n_best_samples(
             model, train_array, args.batch_size, args)
         train_set.append((t1, t2))
 
+        # init_batch_feature, init_batch_targets = random.choice(train_array)
+        # train_set.append((batchify(init_batch_feature, args), init_batch_targets))
+
         print("Length of train set: {}".format(len(train_set)))
 
-        # model = CNNModel.CNN_Text(args)
-
-        if args.cuda:
-            model.cuda()
+        if args.reset:
+            model = CNNModel.CNN_Text(args)
+            if args.cuda:
+                model.cuda()
         model.train()
         train(train_set, model, args, dev_array)
         eval(dev_array, model, args, len(train_set), lg)
@@ -151,24 +160,30 @@ def active_train(train_array, dev_array, model, args, text_field, lg):
 
 def train(train_array, model, args, dev_array):
     model.train()
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    # optimizer = torch.optim.Adam(model.parameters(), lr=args.lr)
+    optimizer = torch.optim.Adadelta(model.parameters())
     steps = 0
 
     if args.cuda:
         model.cuda(args.device)
     for i in range(args.epochs):
         for feature, target in train_array:
+
             # print(feature)
             # print(target)
 
             if args.cuda:
                 feature, target = feature.cuda(args.device), target.cuda(args.device)
 
-            optimizer.zero_grad()
-            output = model(feature)
-            loss = F.cross_entropy(output, target)
-            loss.backward()
-            optimizer.step()
+
+            for index, sentence in enumerate(feature):
+                # print(sentence.unsqueeze(0))
+
+                optimizer.zero_grad()
+                output = model(sentence.unsqueeze(0))
+                loss = F.cross_entropy(output, target[index])
+                loss.backward()
+                optimizer.step()
             steps += 1
             if steps % 20 == 0:
                 eval(dev_array, model, args, -1, None)

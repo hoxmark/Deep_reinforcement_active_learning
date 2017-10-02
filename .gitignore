@@ -1,6 +1,8 @@
 .ftpconfig
 snapshot
 rt-polaritydata
+*.bin
+saved_models/
 
 
 # Byte-compiled / optimized / DLL files
