@@ -59,7 +59,7 @@ def train(data, params, lg):
     data["train_x"], data["train_y"] = shuffle(data["train_x"], data["train_y"])
 
     for i in range(25):
-        t1, t2, ret_array = select_random(
+        t1, t2, ret_array = select_entropy(
             model, data, selected_indices, params)
         train_array.append((t1, t2))
         selected_indices.extend(ret_array)

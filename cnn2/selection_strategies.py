@@ -20,17 +20,12 @@ import copy
 def select_entropy(model, data, selected_indices, params):
     if params["EVAL"]:
         model.eval()
-    sample_scores = []
-    completed = 0
-    slide_n = 500
-    print_every = 500
-    sliding_scores = [0 for i in range(slide_n)]
 
+    sample_scores = []
     all_tensors = []
     all_targets = []
 
-    max_len = 0
-
+    completed = 0
     for i in range(0, len(data["train_x"]), params["BATCH_SIZE"]):
         batch_range = min(params["BATCH_SIZE"], len(data["train_x"]) - i)
 
@@ -41,37 +36,28 @@ def select_entropy(model, data, selected_indices, params):
         batch_y = [data["classes"].index(c)
                    for c in data["train_y"][i:i + batch_range]]
 
-        feature = Variable(torch.LongTensor(batch_x)).cuda(params["DEVICE"])
-        # print(feature[1])
-        target = Variable(torch.LongTensor(batch_y)).cuda(params["DEVICE"])
+        feature = Variable(torch.LongTensor(batch_x))
+        target = Variable(torch.LongTensor(batch_y))
+
+        if params["CUDA"]:
+            feature, target = feature.cuda(params["DEVICE"]), target.cuda(params["DEVICE"])
+
         all_tensors.extend(feature)
         all_targets.extend(target)
 
-        if params["CUDA"]:
-            feature, target = feature.cuda(
-                params["DEVICE"]), target.cuda(params["DEVICE"])
-
-        # print(feature)
         output = model(feature)
-
         output = torch.mul(output, torch.log(output))
         output = torch.sum(output, dim=1)
         output = output * -1
-        # print(output)
 
-        # l = len(target.data)
-        # for s_index, score in enumerate([x for x in range(l)]):
         for s_index, score in enumerate(output):
             sample_scores.append(score.data[0])
-            # sample_scores.append(0)
-        completed += 1
 
+        completed += 1
         print("Selection process: {0:.0f}% completed ".format(
             100 * (completed / (len(data["train_x"]) // params["BATCH_SIZE"] + 1))), end="\r")
 
-    # best_n_indexes = [n[0] for n in heapq.nlargest(params["BATCH_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
-    best_n_indexes = [n[0] for n in random.sample(
-        list(enumerate(sample_scores)), params["BATCH_SIZE"])]
+    best_n_indexes = [n[0] for n in heapq.nlargest(params["BATCH_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
 
     batch_features = []
     batch_target = []
