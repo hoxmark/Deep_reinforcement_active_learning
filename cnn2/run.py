@@ -108,7 +108,7 @@ def select_n_best_samples(model, data, params):
             100 * (completed / (len(data["train_x"]) / params["BATCH_SIZE"]))), end="\r")
 
     best_n_indexes = [n[0] for n in heapq.nlargest(params["BATCH_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
-    # best_n_indexes = [n[0] for n in random.sample(list(enumerate(sample_scores)), params["BATCH_SIZE"])]
+    #best_n_indexes = [n[0] for n in random.sample(list(enumerate(sample_scores)), params["BATCH_SIZE"])]
 
     batch_features = []
     batch_target = []
@@ -238,12 +238,12 @@ def main():
     parser.add_argument("--mode", default="train", help="train: train (with test) a model / test: test saved models")
     parser.add_argument("--model", default="rand", help="available models: rand, static, non-static, multichannel")
     parser.add_argument("--dataset", default="TREC", help="available datasets: MR, TREC")
-    parser.add_argument('--batch-size', type=int, default=64, help='batch size for training [default: 64]')
+    parser.add_argument('--batch-size', type=int, default=25, help='batch size for training [default: 64]')
     parser.add_argument("--save_model", default="F", help="whether saving model or not (T/F)")
     parser.add_argument("--early_stopping", default="F", help="whether to apply early stopping(T/F)")
     parser.add_argument("--epoch", default=100, type=int, help="number of max epoch")
     parser.add_argument("--learning_rate", default=0.15, type=int, help="learning rate")
-    parser.add_argument('--device', type=int, default=0, help='Cuda device to run on')
+    parser.add_argument('--device', type=int, default=1, help='Cuda device to run on')
     parser.add_argument('--no-cuda', action='store_true', default=False, help='disable the gpu' )
     parser.add_argument('--eval', action='store_true', default=False, help='Run eval() in selection')
     parser.add_argument('--reset', action='store_true', default=False, help='Reset model after each selection/train')
