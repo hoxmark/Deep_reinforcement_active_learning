@@ -185,12 +185,12 @@ def train(data, params, lg):
                 if model.fc.weight.norm().data[0] > params["NORM_LIMIT"]:
                     model.fc.weight.data = model.fc.weight.data * params["NORM_LIMIT"] / model.fc.weight.data.norm()
 
-        test(data, model, params, lg, mode="dev")
+        test(data, model, params, lg, i, mode="dev")
 
     best_model = {}
     return best_model
 
-def test(data, model, params, lg, mode="test"):
+def test(data, model, params, lg, step, mode="test"):
     model.eval()
     if params["CUDA"]:
         model.cuda(params["DEVICE"])
@@ -220,11 +220,18 @@ def test(data, model, params, lg, mode="test"):
     size = len(data["dev_x"])
     avg_loss = avg_loss / size
     accuracy = 100.0 * corrects / size
+    lg.scalar_summary("test-acc", accuracy, step+1)
+    lg.scalar_summary("test-loss", avg_loss, step+1)
+    for tag, value in model.named_parameters():
+        if value.requires_grad:
+            tag = tag.replace('.', '/')
+            lg.histo_summary(tag, to_np(value), step+1)
+            lg.histo_summary(tag+'/grad', to_np(value.grad), step+1)        
     print('Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})\n'.format(avg_loss,
                                                                   accuracy,
                                                                   corrects,
                                                                   size))
-    # return accuracy
+    # return accuracy    
 
 def main():
     parser = argparse.ArgumentParser(description="-----[CNN-classifier]-----")
@@ -299,7 +306,7 @@ def main():
     else:
         model = utils.load_model(params).cuda(params["DEVICE"])
 
-        test_acc = test(data, model, params, lg)
+        test_acc = test(data, model, params, -1, lg)
         print("test acc:", test_acc)
 
 if __name__ == "__main__":
