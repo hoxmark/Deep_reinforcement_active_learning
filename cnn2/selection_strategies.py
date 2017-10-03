@@ -1,20 +1,8 @@
-from model import CNN
-import utils
 import heapq
 import random
-import logger
-import datetime
 
 from torch.autograd import Variable
 import torch
-import torch.optim as optim
-import torch.nn as nn
-
-from sklearn.utils import shuffle
-from gensim.models.keyedvectors import KeyedVectors
-import numpy as np
-import argparse
-import copy
 
 
 def select_entropy(model, data, selected_indices, params):
@@ -40,7 +28,8 @@ def select_entropy(model, data, selected_indices, params):
         target = Variable(torch.LongTensor(batch_y))
 
         if params["CUDA"]:
-            feature, target = feature.cuda(params["DEVICE"]), target.cuda(params["DEVICE"])
+            feature, target = feature.cuda(
+                params["DEVICE"]), target.cuda(params["DEVICE"])
 
         all_tensors.extend(feature)
         all_targets.extend(target)
@@ -57,7 +46,8 @@ def select_entropy(model, data, selected_indices, params):
         print("Selection process: {0:.0f}% completed ".format(
             100 * (completed / (len(data["train_x"]) // params["BATCH_SIZE"] + 1))), end="\r")
 
-    best_n_indexes = [n[0] for n in heapq.nlargest(params["BATCH_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
+    best_n_indexes = [n[0] for n in heapq.nlargest(
+        params["BATCH_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
 
     batch_features = []
     batch_target = []
@@ -138,6 +128,4 @@ def batchify(features, params):
         batch_matrix.append(feature)
 
     batch_tensor = torch.stack(batch_matrix, dim=0)
-    # print(batch_matrix)
     return batch_tensor
-    # return torch.nn.utils.rnn.pack_padded_sequence(features, [len(x) for x in features])

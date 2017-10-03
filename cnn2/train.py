@@ -1,9 +1,4 @@
 from model import CNN
-import utils
-import heapq
-import random
-import logger
-import datetime
 
 from torch.autograd import Variable
 import torch
@@ -13,10 +8,8 @@ import torch.nn as nn
 from sklearn.utils import shuffle
 from gensim.models.keyedvectors import KeyedVectors
 import numpy as np
-import argparse
-import copy
 
-from selection_strategies import *
+from selection_strategies import select_random, select_entropy
 
 
 def to_np(x):
@@ -56,7 +49,8 @@ def train(data, params, lg):
     train_array = []
     selected_indices = []
 
-    data["train_x"], data["train_y"] = shuffle(data["train_x"], data["train_y"])
+    data["train_x"], data["train_y"] = shuffle(
+        data["train_x"], data["train_y"])
 
     for i in range(25):
         t1, t2, ret_array = select_entropy(

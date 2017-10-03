@@ -1,22 +1,10 @@
-from model import CNN
 import utils
-import heapq
-import random
 import logger
 import datetime
-
-from torch.autograd import Variable
-import torch
-import torch.optim as optim
-import torch.nn as nn
-
-from sklearn.utils import shuffle
-from gensim.models.keyedvectors import KeyedVectors
-import numpy as np
 import argparse
-import copy
+import torch
 
-from train import *
+from train import train, test
 
 
 def main():
@@ -50,7 +38,8 @@ def main():
     data = getattr(utils, "read_{}".format(options.dataset))()
 
     data["vocab"] = sorted(list(set(
-        [w for sent in data["train_x"] + data["dev_x"] + data["test_x"] for w in sent])))
+        [w for sent in data["train_x"] + data["dev_x"]
+            + data["test_x"] for w in sent])))
     data["classes"] = sorted(list(set(data["train_y"])))
     data["word_to_idx"] = {w: i for i, w in enumerate(data["vocab"])}
     data["idx_to_word"] = {i: w for i, w in enumerate(data["vocab"])}
@@ -63,7 +52,8 @@ def main():
         "EARLY_STOPPING": bool(options.early_stopping == "T"),
         "EPOCH": options.epoch,
         "LEARNING_RATE": options.learning_rate,
-        "MAX_SENT_LEN": max([len(sent) for sent in data["train_x"] + data["dev_x"] + data["test_x"]]),
+        "MAX_SENT_LEN": max([len(sent) for sent in data["train_x"]
+                             + data["dev_x"] + data["test_x"]]),
         "BATCH_SIZE": options.batch_size,
         "WORD_DIM": 300,
         "VOCAB_SIZE": len(data["vocab"]),
