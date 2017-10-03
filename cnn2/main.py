@@ -4,7 +4,7 @@ import datetime
 import argparse
 import torch
 
-from train import train, test
+import train
 
 
 def main():
@@ -33,6 +33,8 @@ def main():
                         default=False, help='Run eval() in selection')
     parser.add_argument('--reset', action='store_true', default=False,
                         help='Reset model after each selection/train')
+    parser.add_argument("--scorefn", default="entropy",
+                        help="available scoring functions: entropy, rand, egl")
 
     options = parser.parse_args()
     data = getattr(utils, "read_{}".format(options.dataset))()
@@ -65,12 +67,13 @@ def main():
         "DEVICE": options.device,
         "NO_CUDA": options.no_cuda,
         "EVAL": options.eval,
-        "RESET": options.reset
+        "RESET": options.reset,
+        "SCORE_FN": options.scorefn
     }
     params["CUDA"] = (not params["NO_CUDA"]) and torch.cuda.is_available()
     del params["NO_CUDA"]
 
-    lg = logger.Logger('./logs/cnn2/batch_size={},date={},FILTERS={},FILTER_NUM={},WORD_DIM={},MODEL={},DROPOUT_PROB={},NORM_LIMIT={},EVAL={},RESET={}'.format(
+    lg = logger.Logger('./logs/cnn2/batch_size={},date={},FILTERS={},FILTER_NUM={},WORD_DIM={},MODEL={},DROPOUT_PROB={},NORM_LIMIT={},EVAL={},RESET={},SCORE_FN={}'.format(
         params["BATCH_SIZE"],
         datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
         str(params["FILTERS"]),
@@ -80,7 +83,8 @@ def main():
         str(params["DROPOUT_PROB"]),
         str(params["NORM_LIMIT"]),
         str(params["EVAL"]),
-        str(params["RESET"])
+        str(params["RESET"]),
+        str(params["SCORE_FN"])
     ))
 
     print("=" * 20 + "INFORMATION" + "=" * 20)
@@ -89,14 +93,14 @@ def main():
 
     if options.mode == "train":
         print("=" * 20 + "TRAINING STARTED" + "=" * 20)
-        model = train(data, params, lg)
+        model = train.train(data, params, lg)
         if params["SAVE_MODEL"]:
             utils.save_model(model, params)
         print("=" * 20 + "TRAINING FINISHED" + "=" * 20)
     else:
         model = utils.load_model(params).cuda(params["DEVICE"])
 
-        test_acc = test(data, model, params, -1, lg)
+        test_acc = train.evaluate(data, model, params, -1, lg)
         print("test acc:", test_acc)
 
 

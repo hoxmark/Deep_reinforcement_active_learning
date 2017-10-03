@@ -4,6 +4,84 @@ import random
 from torch.autograd import Variable
 import torch
 
+# from train import evaluate
+import train
+
+def select_egl(model, data, selected_indices, optimizer, params):
+    if params["EVAL"]:
+        model.eval()
+
+    completed = 0
+
+    sample_scores = []
+    all_tensors = []
+    all_targets = []
+    step = 0
+
+    for i in range(0, len(data["train_x"]), params["BATCH_SIZE"]):
+        batch_range = min(params["BATCH_SIZE"], len(data["train_x"]) - i)
+
+        batch_x = [[data["word_to_idx"][w] for w in sent] +
+                   [params["VOCAB_SIZE"] + 1] *
+                   (params["MAX_SENT_LEN"] - len(sent))
+                   for sent in data["train_x"][i:i + batch_range]]
+        batch_y = [data["classes"].index(c)
+                   for c in data["train_y"][i:i + batch_range]]
+
+        feature = Variable(torch.LongTensor(batch_x))
+        target = Variable(torch.LongTensor(batch_y))
+
+        if params["CUDA"]:
+            feature, target = feature.cuda(
+                params["DEVICE"]), target.cuda(params["DEVICE"])
+
+        all_tensors.extend(feature)
+        all_targets.extend(target)
+        output = model(feature)
+
+        for s_index, sentence_output in enumerate(output):
+            score = 0
+            for index, k in enumerate(sentence_output.data):
+                optimizer.zero_grad()
+                f_target = torch.autograd.Variable(torch.LongTensor([index]))
+                if params["CUDA"]:
+                    f_target = f_target.cuda(params["DEVICE"])
+                loss = torch.nn.functional.cross_entropy(sentence_output.unsqueeze(0), f_target)
+                loss.backward(retain_graph=True)
+
+                best_grad = -999
+                for word in feature[s_index]:
+                    grad = model.embedding.weight.grad[word]
+                    grad_length = torch.norm(grad).data[0]
+                    best_grad = max(best_grad, grad_length)
+                score += k * best_grad
+
+            sample_scores.append(score)
+
+        completed += 1
+        print("Selection process: {0:.0f}% completed ".format(
+            100 * (completed / (len(data["train_x"]) // params["BATCH_SIZE"] + 1))), end="\r")
+
+    best_n_indexes = [n[0] for n in heapq.nlargest(
+        params["BATCH_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
+
+    batch_features = []
+    batch_target = []
+
+    for index in best_n_indexes:
+        batch_features.append(all_tensors[index])
+        batch_target.append(all_targets[index].data[0])
+
+    batch_feature = torch.stack(batch_features, dim=0)
+    batch_target = torch.autograd.Variable(torch.LongTensor(batch_target))
+
+    if params["CUDA"]:
+        batch_feature = batch_feature.cuda(params["DEVICE"])
+        batch_target = batch_target.cuda(params["DEVICE"])
+
+    return batch_feature, batch_target, best_n_indexes
+
+
 
 def select_entropy(model, data, selected_indices, params):
     if params["EVAL"]:

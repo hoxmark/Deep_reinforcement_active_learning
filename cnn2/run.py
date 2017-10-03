@@ -138,13 +138,13 @@ def train(data, params, lg):
                     model.fc.weight.data = model.fc.weight.data * \
                         params["NORM_LIMIT"] / model.fc.weight.data.norm()
 
-        test(data, model, params, lg, i, mode="dev")
+        evaluate(data, model, params, lg, i, mode="dev")
 
     best_model = {}
     return best_model
 
 
-def test(data, model, params, lg, step, mode="test"):
+def evaluate(data, model, params, lg, step, mode="test"):
     model.eval()
     if params["CUDA"]:
         model.cuda(params["DEVICE"])
@@ -278,7 +278,7 @@ def main():
     else:
         model = utils.load_model(params).cuda(params["DEVICE"])
 
-        test_acc = test(data, model, params, -1, lg)
+        test_acc = evaluate(data, model, params, -1, lg)
         print("test acc:", test_acc)
 
 

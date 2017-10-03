@@ -9,7 +9,7 @@ from sklearn.utils import shuffle
 from gensim.models.keyedvectors import KeyedVectors
 import numpy as np
 
-from selection_strategies import select_random, select_entropy
+from selection_strategies import select_random, select_entropy, select_egl
 
 
 def to_np(x):
@@ -53,8 +53,23 @@ def train(data, params, lg):
         data["train_x"], data["train_y"])
 
     for i in range(25):
-        t1, t2, ret_array = select_entropy(
-            model, data, selected_indices, params)
+        if params["SCORE_FN"] == "entropy":
+            # Add a random batch first
+            if i == 0:
+                t1, t2, ret_array = select_random(model, data, selected_indices, params)
+            else:
+                t1, t2, ret_array = select_entropy(model, data, selected_indices, params)
+
+        elif params["SCORE_FN"] == "egl":
+            # Add a random batch first
+            if i == 0:
+                t1, t2, ret_array = select_random(model, data, selected_indices, params)
+            else:
+                t1, t2, ret_array = select_egl(model, data, selected_indices, optimizer, params)
+
+        elif params["SCORE_FN"] == "random":
+            t1, t2, ret_array = select_random(model, data, selected_indices, params)
+
         train_array.append((t1, t2))
         selected_indices.extend(ret_array)
         #
@@ -79,13 +94,13 @@ def train(data, params, lg):
                     model.fc.weight.data = model.fc.weight.data * \
                         params["NORM_LIMIT"] / model.fc.weight.data.norm()
 
-        test(data, model, params, lg, i, mode="dev")
+        evaluate(data, model, params, lg, i, mode="dev")
 
     best_model = {}
     return best_model
 
 
-def test(data, model, params, lg, step, mode="test"):
+def evaluate(data, model, params, lg, step, mode="test"):
     model.eval()
     if params["CUDA"]:
         model.cuda(params["DEVICE"])
