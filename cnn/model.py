@@ -1,42 +1,43 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import numpy as np
+
+from gensim.models.keyedvectors import KeyedVectors
 
 
 class CNN(nn.Module):
-    def __init__(self, **kwargs):
+    def __init__(self, data, params):
         super(CNN, self).__init__()
 
-        self.MODEL = kwargs["MODEL"]
-        self.BATCH_SIZE = kwargs["BATCH_SIZE"]
-        self.MAX_SENT_LEN = kwargs["MAX_SENT_LEN"]
-        self.WORD_DIM = kwargs["WORD_DIM"]
-        self.VOCAB_SIZE = kwargs["VOCAB_SIZE"]
-        self.CLASS_SIZE = kwargs["CLASS_SIZE"]
-        self.FILTERS = kwargs["FILTERS"]
-        self.FILTER_NUM = kwargs["FILTER_NUM"]
-        self.DROPOUT_PROB = kwargs["DROPOUT_PROB"]
+        self.MODEL = params["MODEL"]
+        self.BATCH_SIZE = params["BATCH_SIZE"]
+        self.MAX_SENT_LEN = params["MAX_SENT_LEN"]
+        self.WORD_DIM = params["WORD_DIM"]
+        self.VOCAB_SIZE = params["VOCAB_SIZE"]
+        self.CLASS_SIZE = params["CLASS_SIZE"]
+        self.FILTERS = params["FILTERS"]
+        self.FILTER_NUM = params["FILTER_NUM"]
+        self.DROPOUT_PROB = params["DROPOUT_PROB"]
         self.IN_CHANNEL = 1
 
-        assert (len(self.FILTERS) == len(self.FILTER_NUM))
+        self.data = data
 
         # one for UNK and one for zero padding
-        self.embedding = nn.Embedding(
-            self.VOCAB_SIZE + 2, self.WORD_DIM, padding_idx=self.VOCAB_SIZE + 1)
-        if self.MODEL == "static" or self.MODEL == "non-static" or self.MODEL == "multichannel":
-            self.WV_MATRIX = kwargs["WV_MATRIX"]
-            self.embedding.weight.data.copy_(torch.from_numpy(self.WV_MATRIX))
+        self.NUM_EMBEDDINGS = self.VOCAB_SIZE + 2
+        assert (len(self.FILTERS) == len(self.FILTER_NUM))
 
-            # TODO: Check this 
+        self.embedding = nn.Embedding(
+            self.NUM_EMBEDDINGS, self.WORD_DIM, padding_idx=self.VOCAB_SIZE + 1)
+
+        # Use the pre-trained vectors if we have a non-random model
+        if self.MODEL != "rand":
+            wv_matrix = self.load_word2vec()
+            self.embedding.weight.data.copy_(torch.from_numpy(wv_matrix))
+
+            # TODO: Check this
             # if self.MODEL == "static":
-                # self.embedding.weight.requires_grad = False
-            if self.MODEL == "multichannel":
-                self.embedding2 = nn.Embedding(
-                    self.VOCAB_SIZE + 2, self.WORD_DIM, padding_idx=self.VOCAB_SIZE + 1)
-                self.embedding2.weight.data.copy_(
-                    torch.from_numpy(self.WV_MATRIX))
-                self.embedding2.weight.requires_grad = False
-                self.IN_CHANNEL = 2
+            # self.embedding.weight.requires_grad = False
 
         for i in range(len(self.FILTERS)):
             conv = nn.Conv1d(
@@ -50,21 +51,43 @@ class CNN(nn.Module):
         return getattr(self, 'conv_{}'.format(i))
 
     def forward(self, inp):
+        # inp = (25 x 59) - (mini_batch_size x sentence_length)
         x = self.embedding(inp).view(-1, 1, self.WORD_DIM * self.MAX_SENT_LEN)
-        if self.MODEL == "multichannel":
-            x2 = self.embedding2(
-                inp).view(-1, 1, self.WORD_DIM * self.MAX_SENT_LEN)
-            x = torch.cat((x, x2), 1)
+        # x = (25 x 1 x 17700) - mini_batch_size x embedding_for_each_sentence
 
         conv_results = [
             F.max_pool1d(F.relu(self.get_conv(i)(x)),
-                self.MAX_SENT_LEN - self.FILTERS[i] + 1).view(-1, self.FILTER_NUM[i])
+                         self.MAX_SENT_LEN - self.FILTERS[i] + 1).view(-1, self.FILTER_NUM[i])
             for i in range(len(self.FILTERS))]
+        # Take a max for each filter - each filter result is 25 x 100 x 57
 
-
+        # Each conv_result is (25 x 100)  - one max value for each application of each filter type, across each sentence
         x = torch.cat(conv_results, 1)
+        # x = (25 x 300) - concatenate all the filter results
         x = F.dropout(x, p=self.DROPOUT_PROB, training=self.training)
         x = self.fc(x)
         x = self.softmax(x)
 
         return x
+
+    """
+    load word2vec pre trained vectors
+    """
+    def load_word2vec(self):
+        print("loading word2vec...")
+        word_vectors = KeyedVectors.load_word2vec_format(
+            "GoogleNews-vectors-negative300.bin", binary=True)
+
+        wv_matrix = []
+        for word in self.data["vocab"]:
+            if word in word_vectors.vocab:
+                wv_matrix.append(word_vectors.word_vec(word))
+            else:
+                wv_matrix.append(
+                    np.random.uniform(-0.01, 0.01, 300).astype("float32"))
+
+        # one for UNK and one for zero padding
+        wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32"))
+        wv_matrix.append(np.zeros(300).astype("float32"))
+        wv_matrix = np.array(wv_matrix)
+        return wv_matrix

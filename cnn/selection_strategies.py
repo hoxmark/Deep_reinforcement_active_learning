@@ -3,13 +3,15 @@ import random
 
 from torch.autograd import Variable
 import torch
+import torch.optim as optim
+import torch.nn as nn
 
-# from train import evaluate
 import train
 
-def select_egl(model, data, selected_indices, optimizer, params):
-    if params["EVAL"]:
-        model.eval()
+def select_egl(model, data, selected_indices, params):
+    parameters = filter(lambda p: p.requires_grad, model.parameters())
+    optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"])
+    criterion = nn.CrossEntropyLoss()
 
     completed = 0
 
@@ -46,7 +48,8 @@ def select_egl(model, data, selected_indices, optimizer, params):
                 f_target = torch.autograd.Variable(torch.LongTensor([index]))
                 if params["CUDA"]:
                     f_target = f_target.cuda(params["DEVICE"])
-                loss = torch.nn.functional.cross_entropy(sentence_output.unsqueeze(0), f_target)
+                    
+                loss = criterion(sentence_output.unsqueeze(0), f_target)
                 loss.backward(retain_graph=True)
 
                 best_grad = -999
@@ -84,9 +87,6 @@ def select_egl(model, data, selected_indices, optimizer, params):
 
 
 def select_entropy(model, data, selected_indices, params):
-    if params["EVAL"]:
-        model.eval()
-
     sample_scores = []
     all_tensors = []
     all_targets = []
@@ -145,9 +145,6 @@ def select_entropy(model, data, selected_indices, params):
 
 
 def select_random(model, data, selected_indices, params):
-    if params["EVAL"]:
-        model.eval()
-
     all_sentences = []
     all_targets = []
 

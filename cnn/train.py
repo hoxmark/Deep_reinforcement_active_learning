@@ -1,14 +1,11 @@
-from model import CNN
-
 from torch.autograd import Variable
+from sklearn.utils import shuffle
+
 import torch
 import torch.optim as optim
 import torch.nn as nn
 
-from sklearn.utils import shuffle
-from gensim.models.keyedvectors import KeyedVectors
-import numpy as np
-
+from model import CNN
 from selection_strategies import select_random, select_entropy, select_egl
 
 
@@ -16,101 +13,44 @@ def to_np(x):
     return x.data.cpu().numpy()
 
 
-def train(data, params, lg):
+def active_train(data, params, lg):
     average_accs = {}
     average_losses = {}
-
     lg.scalar_summary("test-acc", 0, 0)
 
     for j in range(params["N_AVERAGE"]):
-        if params["MODEL"] != "rand":
-            # load word2vec
-            print("loading word2vec...")
-            word_vectors = KeyedVectors.load_word2vec_format(
-                "GoogleNews-vectors-negative300.bin", binary=True)
-
-            wv_matrix = []
-            for i in range(len(data["vocab"])):
-                word = data["idx_to_word"][i]
-                if word in word_vectors.vocab:
-                    wv_matrix.append(word_vectors.word_vec(word))
-                else:
-                    wv_matrix.append(
-                        np.random.uniform(-0.01, 0.01, 300).astype("float32"))
-
-            # one for UNK and one for zero padding
-            wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32"))
-            wv_matrix.append(np.zeros(300).astype("float32"))
-            wv_matrix = np.array(wv_matrix)
-            params["WV_MATRIX"] = wv_matrix
-
-        model = CNN(**params)
+        model = CNN(data, params)
         if params["CUDA"]:
             model.cuda(params["DEVICE"])
-
-        parameters = filter(lambda p: p.requires_grad, model.parameters())
-        optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"])
-        criterion = nn.CrossEntropyLoss()
 
         train_array = []
         selected_indices = []
 
-        data["train_x"], data["train_y"] = shuffle(
-            data["train_x"], data["train_y"])
+        data["train_x"], data["train_y"] = shuffle(data["train_x"], data["train_y"])
 
         n_rounds = 25
         for i in range(n_rounds):
-            if params["SCORE_FN"] == "entropy":
-                # Add a random batch first
-                if i == 0:
-                    t1, t2, ret_array = select_random(model, data, selected_indices, params)
-                else:
-                    t1, t2, ret_array = select_entropy(model, data, selected_indices, params)
-
-            elif params["SCORE_FN"] == "egl":
-                # Add a random batch first
-                if i == 0:
-                    t1, t2, ret_array = select_random(model, data, selected_indices, params)
-                else:
-                    t1, t2, ret_array = select_egl(model, data, selected_indices, optimizer, params)
-
-            elif params["SCORE_FN"] == "random":
+            # Add a random batch first
+            if i == 0:
                 t1, t2, ret_array = select_random(model, data, selected_indices, params)
+            else:
+                if params["SCORE_FN"] == "entropy":
+                    t1, t2, ret_array = select_entropy(model, data, selected_indices, params)
+                elif params["SCORE_FN"] == "egl":
+                    t1, t2, ret_array = select_egl(model, data, selected_indices, params)
+                elif params["SCORE_FN"] == "random":
+                    t1, t2, ret_array = select_random(model, data, selected_indices, params)
 
             train_array.append((t1, t2))
             selected_indices.extend(ret_array)
-            #
+
             print("\n")
-            if params["RESET"]:
-                model = CNN(**params)
-                if params["CUDA"]:
-                    model.cuda(params["DEVICE"])
 
-            print("Length of train set: {}".format(len(train_array)))
-            for e in range(params["EPOCH"]):
-                for feature, target in train_array:
-                    optimizer.zero_grad()
-                    model.train()
-                    pred = model(feature)
-                    loss = criterion(pred, target)
-                    loss.backward()
-                    optimizer.step()
-
-                    # constrain l2-norms of the weight vectors
-                    if model.fc.weight.norm().data[0] > params["NORM_LIMIT"]:
-                        model.fc.weight.data = model.fc.weight.data * \
-                            params["NORM_LIMIT"] / model.fc.weight.data.norm()
-
+            train(model, params, train_array)
             accuracy, loss = evaluate(data, model, params, lg, i, mode="dev")
-            # lg.scalar_summary("test-acc", accuracy, i + 1)
-
-            # lg.scalar_summary("test-loss", loss, i + 1)
-
             if i not in average_accs:
                 average_accs[i] = [accuracy]
             else:
-                print("Old accuracy: {}".format(sum(average_accs[i]) / len(average_accs[i])))
-
                 average_accs[i].append(accuracy)
 
             if i not in average_losses:
@@ -118,7 +58,6 @@ def train(data, params, lg):
 
             else:
                 average_losses[i].append(loss)
-
 
             print("New  accuracy: {}".format(sum(average_accs[i]) / len(average_accs[i])))
 
@@ -128,6 +67,27 @@ def train(data, params, lg):
 
     best_model = {}
     return best_model
+
+
+def train(model, params, train_array):
+    print("Length of train set: {}".format(len(train_array)))
+    parameters = filter(lambda p: p.requires_grad, model.parameters())
+    optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"])
+    criterion = nn.CrossEntropyLoss()
+
+    for e in range(params["EPOCH"]):
+        for feature, target in train_array:
+            optimizer.zero_grad()
+            model.train()
+            pred = model(feature)
+            loss = criterion(pred, target)
+            loss.backward()
+            optimizer.step()
+
+            # constrain l2-norms of the weight vectors
+            if model.fc.weight.norm().data[0] > params["NORM_LIMIT"]:
+                model.fc.weight.data = model.fc.weight.data * \
+                    params["NORM_LIMIT"] / model.fc.weight.data.norm()
 
 
 def evaluate(data, model, params, lg, step, mode="test"):
@@ -153,26 +113,21 @@ def evaluate(data, model, params, lg, step, mode="test"):
             target = target.cuda(params["DEVICE"])
 
         logit = model(feature)
-        loss = torch.nn.functional.cross_entropy(
-            logit, target, size_average=False)
+        loss = torch.nn.functional.cross_entropy(logit, target, size_average=False)
 
         avg_loss += loss.data[0]
-        corrects += (torch.max(logit, 1)
-                     [1].view(target.size()).data == target.data).sum()
+        corrects += (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
 
     size = len(data["dev_x"])
     avg_loss = avg_loss / size
     accuracy = 100.0 * corrects / size
-
 
     for tag, value in model.named_parameters():
         if value.requires_grad:
             tag = tag.replace('.', '/')
             lg.histo_summary(tag, to_np(value), step + 1)
             lg.histo_summary(tag + '/grad', to_np(value.grad), step + 1)
-    print('Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})\n'.format(avg_loss,
-                                                                    accuracy,
-                                                                    corrects,
-                                                                    size))
+    print(
+        'Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})\n'.format(avg_loss, accuracy, corrects, size))
 
     return accuracy, avg_loss
