@@ -51,7 +51,7 @@ def select_egl(model, data, selected_indices, optimizer, params):
 
                 best_grad = -999
                 for word in feature[s_index]:
-                    grad = model.embedding.weight.grad[word]
+                    grad = model.embedding.weight.grad[word.data[0]]
                     grad_length = torch.norm(grad).data[0]
                     best_grad = max(best_grad, grad_length)
                 score += k * best_grad
@@ -152,7 +152,7 @@ def select_random(model, data, selected_indices, params):
     all_targets = []
 
     for i in range(params["BATCH_SIZE"]):
-        random_idx = random.randint(0, len(data["train_x"]))
+        random_idx = random.randint(0, len(data["train_x"] - 1))
         sentence = [data["word_to_idx"][w]
                     for w in data["train_x"][random_idx]]
         padding = [params["VOCAB_SIZE"] +

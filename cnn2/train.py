@@ -17,84 +17,114 @@ def to_np(x):
 
 
 def train(data, params, lg):
-    if params["MODEL"] != "rand":
-        # load word2vec
-        print("loading word2vec...")
-        word_vectors = KeyedVectors.load_word2vec_format(
-            "GoogleNews-vectors-negative300.bin", binary=True)
+    average_accs = {}
+    average_losses = {}
 
-        wv_matrix = []
-        for i in range(len(data["vocab"])):
-            word = data["idx_to_word"][i]
-            if word in word_vectors.vocab:
-                wv_matrix.append(word_vectors.word_vec(word))
-            else:
-                wv_matrix.append(
-                    np.random.uniform(-0.01, 0.01, 300).astype("float32"))
+    lg.scalar_summary("test-acc", 0, 0)
 
-        # one for UNK and one for zero padding
-        wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32"))
-        wv_matrix.append(np.zeros(300).astype("float32"))
-        wv_matrix = np.array(wv_matrix)
-        params["WV_MATRIX"] = wv_matrix
+    for j in range(params["N_AVERAGE"]):
+        if params["MODEL"] != "rand":
+            # load word2vec
+            print("loading word2vec...")
+            word_vectors = KeyedVectors.load_word2vec_format(
+                "GoogleNews-vectors-negative300.bin", binary=True)
 
-    model = CNN(**params)
-    if params["CUDA"]:
-        model.cuda(params["DEVICE"])
+            wv_matrix = []
+            for i in range(len(data["vocab"])):
+                word = data["idx_to_word"][i]
+                if word in word_vectors.vocab:
+                    wv_matrix.append(word_vectors.word_vec(word))
+                else:
+                    wv_matrix.append(
+                        np.random.uniform(-0.01, 0.01, 300).astype("float32"))
 
-    parameters = filter(lambda p: p.requires_grad, model.parameters())
-    optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"])
-    criterion = nn.CrossEntropyLoss()
+            # one for UNK and one for zero padding
+            wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32"))
+            wv_matrix.append(np.zeros(300).astype("float32"))
+            wv_matrix = np.array(wv_matrix)
+            params["WV_MATRIX"] = wv_matrix
 
-    train_array = []
-    selected_indices = []
+        model = CNN(**params)
+        if params["CUDA"]:
+            model.cuda(params["DEVICE"])
 
-    data["train_x"], data["train_y"] = shuffle(
-        data["train_x"], data["train_y"])
+        parameters = filter(lambda p: p.requires_grad, model.parameters())
+        optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"])
+        criterion = nn.CrossEntropyLoss()
 
-    for i in range(25):
-        if params["SCORE_FN"] == "entropy":
-            # Add a random batch first
-            if i == 0:
+        train_array = []
+        selected_indices = []
+
+        data["train_x"], data["train_y"] = shuffle(
+            data["train_x"], data["train_y"])
+
+        n_rounds = 25
+        for i in range(n_rounds):
+            if params["SCORE_FN"] == "entropy":
+                # Add a random batch first
+                if i == 0:
+                    t1, t2, ret_array = select_random(model, data, selected_indices, params)
+                else:
+                    t1, t2, ret_array = select_entropy(model, data, selected_indices, params)
+
+            elif params["SCORE_FN"] == "egl":
+                # Add a random batch first
+                if i == 0:
+                    t1, t2, ret_array = select_random(model, data, selected_indices, params)
+                else:
+                    t1, t2, ret_array = select_egl(model, data, selected_indices, optimizer, params)
+
+            elif params["SCORE_FN"] == "random":
                 t1, t2, ret_array = select_random(model, data, selected_indices, params)
+
+            train_array.append((t1, t2))
+            selected_indices.extend(ret_array)
+            #
+            print("\n")
+            if params["RESET"]:
+                model = CNN(**params)
+                if params["CUDA"]:
+                    model.cuda(params["DEVICE"])
+
+            print("Length of train set: {}".format(len(train_array)))
+            for e in range(params["EPOCH"]):
+                for feature, target in train_array:
+                    optimizer.zero_grad()
+                    model.train()
+                    pred = model(feature)
+                    loss = criterion(pred, target)
+                    loss.backward()
+                    optimizer.step()
+
+                    # constrain l2-norms of the weight vectors
+                    if model.fc.weight.norm().data[0] > params["NORM_LIMIT"]:
+                        model.fc.weight.data = model.fc.weight.data * \
+                            params["NORM_LIMIT"] / model.fc.weight.data.norm()
+
+            accuracy, loss = evaluate(data, model, params, lg, i, mode="dev")
+            # lg.scalar_summary("test-acc", accuracy, i + 1)
+
+            # lg.scalar_summary("test-loss", loss, i + 1)
+
+            if i not in average_accs:
+                average_accs[i] = [accuracy]
             else:
-                t1, t2, ret_array = select_entropy(model, data, selected_indices, params)
+                print("Old accuracy: {}".format(sum(average_accs[i]) / len(average_accs[i])))
 
-        elif params["SCORE_FN"] == "egl":
-            # Add a random batch first
-            if i == 0:
-                t1, t2, ret_array = select_random(model, data, selected_indices, params)
+                average_accs[i].append(accuracy)
+
+            if i not in average_losses:
+                average_losses[i] = [loss]
+
             else:
-                t1, t2, ret_array = select_egl(model, data, selected_indices, optimizer, params)
+                average_losses[i].append(loss)
 
-        elif params["SCORE_FN"] == "random":
-            t1, t2, ret_array = select_random(model, data, selected_indices, params)
 
-        train_array.append((t1, t2))
-        selected_indices.extend(ret_array)
-        #
-        print("\n")
-        if params["RESET"]:
-            model = CNN(**params)
-            if params["CUDA"]:
-                model.cuda(params["DEVICE"])
+            print("New  accuracy: {}".format(sum(average_accs[i]) / len(average_accs[i])))
 
-        print("Length of train set: {}".format(len(train_array)))
-        for e in range(params["EPOCH"]):
-            for feature, target in train_array:
-                optimizer.zero_grad()
-                model.train()
-                pred = model(feature)
-                loss = criterion(pred, target)
-                loss.backward()
-                optimizer.step()
-
-                # constrain l2-norms of the weight vectors
-                if model.fc.weight.norm().data[0] > params["NORM_LIMIT"]:
-                    model.fc.weight.data = model.fc.weight.data * \
-                        params["NORM_LIMIT"] / model.fc.weight.data.norm()
-
-        evaluate(data, model, params, lg, i, mode="dev")
+    for i in range(n_rounds):
+        lg.scalar_summary("test-acc", sum(average_accs[i]) / len(average_accs[i]), i + 1)
+        lg.scalar_summary("test-loss", sum(average_losses[i]) / len(average_losses[i]), i + 1)
 
     best_model = {}
     return best_model
@@ -133,8 +163,8 @@ def evaluate(data, model, params, lg, step, mode="test"):
     size = len(data["dev_x"])
     avg_loss = avg_loss / size
     accuracy = 100.0 * corrects / size
-    lg.scalar_summary("test-acc", accuracy, step + 1)
-    lg.scalar_summary("test-loss", avg_loss, step + 1)
+
+
     for tag, value in model.named_parameters():
         if value.requires_grad:
             tag = tag.replace('.', '/')
@@ -144,3 +174,5 @@ def evaluate(data, model, params, lg, step, mode="test"):
                                                                     accuracy,
                                                                     corrects,
                                                                     size))
+
+    return accuracy, avg_loss
