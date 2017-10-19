@@ -152,7 +152,7 @@ def select_random(model, data, selected_indices, params):
     all_targets = []
 
     for i in range(params["BATCH_SIZE"]):
-        random_idx = random.randint(0, len(data["train_x"] - 1))
+        random_idx = random.randint(0, len(data["train_x"]) - 1)
         sentence = [data["word_to_idx"][w]
                     for w in data["train_x"][random_idx]]
         padding = [params["VOCAB_SIZE"] +
