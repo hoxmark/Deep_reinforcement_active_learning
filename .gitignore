@@ -1,5 +1,8 @@
+.ftpconfig
 snapshot
 rt-polaritydata
+*.bin
+saved_models/
 
 
 # Byte-compiled / optimized / DLL files
@@ -9,6 +12,8 @@ __pycache__/
 
 # C extensions
 *.so
+.vscode/
+cnn-text-classification-pytorch/logs/
 
 .vscode/
 

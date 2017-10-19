@@ -29,29 +29,23 @@ parser.add_argument('-kernel-num', type=int, default=50, help='number of each ki
 parser.add_argument('-kernel-sizes', type=str, default='3,4,5', help='comma-separated kernel size to use for convolution')
 parser.add_argument('-static', action='store_true', default=False, help='fix the embedding')
 # device
-parser.add_argument('-device', type=int, default=0, help='Cuda device to run on')
+parser.add_argument('-device', type=int, default=-1, help='device to use for iterate data, -1 mean cpu [default: -1]')
 parser.add_argument('-no-cuda', action='store_true', default=False, help='disable the gpu' )
 # option
 parser.add_argument('-snapshot', type=str, default=None, help='filename of model snapshot [default: None]')
 parser.add_argument('-predict', type=str, default=None, help='predict the sentence given')
 parser.add_argument('-test', action='store_true', default=False, help='train or test')
-parser.add_argument('-batchnorm', action='store_true', default=False, help='Run batch normalization')
-parser.add_argument('-eval', action='store_true', default=False, help='Run eval() in selection')
-parser.add_argument('-reset', action='store_true', default=False, help='Reset model after each selection/train')
 args = parser.parse_args()
 
-lg = logger.Logger('./logs/batch_size={},date={},kernel_number={},kernel={},embed_dim={},static={},dropout={},batchnorm={},eval={},reset={}'.format(
+lg = logger.Logger('./logs/batch_size={},date={},kernel_number={},kernel={},static={},dropout={}'.format(
     args.batch_size,
     datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-    str(args.kernel_num),
     str([int(k) for k in args.kernel_sizes.split(',')]),
-    str(args.embed_dim),
     str(args.static),
-    str(args.dropout),
-    str(args.batchnorm),
-    str(args.eval),
-    str(args.reset)
+    str(args.kernel_num),
+    str(args.dropout)
     ))
+
 
 # load SST dataset
 def sst(text_field, label_field,  **kargs):
@@ -64,14 +58,7 @@ def sst(text_field, label_field,  **kargs):
                                                      len(dev_data),
                                                      len(test_data)),
                                         **kargs)
-    # return train_iter, dev_iter, test_iter
-    train_array = []
-    for batch in train_iter:
-        feature, target = batch.text, batch.label
-        feature.data.t_(), target.data.sub_(1)  # batch first, index align
-        train_array.append((feature, target))
-
-    return train_array, dev_iter
+    return train_iter, dev_iter, test_iter
 
 
 # load MR dataset
@@ -83,26 +70,15 @@ def mr(text_field, label_field, **kargs):
                                 (train_data, dev_data),
                                 batch_sizes=(args.batch_size, len(dev_data)),
                                 **kargs)
-
-    train_array = []
-    for batch in train_iter:
-        feature, target = batch.text, batch.label
-        feature.data.t_(), target.data.sub_(1)  # batch first, index align
-        train_array.append((feature, target))
-
-    return train_array, dev_iter
-
+    return train_iter, dev_iter
 
 
 # load data
 print("\nLoading data...")
 text_field = data.Field(lower=True)
 label_field = data.Field(sequential=False)
-train_array, dev_array = mr(text_field, label_field, device=-1, repeat=False)
-# print(text_field.eos_token)
-# print(text_field.init_token)
-# print(text_field)
-
+train_iter, dev_iter = mr(text_field, label_field, device=-1, repeat=False)
+#train_iter, dev_iter, test_iter = sst(text_field, label_field, device=-1, repeat=False)
 
 
 # update args and print
@@ -128,7 +104,7 @@ else :
         print("Sorry, This snapshot doesn't exist."); exit()
 
 if args.cuda:
-    cnn = cnn.cuda(args.device)
+    cnn = cnn.cuda()
 
 
 # train or predict
@@ -141,4 +117,5 @@ elif args.test :
     except Exception as e:
         print("\nSorry. The test dataset doesn't  exist.\n")
 else :
-    train.active_train(train_array, dev_array, cnn, args, text_field, lg)
+    print()
+    train.train(train_iter, dev_iter, cnn, args, lg)
