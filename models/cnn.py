@@ -10,7 +10,6 @@ class CNN(nn.Module):
     def __init__(self, data, params):
         super(CNN, self).__init__()
 
-        self.MODEL = params["MODEL"]
         self.BATCH_SIZE = params["BATCH_SIZE"]
         self.MAX_SENT_LEN = params["MAX_SENT_LEN"]
         self.WORD_DIM = params["WORD_DIM"]
@@ -31,13 +30,9 @@ class CNN(nn.Module):
             self.NUM_EMBEDDINGS, self.WORD_DIM, padding_idx=self.VOCAB_SIZE + 1)
 
         # Use the pre-trained vectors if we have a non-random model
-        if self.MODEL != "rand":
+        if params["EMBEDDING"] != "random":
             wv_matrix = self.load_word2vec()
             self.embedding.weight.data.copy_(torch.from_numpy(wv_matrix))
-
-            # TODO: Check this
-            # if self.MODEL == "static":
-            # self.embedding.weight.requires_grad = False
 
         for i in range(len(self.FILTERS)):
             conv = nn.Conv1d(

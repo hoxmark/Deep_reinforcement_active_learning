@@ -11,8 +11,10 @@ def main():
     parser = argparse.ArgumentParser(description="-----[CNN-classifier]-----")
     parser.add_argument("--mode", default="train",
                         help="train: train (with test) a model / test: test saved models")
-    parser.add_argument("--model", default="static",
-                        help="available models: rand, static, non-static")
+    parser.add_argument("--model", default="cnn",
+                        help="Type of model to use. Default: CNN. Available models: CNN, RNN")
+    parser.add_argument("--embedding", default="static",
+                        help="available embedings: random, static")
     parser.add_argument("--dataset", default="MR",
                         help="available datasets: MR, TREC")
     parser.add_argument('--batch-size', type=int, default=25,
@@ -30,9 +32,13 @@ def main():
     parser.add_argument('--no-cuda', action='store_true',
                         default=False, help='disable the gpu')
     parser.add_argument("--scorefn", default="entropy",
-                        help="available scoring functions: entropy, rand, egl")
+                        help="available scoring functions: entropy, random, egl")
     parser.add_argument('--average', type=int, default=1,
                         help='Number of runs to average [default: 1]')
+    parser.add_argument('--hnodes', type=int, default=1200,
+                        help='Number of nodes in the hidden layer(s)')
+    parser.add_argument('--hlayers', type=int, default=2,
+                        help='Number of hidden layers')
 
     options = parser.parse_args()
     data = getattr(utils, "read_{}".format(options.dataset))()
@@ -45,6 +51,7 @@ def main():
 
     params = {
         "MODEL": options.model,
+        "EMBEDDING": options.embedding,
         "DATASET": options.dataset,
         "SAVE_MODEL": bool(options.save_model == "T"),
         "EARLY_STOPPING": bool(options.early_stopping == "T"),
@@ -63,7 +70,9 @@ def main():
         "DEVICE": options.device,
         "NO_CUDA": options.no_cuda,
         "SCORE_FN": options.scorefn,
-        "N_AVERAGE": options.average
+        "N_AVERAGE": options.average,
+        "HIDDEN_SIZE": options.hnodes,
+        "HIDDEN_LAYERS": options.hlayers
     }
 
     params["CUDA"] = (not params["NO_CUDA"]) and torch.cuda.is_available()

@@ -39,6 +39,9 @@ def select_egl(model, data, selected_indices, params):
 
         all_tensors.extend(feature)
         all_targets.extend(target)
+
+        if params["MODEL"] == "rnn":
+            model.init_hidden()
         output = model(feature)
 
         for s_index, sentence_output in enumerate(output):
@@ -48,7 +51,7 @@ def select_egl(model, data, selected_indices, params):
                 f_target = torch.autograd.Variable(torch.LongTensor([index]))
                 if params["CUDA"]:
                     f_target = f_target.cuda(params["DEVICE"])
-                    
+
                 loss = criterion(sentence_output.unsqueeze(0), f_target)
                 loss.backward(retain_graph=True)
 
@@ -112,7 +115,10 @@ def select_entropy(model, data, selected_indices, params):
         all_tensors.extend(feature)
         all_targets.extend(target)
 
+        if params["MODEL"] == "rnn":
+            model.init_hidden()
         output = model(feature)
+
         output = torch.mul(output, torch.log(output))
         output = torch.sum(output, dim=1)
         output = output * -1
