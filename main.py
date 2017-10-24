@@ -12,7 +12,7 @@ def main():
     parser.add_argument("--mode", default="train",
                         help="train: train (with test) a model / test: test saved models")
     parser.add_argument("--model", default="cnn",
-                        help="Type of model to use. Default: CNN")
+                        help="Type of model to use. Default: CNN. Available models: CNN, RNN")
     parser.add_argument("--embedding", default="static",
                         help="available embedings: random, static")
     parser.add_argument("--dataset", default="MR",
