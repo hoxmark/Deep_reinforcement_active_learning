@@ -10,7 +10,6 @@ class RNN(nn.Module):
         self.params = params
         self.data = data
 
-        self.MODEL = params["MODEL"]
         self.BATCH_SIZE = params["BATCH_SIZE"]
         self.MAX_SENT_LEN = params["MAX_SENT_LEN"]
         self.WORD_DIM = params["WORD_DIM"]
@@ -22,37 +21,39 @@ class RNN(nn.Module):
         self.IN_CHANNEL = 1
 
 
-        self.input_size = self.WORD_DIM * self.MAX_SENT_LEN
-        # self.input_size = self.WORD_DIM
-        self.hidden_size = 1200
-        self.hidden_layers = 2
+        self.input_size = self.WORD_DIM
+        self.hidden_size = params["HIDDEN_SIZE"]
+        self.hidden_layers = params["HIDDEN_LAYERS"]
         self.output_size = params["CLASS_SIZE"]
         self.NUM_EMBEDDINGS = self.VOCAB_SIZE + 2
 
         assert (len(self.FILTERS) == len(self.FILTER_NUM))
+
         self.embedding = nn.Embedding(self.NUM_EMBEDDINGS, self.WORD_DIM, padding_idx=self.VOCAB_SIZE + 1)
-        if self.MODEL != "rand":
+        if params["EMBEDDING"] != "random":
             wv_matrix = self.load_word2vec()
             self.embedding.weight.data.copy_(torch.from_numpy(wv_matrix))
-        # self.rnn = nn.RNN(self.input_size, self.hidden_size, self.hidden_layers)
+
         self.rnn = nn.GRU(self.input_size, self.hidden_size, self.hidden_layers)
-        self.i2o = nn.Linear(self.hidden_size, self.CLASS_SIZE)
+        self.i2o = nn.Linear(self.MAX_SENT_LEN * self.hidden_size, self.CLASS_SIZE)
         self.softmax = nn.Softmax()
 
-    def forward(self, input, hidden):
-        x = self.embedding(input).view(-1, self.WORD_DIM * self.MAX_SENT_LEN)
-        x = x.unsqueeze(1)
-        output, hidden = self.rnn(x, hidden)
-        output = output.squeeze(1)
+        self.init_hidden()
+
+    def forward(self, input):
+        x = self.embedding(input)
+        output, hidden = self.rnn(x, self.hidden_state)
+        output = output.view(-1, self.MAX_SENT_LEN * self.hidden_size)
         output = self.i2o(output)
-        return output, hidden
+        output = self.softmax(output)
+
+        self.hidden_state = hidden
+        return output
 
     def init_hidden(self):
-        # hidden = Variable(torch.zeros(self.hidden_layers, self.MAX_SENT_LEN, self.hidden_size))
-        hidden = Variable(torch.zeros(self.hidden_layers, 1, self.hidden_size))
+        self.hidden_state = Variable(torch.zeros(self.hidden_layers, self.MAX_SENT_LEN, self.hidden_size))
         if self.params["CUDA"]:
-            hidden = hidden.cuda(self.params["DEVICE"])
-        return hidden
+            self.hidden_state = self.hidden_state.cuda(self.params["DEVICE"])
 
 
     """

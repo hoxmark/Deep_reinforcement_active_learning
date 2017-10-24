@@ -5,8 +5,8 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 
-from model import CNN
-from rnn_model import RNN
+from models.cnn import CNN
+from models.rnn import RNN
 from selection_strategies import select_random, select_entropy, select_egl
 
 
@@ -20,9 +20,12 @@ def active_train(data, params, lg):
     lg.scalar_summary("test-acc", 0, 0)
 
     for j in range(params["N_AVERAGE"]):
-        # model = CNN(data, params)
-        model = RNN(params, data)
-        hidden = model.init_hidden()
+        if params["MODEL"] == "cnn":
+            model = CNN(data, params)
+        elif params["MODEL"] == "rnn":
+            model = RNN(params, data)
+        else:
+            model = CNN(data, params)
 
         if params["CUDA"]:
             model.cuda(params["DEVICE"])
@@ -50,7 +53,7 @@ def active_train(data, params, lg):
 
             print("\n")
 
-            train(model, hidden, params, train_array)
+            train(model, params, train_array)
             accuracy, loss = evaluate(data, model, params, lg, i, mode="dev")
             if i not in average_accs:
                 average_accs[i] = [accuracy]
@@ -73,7 +76,7 @@ def active_train(data, params, lg):
     return best_model
 
 
-def train(model, hidden, params, train_array):
+def train(model, params, train_array):
     print("Length of train set: {}".format(len(train_array)))
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"])
@@ -83,8 +86,11 @@ def train(model, hidden, params, train_array):
     for e in range(params["EPOCH"]):
         for feature, target in train_array:
             optimizer.zero_grad()
-            hidden = model.init_hidden()
-            pred, hidden = model(feature, hidden)
+
+            if params["MODEL"] == "rnn":
+                model.init_hidden()
+
+            pred = model(feature)
             loss = criterion(pred, target)
             loss.backward()
             optimizer.step()
@@ -113,11 +119,11 @@ def evaluate(data, model, params, lg, step, mode="test"):
             feature = feature.cuda(params["DEVICE"])
             target = target.cuda(params["DEVICE"])
 
-        hidden = model.init_hidden()
-        logit, hidden = model(feature, hidden)
+        if params["MODEL"] == "rnn":
+            model.init_hidden()
+        logit = model(feature)
         loss = torch.nn.functional.cross_entropy(logit, target, size_average=False)
         avg_loss += loss.data[0]
-        # print(torch.max(logit, 1)[1].view(target.size()).data)
         corrects += (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
 
 
@@ -130,7 +136,6 @@ def evaluate(data, model, params, lg, step, mode="test"):
             tag = tag.replace('.', '/')
             lg.histo_summary(tag, to_np(value), step + 1)
             lg.histo_summary(tag + '/grad', to_np(value.grad), step + 1)
-    print(
-        'Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})\n'.format(avg_loss, accuracy, corrects, size))
+    print('Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})\n'.format(avg_loss, accuracy, corrects, size))
 
     return accuracy, avg_loss
