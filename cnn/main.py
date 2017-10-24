@@ -34,6 +34,9 @@ def main():
     parser.add_argument('--average', type=int, default=1,
                         help='Number of runs to average [default: 1]')
 
+    parser.add_argument('--hidden', type=int, default=300,
+                        help='Size of the hidden layer')
+
     options = parser.parse_args()
     data = getattr(utils, "read_{}".format(options.dataset))()
 
@@ -63,7 +66,8 @@ def main():
         "DEVICE": options.device,
         "NO_CUDA": options.no_cuda,
         "SCORE_FN": options.scorefn,
-        "N_AVERAGE": options.average
+        "N_AVERAGE": options.average,
+        "HIDDEN_SIZE": options.hidden
     }
 
     params["CUDA"] = (not params["NO_CUDA"]) and torch.cuda.is_available()

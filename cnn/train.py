@@ -6,6 +6,7 @@ import torch.optim as optim
 import torch.nn as nn
 
 from model import CNN
+from rnn_model import RNN
 from selection_strategies import select_random, select_entropy, select_egl
 
 
@@ -19,7 +20,10 @@ def active_train(data, params, lg):
     lg.scalar_summary("test-acc", 0, 0)
 
     for j in range(params["N_AVERAGE"]):
-        model = CNN(data, params)
+        # model = CNN(data, params)
+        model = RNN(params, data)
+        hidden = model.init_hidden()
+
         if params["CUDA"]:
             model.cuda(params["DEVICE"])
 
@@ -46,7 +50,7 @@ def active_train(data, params, lg):
 
             print("\n")
 
-            train(model, params, train_array)
+            train(model, hidden, params, train_array)
             accuracy, loss = evaluate(data, model, params, lg, i, mode="dev")
             if i not in average_accs:
                 average_accs[i] = [accuracy]
@@ -69,29 +73,26 @@ def active_train(data, params, lg):
     return best_model
 
 
-def train(model, params, train_array):
+def train(model, hidden, params, train_array):
     print("Length of train set: {}".format(len(train_array)))
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"])
     criterion = nn.CrossEntropyLoss()
 
+    model.train()
     for e in range(params["EPOCH"]):
         for feature, target in train_array:
             optimizer.zero_grad()
-            model.train()
-            pred = model(feature)
+            hidden = model.init_hidden()
+            pred, hidden = model(feature, hidden)
             loss = criterion(pred, target)
             loss.backward()
             optimizer.step()
-
-            # constrain l2-norms of the weight vectors
-            if model.fc.weight.norm().data[0] > params["NORM_LIMIT"]:
-                model.fc.weight.data = model.fc.weight.data * \
-                    params["NORM_LIMIT"] / model.fc.weight.data.norm()
-
+        print("Training process: {0:.0f}% completed ".format(100 * (e / params["EPOCH"])), end="\r")
 
 def evaluate(data, model, params, lg, step, mode="test"):
     model.eval()
+
     if params["CUDA"]:
         model.cuda(params["DEVICE"])
 
@@ -112,11 +113,13 @@ def evaluate(data, model, params, lg, step, mode="test"):
             feature = feature.cuda(params["DEVICE"])
             target = target.cuda(params["DEVICE"])
 
-        logit = model(feature)
+        hidden = model.init_hidden()
+        logit, hidden = model(feature, hidden)
         loss = torch.nn.functional.cross_entropy(logit, target, size_average=False)
-
         avg_loss += loss.data[0]
+        # print(torch.max(logit, 1)[1].view(target.size()).data)
         corrects += (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
+
 
     size = len(data["dev_x"])
     avg_loss = avg_loss / size

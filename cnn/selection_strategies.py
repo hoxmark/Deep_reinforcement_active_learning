@@ -48,7 +48,7 @@ def select_egl(model, data, selected_indices, params):
                 f_target = torch.autograd.Variable(torch.LongTensor([index]))
                 if params["CUDA"]:
                     f_target = f_target.cuda(params["DEVICE"])
-                    
+
                 loss = criterion(sentence_output.unsqueeze(0), f_target)
                 loss.backward(retain_graph=True)
 
@@ -112,13 +112,16 @@ def select_entropy(model, data, selected_indices, params):
         all_tensors.extend(feature)
         all_targets.extend(target)
 
-        output = model(feature)
-        output = torch.mul(output, torch.log(output))
-        output = torch.sum(output, dim=1)
-        output = output * -1
+        for sentence, t in list(zip(feature, target)):
+            model.zero_grad()
+            hidden = model.init_hidden()
+            for word in sentence:
+                output, hidden = model(word, hidden)
 
-        for s_index, score in enumerate(output):
-            sample_scores.append(score.data[0])
+            output = torch.mul(output, torch.log(output))
+            output = torch.sum(output, dim=1)
+            output = output * -1
+            sample_scores.append(output.data[0])
 
         completed += 1
         print("Selection process: {0:.0f}% completed ".format(
