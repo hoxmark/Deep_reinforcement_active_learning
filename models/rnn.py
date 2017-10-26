@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 from torch.autograd import Variable
+import torch.nn.functional as F
 import numpy as np
 from gensim.models.keyedvectors import KeyedVectors
 
@@ -18,8 +19,6 @@ class RNN(nn.Module):
         self.FILTERS = params["FILTERS"]
         self.FILTER_NUM = params["FILTER_NUM"]
         self.DROPOUT_PROB = params["DROPOUT_PROB"]
-        self.IN_CHANNEL = 1
-
 
         self.input_size = self.WORD_DIM
         self.hidden_size = params["HIDDEN_SIZE"]
@@ -29,31 +28,39 @@ class RNN(nn.Module):
 
         assert (len(self.FILTERS) == len(self.FILTER_NUM))
 
-        self.embedding = nn.Embedding(self.NUM_EMBEDDINGS, self.WORD_DIM, padding_idx=self.VOCAB_SIZE + 1)
+        self.embed = nn.Embedding(self.NUM_EMBEDDINGS, self.WORD_DIM, padding_idx=self.VOCAB_SIZE + 1)
         if params["EMBEDDING"] != "random":
             wv_matrix = self.load_word2vec()
-            self.embedding.weight.data.copy_(torch.from_numpy(wv_matrix))
+            self.embed.weight.data.copy_(torch.from_numpy(wv_matrix))
 
-        self.rnn = nn.GRU(self.input_size, self.hidden_size, self.hidden_layers)
-        self.i2o = nn.Linear(self.MAX_SENT_LEN * self.hidden_size, self.CLASS_SIZE)
-        self.softmax = nn.Softmax()
-
-        self.init_hidden()
+        self.bigru = nn.GRU(self.WORD_DIM, self.hidden_size, dropout=0.5, num_layers=self.hidden_layers, bidirectional=True)
+        self.hidden2label = nn.Linear(self.hidden_size * 2, self.CLASS_SIZE)
+        self.dropout = nn.Dropout(0.5)
 
     def forward(self, input):
-        x = self.embedding(input)
-        output, hidden = self.rnn(x, self.hidden_state)
-        output = output.view(-1, self.MAX_SENT_LEN * self.hidden_size)
-        output = self.i2o(output)
-        output = self.softmax(output)
+        hidden = self.init_hidden(self.hidden_layers, len(input))
+        input = input.transpose(0, 1)
+        embed = self.embed(input)
+        embed = self.dropout(embed)  # add this reduce the acc
+        input = embed.view(len(input), embed.size(1), -1)
+        gru_out, hidden = self.bigru(input, hidden)
+        # gru_out = (59 x 25 x 2400)
 
-        self.hidden_state = hidden
-        return output
+        gru_out = gru_out.permute(1, 2, 0)
+        # gru_out = (25 x 2400 x 59)
 
-    def init_hidden(self):
-        self.hidden_state = Variable(torch.zeros(self.hidden_layers, self.MAX_SENT_LEN, self.hidden_size))
+        gru_out = F.max_pool1d(gru_out, gru_out.size(2)).squeeze(2)
+        # gru_out = (25 x 2400)
+        gru_out = F.tanh(gru_out)
+        y = self.hidden2label(gru_out)
+        logit = y
+        return logit
+
+    def init_hidden(self, num_layers, batch_size):
+        hidden = Variable(torch.zeros(num_layers * 2, batch_size, self.hidden_size))
         if self.params["CUDA"]:
-            self.hidden_state = self.hidden_state.cuda(self.params["DEVICE"])
+            hidden = hidden.cuda(self.params["DEVICE"])
+        return hidden
 
 
     """

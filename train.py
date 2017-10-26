@@ -86,10 +86,6 @@ def train(model, params, train_array):
     for e in range(params["EPOCH"]):
         for feature, target in train_array:
             optimizer.zero_grad()
-
-            if params["MODEL"] == "rnn":
-                model.init_hidden()
-
             pred = model(feature)
             loss = criterion(pred, target)
             loss.backward()
@@ -118,9 +114,7 @@ def evaluate(data, model, params, lg, step, mode="test"):
         if params["CUDA"]:
             feature = feature.cuda(params["DEVICE"])
             target = target.cuda(params["DEVICE"])
-
-        if params["MODEL"] == "rnn":
-            model.init_hidden()
+            
         logit = model(feature)
         loss = torch.nn.functional.cross_entropy(logit, target, size_average=False)
         avg_loss += loss.data[0]

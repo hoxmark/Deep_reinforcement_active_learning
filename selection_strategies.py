@@ -40,8 +40,6 @@ def select_egl(model, data, selected_indices, params):
         all_tensors.extend(feature)
         all_targets.extend(target)
 
-        if params["MODEL"] == "rnn":
-            model.init_hidden()
         output = model(feature)
 
         for s_index, sentence_output in enumerate(output):
@@ -115,8 +113,6 @@ def select_entropy(model, data, selected_indices, params):
         all_tensors.extend(feature)
         all_targets.extend(target)
 
-        if params["MODEL"] == "rnn":
-            model.init_hidden()
         output = model(feature)
 
         output = torch.mul(output, torch.log(output))
