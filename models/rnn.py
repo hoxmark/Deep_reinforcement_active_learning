@@ -34,6 +34,17 @@ class RNN(nn.Module):
 
         self.init_model()
 
+    def init_model(self):
+        self.embed = nn.Embedding(self.NUM_EMBEDDINGS, self.WORD_DIM, padding_idx=self.VOCAB_SIZE + 1)
+        if self.EMBEDDING != "random":
+            self.embed.weight.data.copy_(torch.from_numpy(self.wv_matrix))
+        self.bigru = nn.RNN(self.WORD_DIM, self.hidden_size, dropout=0.2, num_layers=self.hidden_layers, bidirectional=True)
+        self.hidden2label = nn.Linear(self.hidden_size * 2, self.CLASS_SIZE)
+        self.dropout = nn.Dropout(0.5)
+
+        if self.params["CUDA"]:
+            self.cuda(self.params["DEVICE"])
+
     def forward(self, input):
         hidden = self.init_hidden(self.hidden_layers, len(input))
         input = input.transpose(0, 1)
@@ -52,18 +63,6 @@ class RNN(nn.Module):
         y = self.hidden2label(gru_out)
         logit = y
         return logit
-
-
-    def init_model(self):
-        self.embed = nn.Embedding(self.NUM_EMBEDDINGS, self.WORD_DIM, padding_idx=self.VOCAB_SIZE + 1)
-        if self.EMBEDDING != "random":
-            self.embed.weight.data.copy_(torch.from_numpy(self.wv_matrix))
-        self.bigru = nn.GRU(self.WORD_DIM, self.hidden_size, dropout=0.2, num_layers=self.hidden_layers, bidirectional=True)
-        self.hidden2label = nn.Linear(self.hidden_size * 2, self.CLASS_SIZE)
-        self.dropout = nn.Dropout(0.5)
-
-        if self.params["CUDA"]:
-            self.cuda(self.params["DEVICE"])
 
     def init_hidden(self, num_layers, batch_size):
         hidden = Variable(torch.zeros(num_layers * 2, batch_size, self.hidden_size))
