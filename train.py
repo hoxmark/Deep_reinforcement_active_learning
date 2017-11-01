@@ -7,7 +7,7 @@ import torch.nn as nn
 
 from models.cnn import CNN
 from models.rnn import RNN
-from selection_strategies import select_random, select_entropy, select_egl
+from selection_strategies import select_random, select_entropy, select_egl, select_all
 
 
 def to_np(x):
@@ -37,9 +37,14 @@ def active_train(data, params, lg):
 
         n_rounds = 25
         for i in range(n_rounds):
+
+            if params["SCORE_FN"] == "all":
+                t1, t2, ret_array = select_all(model, data, selected_indices, params)
+                train_array = list(zip(t1, t2))
             # Add a random batch first
-            if i == 0:
+            elif i == 0:
                 t1, t2, ret_array = select_random(model, data, selected_indices, params)
+                train_array.append((t1, t2))
             else:
                 if params["SCORE_FN"] == "entropy":
                     t1, t2, ret_array = select_entropy(model, data, selected_indices, params)
@@ -48,13 +53,13 @@ def active_train(data, params, lg):
                 elif params["SCORE_FN"] == "random":
                     t1, t2, ret_array = select_random(model, data, selected_indices, params)
 
-            train_array.append((t1, t2))
+                train_array.append((t1, t2))
             selected_indices.extend(ret_array)
 
             print("\n")
-
-            train(model, params, train_array)
-            accuracy, loss = evaluate(data, model, params, lg, i, mode="dev")
+            model.init_model()
+            train(model, params, train_array, data, lg)
+            accuracy, loss = evaluate(data, model, params, lg, i, mode="test")
             if i not in average_accs:
                 average_accs[i] = [accuracy]
             else:
@@ -76,10 +81,13 @@ def active_train(data, params, lg):
     return best_model
 
 
-def train(model, params, train_array):
+def train(model, params, train_array, data, lg):
     print("Length of train set: {}".format(len(train_array)))
     parameters = filter(lambda p: p.requires_grad, model.parameters())
+    lr = params["LEARNING_RATE"] / len(train_array)
     optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"])
+    # optimizer = optim.Adadelta(parameters, lr)
+    # optimizer = optim.Adam(parameters, params["LEARNING_RATE"])
     criterion = nn.CrossEntropyLoss()
 
     model.train()
@@ -91,6 +99,10 @@ def train(model, params, train_array):
             loss.backward()
             optimizer.step()
         print("Training process: {0:.0f}% completed ".format(100 * (e / params["EPOCH"])), end="\r")
+
+        if params["SCORE_FN"] == "all":
+            evaluate(data, model, params, lg, e, mode="test")
+
 
 def evaluate(data, model, params, lg, step, mode="test"):
     model.eval()
@@ -114,7 +126,7 @@ def evaluate(data, model, params, lg, step, mode="test"):
         if params["CUDA"]:
             feature = feature.cuda(params["DEVICE"])
             target = target.cuda(params["DEVICE"])
-            
+
         logit = model(feature)
         loss = torch.nn.functional.cross_entropy(logit, target, size_average=False)
         avg_loss += loss.data[0]

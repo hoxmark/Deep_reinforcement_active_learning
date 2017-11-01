@@ -8,6 +8,30 @@ import torch.nn as nn
 
 import train
 
+def select_all(model, data, selected_indices, params):
+    ret_feature = []
+    ret_target = []
+
+    for i in range(0, len(data["train_x"]), params["BATCH_SIZE"]):
+        batch_range = min(params["BATCH_SIZE"], len(data["train_x"]) - i)
+
+        batch_x = [[data["word_to_idx"][w] for w in sent] +
+                   [params["VOCAB_SIZE"] + 1] *
+                   (params["MAX_SENT_LEN"] - len(sent))
+                   for sent in data["train_x"][i:i + batch_range]]
+        batch_y = [data["classes"].index(c)
+                   for c in data["train_y"][i:i + batch_range]]
+
+        feature = Variable(torch.LongTensor(batch_x))
+        target = Variable(torch.LongTensor(batch_y))
+        if params["CUDA"]:
+            feature, target = feature.cuda(params["DEVICE"]), target.cuda(params["DEVICE"])
+        ret_feature.append(feature)
+        ret_target.append(target)
+
+    return ret_feature, ret_target, []
+
+
 def select_egl(model, data, selected_indices, params):
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"])
