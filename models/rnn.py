@@ -19,6 +19,7 @@ class RNN(nn.Module):
         self.FILTERS = params["FILTERS"]
         self.FILTER_NUM = params["FILTER_NUM"]
         self.DROPOUT_PROB = params["DROPOUT_PROB"]
+        self.EMBEDDING = params["EMBEDDING"]
 
         self.input_size = self.WORD_DIM
         self.hidden_size = params["HIDDEN_SIZE"]
@@ -28,14 +29,10 @@ class RNN(nn.Module):
 
         assert (len(self.FILTERS) == len(self.FILTER_NUM))
 
-        self.embed = nn.Embedding(self.NUM_EMBEDDINGS, self.WORD_DIM, padding_idx=self.VOCAB_SIZE + 1)
-        if params["EMBEDDING"] != "random":
-            wv_matrix = self.load_word2vec()
-            self.embed.weight.data.copy_(torch.from_numpy(wv_matrix))
+        if self.EMBEDDING != "random":
+            self.wv_matrix = self.load_word2vec()
 
-        self.bigru = nn.GRU(self.WORD_DIM, self.hidden_size, dropout=0.5, num_layers=self.hidden_layers, bidirectional=True)
-        self.hidden2label = nn.Linear(self.hidden_size * 2, self.CLASS_SIZE)
-        self.dropout = nn.Dropout(0.5)
+        self.init_model()
 
     def forward(self, input):
         hidden = self.init_hidden(self.hidden_layers, len(input))
@@ -55,6 +52,18 @@ class RNN(nn.Module):
         y = self.hidden2label(gru_out)
         logit = y
         return logit
+
+
+    def init_model(self):
+        self.embed = nn.Embedding(self.NUM_EMBEDDINGS, self.WORD_DIM, padding_idx=self.VOCAB_SIZE + 1)
+        if self.EMBEDDING != "random":
+            self.embed.weight.data.copy_(torch.from_numpy(self.wv_matrix))
+        self.bigru = nn.GRU(self.WORD_DIM, self.hidden_size, dropout=0.2, num_layers=self.hidden_layers, bidirectional=True)
+        self.hidden2label = nn.Linear(self.hidden_size * 2, self.CLASS_SIZE)
+        self.dropout = nn.Dropout(0.5)
+
+        if self.params["CUDA"]:
+            self.cuda(self.params["DEVICE"])
 
     def init_hidden(self, num_layers, batch_size):
         hidden = Variable(torch.zeros(num_layers * 2, batch_size, self.hidden_size))

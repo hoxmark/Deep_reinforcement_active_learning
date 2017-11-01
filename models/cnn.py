@@ -9,6 +9,7 @@ from gensim.models.keyedvectors import KeyedVectors
 class CNN(nn.Module):
     def __init__(self, data, params):
         super(CNN, self).__init__()
+        self.params = params
 
         self.BATCH_SIZE = params["BATCH_SIZE"]
         self.MAX_SENT_LEN = params["MAX_SENT_LEN"]
@@ -19,6 +20,7 @@ class CNN(nn.Module):
         self.FILTER_NUM = params["FILTER_NUM"]
         self.DROPOUT_PROB = params["DROPOUT_PROB"]
         self.IN_CHANNEL = 1
+        self.EMBEDDING = params["EMBEDDING"]
 
         self.data = data
 
@@ -26,13 +28,21 @@ class CNN(nn.Module):
         self.NUM_EMBEDDINGS = self.VOCAB_SIZE + 2
         assert (len(self.FILTERS) == len(self.FILTER_NUM))
 
-        self.embedding = nn.Embedding(
+        if self.EMBEDDING != "random":
+            self.wv_matrix = self.load_word2vec()
+
+        self.init_model()
+
+    def get_conv(self, i):
+        return getattr(self, 'conv_{}'.format(i))
+
+
+    def init_model(self):
+        self.embed = nn.Embedding(
             self.NUM_EMBEDDINGS, self.WORD_DIM, padding_idx=self.VOCAB_SIZE + 1)
 
-        # Use the pre-trained vectors if we have a non-random model
-        if params["EMBEDDING"] != "random":
-            wv_matrix = self.load_word2vec()
-            self.embedding.weight.data.copy_(torch.from_numpy(wv_matrix))
+        if self.EMBEDDING != "random":
+            self.embed.weight.data.copy_(torch.from_numpy(self.wv_matrix))
 
         for i in range(len(self.FILTERS)):
             conv = nn.Conv1d(
@@ -42,12 +52,13 @@ class CNN(nn.Module):
         self.fc = nn.Linear(sum(self.FILTER_NUM), self.CLASS_SIZE)
         self.softmax = nn.Softmax()
 
-    def get_conv(self, i):
-        return getattr(self, 'conv_{}'.format(i))
+        if self.params["CUDA"]:
+            self.cuda(self.params["DEVICE"])
+
 
     def forward(self, inp):
         # inp = (25 x 59) - (mini_batch_size x sentence_length)
-        x = self.embedding(inp).view(-1, 1, self.WORD_DIM * self.MAX_SENT_LEN)
+        x = self.embed(inp).view(-1, 1, self.WORD_DIM * self.MAX_SENT_LEN)
         # x = (25 x 1 x 17700) - mini_batch_size x embedding_for_each_sentence
 
         conv_results = [
