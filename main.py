@@ -13,7 +13,7 @@ def main():
                         help="train: train (with test) a model / test: test saved models")
     parser.add_argument("--model", default="cnn",
                         help="Type of model to use. Default: CNN. Available models: CNN, RNN")
-    parser.add_argument("--embedding", default="static",
+    parser.add_argument("--embedding", default="static", 
                         help="available embedings: random, static")
     parser.add_argument("--dataset", default="MR",
                         help="available datasets: MR, TREC")
@@ -38,7 +38,7 @@ def main():
     parser.add_argument('--hnodes', type=int, default=1200,
                         help='Number of nodes in the hidden layer(s)')
     parser.add_argument('--hlayers', type=int, default=2,
-                        help='Number of hidden layers')
+                        help='Number of hidden layers') 
 
     options = parser.parse_args()
     data = getattr(utils, "read_{}".format(options.dataset))()
@@ -64,9 +64,8 @@ def main():
         "VOCAB_SIZE": len(data["vocab"]),
         "CLASS_SIZE": len(data["classes"]),
         "FILTERS": [3, 4, 5],
-        "FILTER_NUM": [100, 100, 100],
+        "FILTER_NUM": [100, 100, 100], 
         "DROPOUT_PROB": 0.5,
-        "NORM_LIMIT": 3,
         "DEVICE": options.device,
         "NO_CUDA": options.no_cuda,
         "SCORE_FN": options.scorefn,
@@ -78,18 +77,29 @@ def main():
     params["CUDA"] = (not params["NO_CUDA"]) and torch.cuda.is_available()
     del params["NO_CUDA"]
 
-    lg = logger.Logger('./logs/cnn2/batch_size={},date={},FILTERS={},FILTER_NUM={},WORD_DIM={},MODEL={},DROPOUT_PROB={},NORM_LIMIT={},SCORE_FN={},AVERAGE={}'.format(
-        params["BATCH_SIZE"],
-        datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-        str(params["FILTERS"]),
-        str(params["FILTER_NUM"]),
-        str(params["WORD_DIM"]),
-        str(params["MODEL"]),
-        str(params["DROPOUT_PROB"]),
-        str(params["NORM_LIMIT"]),
-        str(params["SCORE_FN"]),
-        str(params["N_AVERAGE"])
-    ))
+    if params["MODEL"] == "cnn":        
+        lg = logger.Logger('./logs/cnn/batch_size={},date={},FILTERS={},FILTER_NUM={},WORD_DIM={},MODEL={},DROPOUT_PROB={},SCORE_FN={},AVERAGE={}'.format(
+            params["BATCH_SIZE"],
+            datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+            str(params["FILTERS"]), 
+            str(params["FILTER_NUM"]),
+            str(params["WORD_DIM"]),
+            str(params["MODEL"]),
+            str(params["DROPOUT_PROB"]),
+            str(params["SCORE_FN"]),
+            str(params["N_AVERAGE"])
+        ))
+
+    if (params["MODEL"]=="rnn"):        
+        lg = logger.Logger('./logs/rnn/batch_size={},date={},WORD_DIM={},MODEL={},DROPOUT_PROB={},SCORE_FN={},AVERAGE={}'.format(
+            params["BATCH_SIZE"],
+            datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+            str(params["WORD_DIM"]),
+            str(params["MODEL"]),
+            str(params["DROPOUT_PROB"]),
+            str(params["SCORE_FN"]),
+            str(params["N_AVERAGE"])
+        ))
 
     print("=" * 20 + "INFORMATION" + "=" * 20)
     for key, value in params.items():
