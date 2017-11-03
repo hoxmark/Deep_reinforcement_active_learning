@@ -48,7 +48,7 @@ class RNN(nn.Module):
 
         gru_out = F.max_pool1d(gru_out, gru_out.size(2)).squeeze(2)
         # gru_out = (25 x 2400)
-        gru_out = F.tanh(gru_out)
+        gru_out = F.relu(gru_out)
         y = self.hidden2label(gru_out)
         logit = y
         return logit
@@ -58,17 +58,17 @@ class RNN(nn.Module):
         self.embed = nn.Embedding(self.NUM_EMBEDDINGS, self.WORD_DIM, padding_idx=self.VOCAB_SIZE + 1)
         if self.EMBEDDING != "random":
             self.embed.weight.data.copy_(torch.from_numpy(self.wv_matrix))
-        self.bigru = nn.GRU(self.WORD_DIM, self.hidden_size, dropout=0.2, num_layers=self.hidden_layers, bidirectional=True)
+        self.bigru = nn.GRU(self.WORD_DIM, self.hidden_size, dropout=0.4, num_layers=self.hidden_layers, bidirectional=True)
         self.hidden2label = nn.Linear(self.hidden_size * 2, self.CLASS_SIZE)
         self.dropout = nn.Dropout(0.5)
 
         if self.params["CUDA"]:
-            self.cuda(self.params["DEVICE"])
+            self.cuda()
 
     def init_hidden(self, num_layers, batch_size):
         hidden = Variable(torch.zeros(num_layers * 2, batch_size, self.hidden_size))
         if self.params["CUDA"]:
-            hidden = hidden.cuda(self.params["DEVICE"])
+            hidden = hidden.cuda()
         return hidden
 
 

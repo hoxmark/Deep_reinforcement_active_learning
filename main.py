@@ -78,6 +78,9 @@ def main():
     params["CUDA"] = (not params["NO_CUDA"]) and torch.cuda.is_available()
     del params["NO_CUDA"]
 
+    if params["CUDA"]:
+        torch.cuda.set_device(params["DEVICE"])
+
     lg = logger.Logger('./logs/cnn2/batch_size={},date={},FILTERS={},FILTER_NUM={},WORD_DIM={},MODEL={},DROPOUT_PROB={},NORM_LIMIT={},SCORE_FN={},AVERAGE={}'.format(
         params["BATCH_SIZE"],
         datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
@@ -104,7 +107,7 @@ def main():
         #     utils.save_model(model, params)
         print("=" * 20 + "TRAINING FINISHED" + "=" * 20)
     else:
-        model = utils.load_model(params).cuda(params["DEVICE"])
+        model = utils.load_model(params).cuda()
 
         test_acc = train.evaluate(data, model, params, -1, lg)
         print("test acc:", test_acc)
