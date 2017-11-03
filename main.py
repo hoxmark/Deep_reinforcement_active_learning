@@ -25,7 +25,7 @@ def main():
                         help="whether to apply early stopping(T/F)")
     parser.add_argument("--epoch", default=100, type=int,
                         help="number of max epoch")
-    parser.add_argument("--learning_rate", default=0.1,
+    parser.add_argument("--learning_rate", default=0.05,
                         type=float, help="learning rate")
     parser.add_argument('--device', type=int, default=0,
                         help='Cuda device to run on')
@@ -66,7 +66,6 @@ def main():
         "FILTERS": [3, 4, 5],
         "FILTER_NUM": [100, 100, 100],
         "DROPOUT_PROB": 0.5,
-        "NORM_LIMIT": 3,
         "DEVICE": options.device,
         "NO_CUDA": options.no_cuda,
         "SCORE_FN": options.scorefn,
@@ -81,18 +80,30 @@ def main():
     if params["CUDA"]:
         torch.cuda.set_device(params["DEVICE"])
 
-    lg = logger.Logger('./logs/cnn2/batch_size={},date={},FILTERS={},FILTER_NUM={},WORD_DIM={},MODEL={},DROPOUT_PROB={},NORM_LIMIT={},SCORE_FN={},AVERAGE={}'.format(
-        params["BATCH_SIZE"],
-        datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-        str(params["FILTERS"]),
-        str(params["FILTER_NUM"]),
-        str(params["WORD_DIM"]),
-        str(params["MODEL"]),
-        str(params["DROPOUT_PROB"]),
-        str(params["NORM_LIMIT"]),
-        str(params["SCORE_FN"]),
-        str(params["N_AVERAGE"])
-    ))
+    if params["MODEL"] == "cnn":
+        lg = logger.Logger('./logs/cnn/batch_size={},date={},FILTERS={},FILTER_NUM={},WORD_DIM={},MODEL={},DROPOUT_PROB={},SCORE_FN={},AVERAGE={}'.format(
+            str(params["BATCH_SIZE"]),
+            datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+            str(params["FILTERS"]),
+            str(params["FILTER_NUM"]),
+            str(params["WORD_DIM"]),
+            str(params["MODEL"]),
+            str(params["DROPOUT_PROB"]),
+            str(params["SCORE_FN"]),
+            str(params["N_AVERAGE"])
+        ))
+
+    if (params["MODEL"]=="rnn"):
+        lg = logger.Logger('./logs/rnn/batch_size={},date={},WORD_DIM={},MODEL={},DROPOUT_PROB={},SCORE_FN={},AVERAGE={},LEARNING_RATE={}'.format(
+            str(params["BATCH_SIZE"]),
+            datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+            str(params["WORD_DIM"]),
+            str(params["MODEL"]),
+            str(params["DROPOUT_PROB"]),
+            str(params["SCORE_FN"]),
+            str(params["N_AVERAGE"]),
+            str(params["LEARNING_RATE"])
+        ))
 
     print("=" * 20 + "INFORMATION" + "=" * 20)
     for key, value in params.items():

@@ -17,7 +17,7 @@ def to_np(x):
 def active_train(data, params, lg):
     average_accs = {}
     average_losses = {}
-    lg.scalar_summary("test-acc", 50, 0)
+    lg.scalar_summary("test-acc", 0.5, 0)
 
     if params["MODEL"] == "cnn":
         model = CNN(data, params)
@@ -74,10 +74,14 @@ def active_train(data, params, lg):
                 average_losses[i].append(loss)
 
             print("New  accuracy: {}".format(sum(average_accs[i]) / len(average_accs[i])))
+            if (params["N_AVERAGE"] == 1):
+                lg.scalar_summary("test-acc", accuracy, i + 1)
+                lg.scalar_summary("test-loss", loss, i + 1)
 
-    for i in range(n_rounds):
-        lg.scalar_summary("test-acc", sum(average_accs[i]) / len(average_accs[i]), i + 1)
-        lg.scalar_summary("test-loss", sum(average_losses[i]) / len(average_losses[i]), i + 1)
+    if (params["N_AVERAGE"] != 1):
+        for i in range(n_rounds):
+            lg.scalar_summary("test-acc", sum(average_accs[i]) / len(average_accs[i]), i + 1)
+            lg.scalar_summary("test-loss", sum(average_losses[i]) / len(average_losses[i]), i + 1)
 
     best_model = {}
     return best_model
