@@ -89,13 +89,14 @@ def train(model, params, train_array, data, lg):
     print("Length of train set: {}".format(len(train_array)))
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     lr = params["LEARNING_RATE"] / len(train_array)
-    optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"], weight_decay=1e-5)
+    optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"], params["WEIGHT_DECAY"])
     # optimizer = optim.Adadelta(parameters, lr)
     # optimizer = optim.Adam(parameters, params["LEARNING_RATE"])
     criterion = nn.CrossEntropyLoss()
 
     model.train()
     for e in range(params["EPOCH"]):
+        shuffle(train_array)
         for feature, target in train_array:
             optimizer.zero_grad()
             pred = model(feature)

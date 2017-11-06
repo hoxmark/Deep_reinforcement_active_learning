@@ -39,6 +39,8 @@ def main():
                         help='Number of nodes in the hidden layer(s)')
     parser.add_argument('--hlayers', type=int, default=2,
                         help='Number of hidden layers') 
+    parser.add_argument('--weight_decay', type=float, default=1e-5,
+                        help='Value of weight_decay') 
 
     options = parser.parse_args()
     data = getattr(utils, "read_{}".format(options.dataset))()
@@ -71,7 +73,8 @@ def main():
         "SCORE_FN": options.scorefn,
         "N_AVERAGE": options.average,
         "HIDDEN_SIZE": options.hnodes,
-        "HIDDEN_LAYERS": options.hlayers
+        "HIDDEN_LAYERS": options.hlayers,
+        "WEIGHT_DECAY": options.weight_decay 
     }
 
     params["CUDA"] = (not params["NO_CUDA"]) and torch.cuda.is_available()
@@ -88,10 +91,10 @@ def main():
             str(params["DROPOUT_PROB"]),
             str(params["SCORE_FN"]),
             str(params["N_AVERAGE"])
-        ))
+        )) 
 
     if (params["MODEL"]=="rnn"):        
-        lg = logger.Logger('./logs/rnn/batch_size={},date={},WORD_DIM={},MODEL={},DROPOUT_PROB={},SCORE_FN={},AVERAGE={},LEARNING_RATE={}'.format(
+        lg = logger.Logger('./logs/rnn/batch_size={},date={},WORD_DIM={},MODEL={},DROPOUT_PROB={},SCORE_FN={},AVERAGE={},LEARNING_RATE={},WEIGHT_DECAY={}'.format(
             str(params["BATCH_SIZE"]),
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
             str(params["WORD_DIM"]),
@@ -99,7 +102,8 @@ def main():
             str(params["DROPOUT_PROB"]),
             str(params["SCORE_FN"]),
             str(params["N_AVERAGE"]), 
-            str(params["LEARNING_RATE"]) 
+            str(params["LEARNING_RATE"]),
+            str(params["WEIGHT_DECAY"]) 
         ))
 
     print("=" * 20 + "INFORMATION" + "=" * 20)
