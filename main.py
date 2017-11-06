@@ -13,7 +13,7 @@ def main():
                         help="train: train (with test) a model / test: test saved models")
     parser.add_argument("--model", default="cnn",
                         help="Type of model to use. Default: CNN. Available models: CNN, RNN")
-    parser.add_argument("--embedding", default="static", 
+    parser.add_argument("--embedding", default="static",
                         help="available embedings: random, static")
     parser.add_argument("--dataset", default="MR",
                         help="available datasets: MR, TREC")
@@ -66,7 +66,7 @@ def main():
         "VOCAB_SIZE": len(data["vocab"]),
         "CLASS_SIZE": len(data["classes"]),
         "FILTERS": [3, 4, 5],
-        "FILTER_NUM": [100, 100, 100], 
+        "FILTER_NUM": [100, 100, 100],
         "DROPOUT_PROB": 0.5,
         "DEVICE": options.device,
         "NO_CUDA": options.no_cuda,
@@ -80,11 +80,14 @@ def main():
     params["CUDA"] = (not params["NO_CUDA"]) and torch.cuda.is_available()
     del params["NO_CUDA"]
 
-    if params["MODEL"] == "cnn":        
+    if params["CUDA"]:
+        torch.cuda.set_device(params["DEVICE"])
+
+    if params["MODEL"] == "cnn":
         lg = logger.Logger('./logs/cnn/batch_size={},date={},FILTERS={},FILTER_NUM={},WORD_DIM={},MODEL={},DROPOUT_PROB={},SCORE_FN={},AVERAGE={}'.format(
             str(params["BATCH_SIZE"]),
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-            str(params["FILTERS"]), 
+            str(params["FILTERS"]),
             str(params["FILTER_NUM"]),
             str(params["WORD_DIM"]),
             str(params["MODEL"]),
@@ -119,7 +122,7 @@ def main():
         #     utils.save_model(model, params)
         print("=" * 20 + "TRAINING FINISHED" + "=" * 20)
     else:
-        model = utils.load_model(params).cuda(params["DEVICE"])
+        model = utils.load_model(params).cuda()
 
         test_acc = train.evaluate(data, model, params, -1, lg)
         print("test acc:", test_acc)

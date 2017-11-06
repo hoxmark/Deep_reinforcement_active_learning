@@ -43,7 +43,7 @@ class RNN(nn.Module):
         self.dropout = nn.Dropout(0.5)
 
         if self.params["CUDA"]:
-            self.cuda(self.params["DEVICE"])
+            self.cuda()
 
     def forward(self, input):
         hidden = self.init_hidden(self.hidden_layers, len(input))
@@ -64,10 +64,11 @@ class RNN(nn.Module):
         logit = y
         return logit
 
+
     def init_hidden(self, num_layers, batch_size):
         hidden = Variable(torch.zeros(num_layers * 2, batch_size, self.hidden_size))
         if self.params["CUDA"]:
-            hidden = hidden.cuda(self.params["DEVICE"])
+            hidden = hidden.cuda()
         return hidden
 
 

@@ -53,8 +53,7 @@ class CNN(nn.Module):
         self.softmax = nn.Softmax()
 
         if self.params["CUDA"]:
-            self.cuda(self.params["DEVICE"])
-
+            self.cuda()
 
     def forward(self, inp):
         # inp = (25 x 59) - (mini_batch_size x sentence_length)

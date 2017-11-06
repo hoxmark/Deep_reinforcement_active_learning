@@ -144,7 +144,11 @@ def select_entropy(model, data, selected_indices, params):
         output = output * -1
 
         for s_index, score in enumerate(output):
-            sample_scores.append(score.data[0])
+            # "skip" the ones we already selected
+            if i + s_index in selected_indices:
+                sample_scores.append(-9999999)
+            else:
+                sample_scores.append(score.data[0])
 
         completed += 1
         print("Selection process: {0:.0f}% completed ".format(
