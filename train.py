@@ -97,7 +97,7 @@ def train(model, params, train_features, train_targets, data, lg):
     print("Labeled pool size: {}".format(len(train_features)))
 
     parameters = filter(lambda p: p.requires_grad, model.parameters())
-    optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"], weight_decay=1e-5)
+    optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"], weight_decay=params["WEIGHT_DECAY"])
     criterion = nn.CrossEntropyLoss()
     model.train()
 
