@@ -19,7 +19,7 @@ def to_np(x):
 def active_train(data, params, lg):
     average_accs = {}
     average_losses = {}
-    lg.scalar_summary("test-acc", 0.5, 0)
+    lg.scalar_summary("test-acc", 50, 0)
 
     if params["MODEL"] == "cnn":
         model = CNN(data, params)
@@ -39,7 +39,7 @@ def active_train(data, params, lg):
 
         data["train_x"], data["train_y"] = shuffle(data["train_x"], data["train_y"])
 
-        n_rounds = 10
+        n_rounds = int(500 / params["BATCH_SIZE"])
         for i in range(n_rounds):
 
             print("Unlabeled pool size: {}".format(len(data["train_x"])))
@@ -81,13 +81,13 @@ def active_train(data, params, lg):
 
             print("New  accuracy: {}".format(sum(average_accs[i]) / len(average_accs[i])))
             if (params["N_AVERAGE"] == 1):
-                lg.scalar_summary("test-acc", accuracy, i + 1)
-                lg.scalar_summary("test-loss", loss, i + 1)
+                lg.scalar_summary("test-acc", accuracy, len(train_features))
+                lg.scalar_summary("test-loss", loss, len(train_features))
 
     if (params["N_AVERAGE"] != 1):
         for i in range(n_rounds):
-            lg.scalar_summary("test-acc", sum(average_accs[i]) / len(average_accs[i]), i + 1)
-            lg.scalar_summary("test-loss", sum(average_losses[i]) / len(average_losses[i]), i + 1)
+            lg.scalar_summary("test-acc", sum(average_accs[i]) / len(average_accs[i]), len(train_features))
+            lg.scalar_summary("test-loss", sum(average_losses[i]) / len(average_losses[i]), len(train_features))
 
     best_model = {}
     return best_model
@@ -142,7 +142,7 @@ def train(model, params, train_features, train_targets, data, lg):
             eval_acc, eval_loss = evaluate(data, model, params, lg, e, mode="dev")
 
             if eval_acc > best_acc:
-                print("New best model at epoch {}".format(e))
+                print("New best model at epoch {}".format(e + 1))
                 best_acc = eval_acc
                 best_model = copy.deepcopy(model)
                 best_epoch = e
