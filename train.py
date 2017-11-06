@@ -1,3 +1,5 @@
+import copy
+
 from torch.autograd import Variable
 from sklearn.utils import shuffle
 
@@ -32,35 +34,39 @@ def active_train(data, params, lg):
     for j in range(params["N_AVERAGE"]):
         print("-" * 20, "Round {}".format(j), "-" * 20)
         model.init_model()
-        train_array = []
-        selected_indices = []
+        train_features = []
+        train_targets = []
 
         data["train_x"], data["train_y"] = shuffle(data["train_x"], data["train_y"])
 
         n_rounds = 10
         for i in range(n_rounds):
 
+            print("Unlabeled pool size: {}".format(len(data["train_x"])))
+            print("Learning rate: {}".format(params["LEARNING_RATE"]))
+
             if params["SCORE_FN"] == "all":
-                t1, t2, ret_array = select_all(model, data, selected_indices, params)
-                train_array = list(zip(t1, t2))
+                t1, t2 = select_all(model, data, params)
+                train_features = list(zip(t1, t2))
             # Add a random batch first
             elif i == 0:
-                t1, t2, ret_array = select_random(model, data, selected_indices, params)
-                train_array.append((t1, t2))
+                t1, t2 = select_random(model, data, params)
+                train_features.extend(t1)
+                train_targets.extend(t2)
             else:
                 if params["SCORE_FN"] == "entropy":
-                    t1, t2, ret_array = select_entropy(model, data, selected_indices, params)
+                    t1, t2 = select_entropy(model, data, params)
                 elif params["SCORE_FN"] == "egl":
-                    t1, t2, ret_array = select_egl(model, data, selected_indices, params)
+                    t1, t2 = select_egl(model, data, params)
                 elif params["SCORE_FN"] == "random":
-                    t1, t2, ret_array = select_random(model, data, selected_indices, params)
+                    t1, t2 = select_random(model, data, params)
 
-                train_array.append((t1, t2))
-            selected_indices.extend(ret_array)
+                train_features.extend(t1)
+                train_targets.extend(t2)
 
             print("\n")
             model.init_model()
-            train(model, params, train_array, data, lg)
+            model = train(model, params, train_features, train_targets, data, lg)
             accuracy, loss = evaluate(data, model, params, lg, i, mode="dev")
             if i not in average_accs:
                 average_accs[i] = [accuracy]
@@ -87,19 +93,33 @@ def active_train(data, params, lg):
     return best_model
 
 
-def train(model, params, train_array, data, lg):
-    print("Length of train set: {}".format(len(train_array)))
+def train(model, params, train_features, train_targets, data, lg):
+    print("Labeled pool size: {}".format(len(train_features)))
+
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"], weight_decay=1e-5)
     criterion = nn.CrossEntropyLoss()
-
     model.train()
 
+    best_model = None
+    best_acc = 0
+    best_epoch = 0
+
     for e in range(params["EPOCH"]):
+        shuffle(train_features, train_targets)
         avg_loss = 0
-        shuffle(train_array)
         corrects = 0
-        for feature, target in train_array:
+
+        for i in range(0, len(train_features), params["BATCH_SIZE"]):
+            batch_range = min(params["BATCH_SIZE"], len(train_features) - i)
+            batch_x = train_features[i:i + batch_range]
+            batch_y = train_targets[i:i + batch_range]
+
+            feature = Variable(torch.LongTensor(batch_x))
+            target = Variable(torch.LongTensor(batch_y))
+            if params["CUDA"]:
+                feature, target = feature.cuda(params["DEVICE"]), target.cuda(params["DEVICE"])
+
             optimizer.zero_grad()
             pred = model(feature)
             loss = criterion(pred, target)
@@ -114,13 +134,25 @@ def train(model, params, train_array, data, lg):
 
         if params["SCORE_FN"] == "all":
             evaluate(data, model, params, lg, e, mode="dev")
-        elif ((e + 1) % 20) == 0:
-            # print("Average training loss: {}".format(avg_loss / len(train_array)))
-            avg_loss = avg_loss / len(train_array)
-            size = len(train_array) * params["BATCH_SIZE"]
+        elif ((e + 1) % 10) == 0:
+            avg_loss = avg_loss * params["BATCH_SIZE"] / len(train_features)
+            size = len(train_features)
             accuracy = 100.0 * corrects / size
             print('{}: Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})'.format("train", avg_loss, accuracy, corrects, size))
-            evaluate(data, model, params, lg, e, mode="dev")
+            eval_acc, eval_loss = evaluate(data, model, params, lg, e, mode="dev")
+
+            if eval_acc > best_acc:
+                print("New best model at epoch {}".format(e))
+                best_acc = eval_acc
+                best_model = copy.deepcopy(model)
+                best_epoch = e
+
+
+    # WIMSEN ADAPTIVE LEARNING RATE
+    if best_epoch < 60:
+        params["LEARNING_RATE"] = params["LEARNING_RATE"] * 0.65
+
+    return best_model
 
 
 def evaluate(data, model, params, lg, step, mode="test"):
@@ -157,7 +189,7 @@ def evaluate(data, model, params, lg, step, mode="test"):
     accuracy = 100.0 * corrects / size
 
     for tag, value in model.named_parameters():
-        if value.requires_grad:
+        if value.requires_grad and hasattr(value.grad, "data"):
             tag = tag.replace('.', '/')
             lg.histo_summary(tag, to_np(value), step + 1)
             lg.histo_summary(tag + '/grad', to_np(value.grad), step + 1)

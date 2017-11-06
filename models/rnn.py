@@ -46,7 +46,10 @@ class RNN(nn.Module):
             self.cuda()
 
     def forward(self, input):
+        if len(input.size()) == 1:
+            input = input.unsqueeze(0)
         hidden = self.init_hidden(self.hidden_layers, len(input))
+
         input = input.transpose(0, 1)
         embed = self.embed(input)
         embed = self.dropout(embed)  # add this reduce the acc

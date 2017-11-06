@@ -25,7 +25,7 @@ def main():
                         help="whether to apply early stopping(T/F)")
     parser.add_argument("--epoch", default=100, type=int,
                         help="number of max epoch")
-    parser.add_argument("--learning_rate", default=0.05,
+    parser.add_argument("--learning_rate", default=0.1,
                         type=float, help="learning rate")
     parser.add_argument('--device', type=int, default=0,
                         help='Cuda device to run on')
