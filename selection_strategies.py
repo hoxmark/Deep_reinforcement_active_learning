@@ -79,7 +79,7 @@ def select_egl(model, data, selected_indices, params):
 
                 best_grad = -999
                 for word in feature[s_index]:
-                    grad = model.embedding.weight.grad[word.data[0]]
+                    grad = model.embed.weight.grad[word.data[0]]
                     grad_length = torch.norm(grad).data[0]
                     best_grad = max(best_grad, grad_length)
                 score += k * best_grad
