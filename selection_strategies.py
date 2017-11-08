@@ -24,12 +24,8 @@ def select_all(model, data, params):
         batch_y = [data["classes"].index(c)
                    for c in data["train_y"][i:i + batch_range]]
 
-        feature = Variable(torch.LongTensor(batch_x))
-        target = Variable(torch.LongTensor(batch_y))
-        if params["CUDA"]:
-            feature, target = feature.cuda(params["DEVICE"]), target.cuda(params["DEVICE"])
-        ret_feature.append(feature)
-        ret_target.append(target)
+        ret_feature.extend(batch_x)
+        ret_target.extend(batch_y)
 
     return ret_feature, ret_target
 

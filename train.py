@@ -47,12 +47,8 @@ def active_train(data, params, lg):
 
             if params["SCORE_FN"] == "all":
                 t1, t2 = select_all(model, data, params)
-                train_features = list(zip(t1, t2))
-            # Add a random batch first
             elif i == 0:
                 t1, t2 = select_random(model, data, params)
-                train_features.extend(t1)
-                train_targets.extend(t2)
             else:
                 if params["SCORE_FN"] == "entropy":
                     t1, t2 = select_entropy(model, data, params)
@@ -61,8 +57,8 @@ def active_train(data, params, lg):
                 elif params["SCORE_FN"] == "random":
                     t1, t2 = select_random(model, data, params)
 
-                train_features.extend(t1)
-                train_targets.extend(t2)
+            train_features.extend(t1)
+            train_targets.extend(t2)
 
             print("\n")
             model.init_model()
