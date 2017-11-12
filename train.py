@@ -1,4 +1,6 @@
 import copy
+import logger
+import datetime
 
 from torch.autograd import Variable
 from sklearn.utils import shuffle
@@ -16,10 +18,10 @@ def to_np(x):
     return x.data.cpu().numpy()
 
 
-def active_train(data, params, lg):
+def active_train(data, params):
+    init_learning_rate = params["LEARNING_RATE"]
     average_accs = {}
     average_losses = {}
-    lg.scalar_summary("test-acc", 50, 0)
 
     if params["MODEL"] == "cnn":
         model = CNN(data, params)
@@ -32,6 +34,10 @@ def active_train(data, params, lg):
         model.cuda()
 
     for j in range(params["N_AVERAGE"]):
+        params["LEARNING_RATE"] = init_learning_rate
+        lg = init_logger(params, j)
+        lg.scalar_summary("test-acc", 50, 0)
+
         print("-" * 20, "Round {}".format(j), "-" * 20)
         model.init_model()
         train_features = []
@@ -76,14 +82,9 @@ def active_train(data, params, lg):
                 average_losses[i].append(loss)
 
             print("New  accuracy: {}".format(sum(average_accs[i]) / len(average_accs[i])))
-            if (params["N_AVERAGE"] == 1):
-                lg.scalar_summary("test-acc", accuracy, len(train_features))
-                lg.scalar_summary("test-loss", loss, len(train_features))
-
-    if (params["N_AVERAGE"] != 1):
-        for i in range(n_rounds):
             lg.scalar_summary("test-acc", sum(average_accs[i]) / len(average_accs[i]), len(train_features))
             lg.scalar_summary("test-loss", sum(average_losses[i]) / len(average_losses[i]), len(train_features))
+            log_model(model, lg)
 
     best_model = {}
     return best_model
@@ -93,7 +94,12 @@ def train(model, params, train_features, train_targets, data, lg):
     print("Labeled pool size: {}".format(len(train_features)))
 
     parameters = filter(lambda p: p.requires_grad, model.parameters())
-    optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"], weight_decay=params["WEIGHT_DECAY"])
+
+    if params["MODEL"] == "rnn":
+        optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"], weight_decay=params["WEIGHT_DECAY"])
+    else:
+        optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"])
+
     criterion = nn.CrossEntropyLoss()
     model.train()
 
@@ -137,6 +143,7 @@ def train(model, params, train_features, train_targets, data, lg):
             print('{}: Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})'.format("train", avg_loss, accuracy, corrects, size))
             eval_acc, eval_loss = evaluate(data, model, params, lg, e, mode="dev")
 
+            # TODO check if this should also apply for cnn
             if eval_acc > best_acc:
                 print("New best model at epoch {}".format(e + 1))
                 best_acc = eval_acc
@@ -145,11 +152,50 @@ def train(model, params, train_features, train_targets, data, lg):
 
 
     # WIMSEN ADAPTIVE LEARNING RATE
-    if best_epoch < 60:
+    if best_epoch < 60 and params["MODEL"] == "rnn":
         params["LEARNING_RATE"] = params["LEARNING_RATE"] * 0.65
 
+    # return best_model if best_model != None else model
     return best_model
 
+
+def init_logger(params, average):
+    if params["MODEL"] == "cnn":
+        lg = logger.Logger('./logs/cnn/batch_size={},date={},FILTERS={},FILTER_NUM={},WORD_DIM={},MODEL={},DROPOUT_PROB={},SCORE_FN={},AVERAGE={}'.format(
+            str(params["BATCH_SIZE"]),
+            datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+            str(params["FILTERS"]),
+            str(params["FILTER_NUM"]),
+            str(params["WORD_DIM"]),
+            str(params["MODEL"]),
+            str(params["DROPOUT_PROB"]),
+            str(params["SCORE_FN"]),
+            # str(params["N_AVERAGE"])
+            str(average + 1)
+        ))
+
+    if (params["MODEL"]=="rnn"):
+        lg = logger.Logger('./logs/rnn/batch_size={},date={},WORD_DIM={},MODEL={},DROPOUT_PROB={},SCORE_FN={},AVERAGE={},LEARNING_RATE={},WEIGHT_DECAY={}'.format(
+            str(params["BATCH_SIZE"]),
+            datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+            str(params["WORD_DIM"]),
+            str(params["MODEL"]),
+            str(params["DROPOUT_PROB"]),
+            str(params["SCORE_FN"]),
+            # str(params["N_AVERAGE"]),
+            str(average + 1),
+            str(params["LEARNING_RATE"]),
+            str(params["WEIGHT_DECAY"])
+        ))
+    return lg
+
+
+def log_model(model, lg):
+    for tag, value in model.named_parameters():
+        if value.requires_grad and hasattr(value.grad, "data"):
+            tag = tag.replace('.', '/')
+            lg.histo_summary(tag, to_np(value), step + 1)
+            lg.histo_summary(tag + '/grad', to_np(value.grad), step + 1)
 
 def evaluate(data, model, params, lg, step, mode="test"):
     model.eval()
@@ -184,11 +230,6 @@ def evaluate(data, model, params, lg, step, mode="test"):
     avg_loss = avg_loss / size
     accuracy = 100.0 * corrects / size
 
-    for tag, value in model.named_parameters():
-        if value.requires_grad and hasattr(value.grad, "data"):
-            tag = tag.replace('.', '/')
-            lg.histo_summary(tag, to_np(value), step + 1)
-            lg.histo_summary(tag + '/grad', to_np(value.grad), step + 1)
     print('{}: Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})\n'.format(mode, avg_loss, accuracy, corrects, size))
 
     return accuracy, avg_loss

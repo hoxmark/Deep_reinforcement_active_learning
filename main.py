@@ -83,49 +83,13 @@ def main():
     if params["CUDA"]:
         torch.cuda.set_device(params["DEVICE"])
 
-    if params["MODEL"] == "cnn":
-        lg = logger.Logger('./logs/cnn/batch_size={},date={},FILTERS={},FILTER_NUM={},WORD_DIM={},MODEL={},DROPOUT_PROB={},SCORE_FN={},AVERAGE={}'.format(
-            str(params["BATCH_SIZE"]),
-            datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-            str(params["FILTERS"]),
-            str(params["FILTER_NUM"]),
-            str(params["WORD_DIM"]),
-            str(params["MODEL"]),
-            str(params["DROPOUT_PROB"]),
-            str(params["SCORE_FN"]),
-            str(params["N_AVERAGE"])
-        ))
-
-    if (params["MODEL"]=="rnn"):
-        lg = logger.Logger('./logs/rnn/batch_size={},date={},WORD_DIM={},MODEL={},DROPOUT_PROB={},SCORE_FN={},AVERAGE={},LEARNING_RATE={},WEIGHT_DECAY={}'.format(
-            str(params["BATCH_SIZE"]),
-            datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-            str(params["WORD_DIM"]),
-            str(params["MODEL"]),
-            str(params["DROPOUT_PROB"]),
-            str(params["SCORE_FN"]),
-            str(params["N_AVERAGE"]),
-            str(params["LEARNING_RATE"]),
-            str(params["WEIGHT_DECAY"])
-        ))
-
     print("=" * 20 + "INFORMATION" + "=" * 20)
     for key, value in params.items():
         print("{}: {}".format(key.upper(), value))
 
-    if options.mode == "train":
-
-        print("=" * 20 + "TRAINING STARTED" + "=" * 20)
-        # model = train.active_train(data, params, lg)
-        train.active_train(data, params, lg)
-        # if params["SAVE_MODEL"]:
-        #     utils.save_model(model, params)
-        print("=" * 20 + "TRAINING FINISHED" + "=" * 20)
-    else:
-        model = utils.load_model(params).cuda()
-
-        test_acc = train.evaluate(data, model, params, -1, lg)
-        print("test acc:", test_acc)
+    print("=" * 20 + "TRAINING STARTED" + "=" * 20)
+    train.active_train(data, params)
+    print("=" * 20 + "TRAINING FINISHED" + "=" * 20)
 
 
 if __name__ == "__main__":
