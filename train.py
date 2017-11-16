@@ -37,6 +37,7 @@ def active_train(data, params):
         params["LEARNING_RATE"] = init_learning_rate
         lg = init_logger(params, j)
         lg.scalar_summary("test-acc", 50, 0)
+        lg.scalar_summary("test-acc-avg", 50, 0)
 
         print("-" * 20, "Round {}".format(j), "-" * 20)
         model.init_model()
@@ -69,7 +70,7 @@ def active_train(data, params):
             print("\n")
             model.init_model()
             model = train(model, params, train_features, train_targets, data, lg)
-            accuracy, loss = evaluate(data, model, params, lg, i, mode="dev")
+            accuracy, loss = evaluate(data, model, params, lg, i, mode="test")
             if i not in average_accs:
                 average_accs[i] = [accuracy]
             else:
@@ -82,8 +83,11 @@ def active_train(data, params):
                 average_losses[i].append(loss)
 
             print("New  accuracy: {}".format(sum(average_accs[i]) / len(average_accs[i])))
-            lg.scalar_summary("test-acc", sum(average_accs[i]) / len(average_accs[i]), len(train_features))
-            lg.scalar_summary("test-loss", sum(average_losses[i]) / len(average_losses[i]), len(train_features))
+            lg.scalar_summary("test-acc", accuracy, len(train_features))
+            lg.scalar_summary("test-acc-avg", sum(average_accs[i]) / len(average_accs[i]), len(train_features))
+
+            lg.scalar_summary("test-loss", loss, len(train_features))
+            lg.scalar_summary("test-loss-avg", sum(average_losses[i]) / len(average_losses[i]), len(train_features))
             log_model(model, lg)
 
     best_model = {}
@@ -133,14 +137,14 @@ def train(model, params, train_features, train_targets, data, lg):
 
         print("Training process: {0:.0f}% completed ".format(100 * (e / params["EPOCH"])), end="\r")
 
-
         if params["SCORE_FN"] == "all":
             evaluate(data, model, params, lg, e, mode="dev")
         elif ((e + 1) % 10) == 0:
             avg_loss = avg_loss * params["BATCH_SIZE"] / len(train_features)
             size = len(train_features)
             accuracy = 100.0 * corrects / size
-            print('{}: Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})'.format("train", avg_loss, accuracy, corrects, size))
+            print('{}: Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})'.format("train",
+                                                                              avg_loss, accuracy, corrects, size))
             eval_acc, eval_loss = evaluate(data, model, params, lg, e, mode="dev")
 
             # TODO check if this should also apply for cnn
@@ -149,7 +153,6 @@ def train(model, params, train_features, train_targets, data, lg):
                 best_acc = eval_acc
                 best_model = copy.deepcopy(model)
                 best_epoch = e
-
 
     # WIMSEN ADAPTIVE LEARNING RATE
     if best_epoch < 60 and params["MODEL"] == "rnn":
@@ -174,7 +177,7 @@ def init_logger(params, average):
             str(average + 1)
         ))
 
-    if (params["MODEL"]=="rnn"):
+    if (params["MODEL"] == "rnn"):
         lg = logger.Logger('./logs/rnn/batch_size={},date={},WORD_DIM={},MODEL={},DROPOUT_PROB={},SCORE_FN={},AVERAGE={},LEARNING_RATE={},WEIGHT_DECAY={}'.format(
             str(params["BATCH_SIZE"]),
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
@@ -196,6 +199,7 @@ def log_model(model, lg):
             tag = tag.replace('.', '/')
             lg.histo_summary(tag, to_np(value), step + 1)
             lg.histo_summary(tag + '/grad', to_np(value.grad), step + 1)
+
 
 def evaluate(data, model, params, lg, step, mode="test"):
     model.eval()
@@ -225,11 +229,11 @@ def evaluate(data, model, params, lg, step, mode="test"):
         avg_loss += loss.data[0]
         corrects += (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
 
-
     size = len(data["{}_x".format(mode)])
     avg_loss = avg_loss / size
     accuracy = 100.0 * corrects / size
 
-    print('{}: Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})\n'.format(mode, avg_loss, accuracy, corrects, size))
+    print('{}: Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})\n'.format(mode,
+                                                                        avg_loss, accuracy, corrects, size))
 
     return accuracy, avg_loss

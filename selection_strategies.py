@@ -91,7 +91,7 @@ def select_egl(model, data, params):
     for index in sorted(best_n_indexes, reverse=True):
         batch_feature.append([data["word_to_idx"][w] for w in data["train_x"][index]] +
                              [params["VOCAB_SIZE"] + 1 for i in range(params["MAX_SENT_LEN"] - len(data["train_x"][index]))])
-        batch_target.append(data["train_y"][index])
+        batch_target.append(data["classes"].index(data["train_y"][index]))
         del data["train_x"][index]
         del data["train_y"][index]
 
@@ -140,7 +140,7 @@ def select_entropy(model, data, params):
     for index in sorted(best_n_indexes, reverse=True):
         batch_feature.append([data["word_to_idx"][w] for w in data["train_x"][index]] +
                              [params["VOCAB_SIZE"] + 1 for i in range(params["MAX_SENT_LEN"] - len(data["train_x"][index]))])
-        batch_target.append(data["train_y"][index])
+        batch_target.append(data["classes"].index(data["train_y"][index]))
         del data["train_x"][index]
         del data["train_y"][index]
 
@@ -158,8 +158,10 @@ def select_random(model, data, params):
         padding = [params["VOCAB_SIZE"] +
                    1 for i in range(params["MAX_SENT_LEN"] - len(sentence))]
         sentence.extend(padding)
+
+        target = data["classes"].index(data["train_y"][index])
         all_sentences.append(sentence)
-        all_targets.append(data["train_y"][index])
+        all_targets.append(target)
         del data["train_x"][index]
         del data["train_y"][index]
 
