@@ -3,7 +3,8 @@ snapshot
 rt-polaritydata
 *.bin
 saved_models/
-
+logs/
+nohup.out
 
 # Byte-compiled / optimized / DLL files
 __pycache__/

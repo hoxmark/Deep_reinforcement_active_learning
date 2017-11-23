@@ -26,7 +26,9 @@ def main():
     parser.add_argument("--epoch", default=100, type=int,
                         help="number of max epoch")
     parser.add_argument("--learning_rate", default=0.1,
-                        type=int, help="learning rate")
+                        type=float, help="learning rate")
+    parser.add_argument("--dropout", default=0.5,
+                        type=float, help="Dropout probability. Default: 0.5")
     parser.add_argument('--device', type=int, default=0,
                         help='Cuda device to run on')
     parser.add_argument('--no-cuda', action='store_true',
@@ -35,10 +37,15 @@ def main():
                         help="available scoring functions: entropy, random, egl")
     parser.add_argument('--average', type=int, default=1,
                         help='Number of runs to average [default: 1]')
-    parser.add_argument('--hnodes', type=int, default=1200,
+    parser.add_argument('--hnodes', type=int, default=128,
                         help='Number of nodes in the hidden layer(s)')
-    parser.add_argument('--hlayers', type=int, default=2,
+    parser.add_argument('--hlayers', type=int, default=1,
                         help='Number of hidden layers')
+    parser.add_argument('--weight_decay', type=float, default=1e-5,
+                        help='Value of weight_decay')
+    parser.add_argument('--no-log', action='store_true',
+                        default=False, help='Disable logging')
+
 
     options = parser.parse_args()
     data = getattr(utils, "read_{}".format(options.dataset))()
@@ -65,49 +72,30 @@ def main():
         "CLASS_SIZE": len(data["classes"]),
         "FILTERS": [3, 4, 5],
         "FILTER_NUM": [100, 100, 100],
-        "DROPOUT_PROB": 0.5,
-        "NORM_LIMIT": 3,
+        "DROPOUT_PROB": options.dropout,
         "DEVICE": options.device,
         "NO_CUDA": options.no_cuda,
         "SCORE_FN": options.scorefn,
         "N_AVERAGE": options.average,
         "HIDDEN_SIZE": options.hnodes,
-        "HIDDEN_LAYERS": options.hlayers
+        "HIDDEN_LAYERS": options.hlayers,
+        "WEIGHT_DECAY": options.weight_decay,
+        "LOG": not options.no_log
     }
 
     params["CUDA"] = (not params["NO_CUDA"]) and torch.cuda.is_available()
     del params["NO_CUDA"]
 
-    lg = logger.Logger('./logs/cnn2/batch_size={},date={},FILTERS={},FILTER_NUM={},WORD_DIM={},MODEL={},DROPOUT_PROB={},NORM_LIMIT={},SCORE_FN={},AVERAGE={}'.format(
-        params["BATCH_SIZE"],
-        datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-        str(params["FILTERS"]),
-        str(params["FILTER_NUM"]),
-        str(params["WORD_DIM"]),
-        str(params["MODEL"]),
-        str(params["DROPOUT_PROB"]),
-        str(params["NORM_LIMIT"]),
-        str(params["SCORE_FN"]),
-        str(params["N_AVERAGE"])
-    ))
+    if params["CUDA"]:
+        torch.cuda.set_device(params["DEVICE"])
 
     print("=" * 20 + "INFORMATION" + "=" * 20)
     for key, value in params.items():
         print("{}: {}".format(key.upper(), value))
 
-    if options.mode == "train":
-
-        print("=" * 20 + "TRAINING STARTED" + "=" * 20)
-        # model = train.active_train(data, params, lg)
-        train.active_train(data, params, lg)
-        # if params["SAVE_MODEL"]:
-        #     utils.save_model(model, params)
-        print("=" * 20 + "TRAINING FINISHED" + "=" * 20)
-    else:
-        model = utils.load_model(params).cuda(params["DEVICE"])
-
-        test_acc = train.evaluate(data, model, params, -1, lg)
-        print("test acc:", test_acc)
+    print("=" * 20 + "TRAINING STARTED" + "=" * 20)
+    train.active_train(data, params)
+    print("=" * 20 + "TRAINING FINISHED" + "=" * 20)
 
 
 if __name__ == "__main__":
