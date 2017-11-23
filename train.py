@@ -2,6 +2,7 @@ import copy
 import logger
 import datetime
 
+from reprint import output
 from torch.autograd import Variable
 from sklearn.utils import shuffle
 
@@ -11,7 +12,7 @@ import torch.nn as nn
 
 from models.cnn import CNN
 from models.rnn import RNN
-from selection_strategies import select_random, select_entropy, select_egl, select_all
+from selection_strategies import select_first, select_random, select_entropy, select_egl, select_all
 
 
 def to_np(x):
@@ -35,11 +36,13 @@ def active_train(data, params):
 
     for j in range(params["N_AVERAGE"]):
         params["LEARNING_RATE"] = init_learning_rate
-        lg = init_logger(params, j)
-        lg.scalar_summary("test-acc", 50, 0)
-        lg.scalar_summary("test-acc-avg", 50, 0)
 
-        print("-" * 20, "Round {}".format(j), "-" * 20)
+        if params["LOG"]:
+            lg = init_logger(params, j)
+            lg.scalar_summary("test-acc", 50, 0)
+            lg.scalar_summary("test-acc-avg", 50, 0)
+
+        print("-" * 20, "Round {}".format(j + 1), "-" * 20)
         model.init_model()
         train_features = []
         train_targets = []
@@ -48,29 +51,23 @@ def active_train(data, params):
 
         n_rounds = int(500 / params["BATCH_SIZE"])
         for i in range(n_rounds):
-
-            print("Unlabeled pool size: {}".format(len(data["train_x"])))
-            print("Learning rate: {}".format(params["LEARNING_RATE"]))
-
             if params["SCORE_FN"] == "all":
                 t1, t2 = select_all(model, data, params)
-            elif i == 0:
+            elif params["SCORE_FN"] == "entropy":
+                t1, t2 = select_entropy(model, data, params)
+            elif params["SCORE_FN"] == "egl":
+                t1, t2 = select_egl(model, data, params)
+            elif params["SCORE_FN"] == "random":
                 t1, t2 = select_random(model, data, params)
-            else:
-                if params["SCORE_FN"] == "entropy":
-                    t1, t2 = select_entropy(model, data, params)
-                elif params["SCORE_FN"] == "egl":
-                    t1, t2 = select_egl(model, data, params)
-                elif params["SCORE_FN"] == "random":
-                    t1, t2 = select_random(model, data, params)
 
             train_features.extend(t1)
             train_targets.extend(t2)
 
             print("\n")
             model.init_model()
-            model = train(model, params, train_features, train_targets, data, lg)
-            accuracy, loss = evaluate(data, model, params, lg, i, mode="test")
+            model = train(model, params, train_features, train_targets, data)
+            accuracy, loss, corrects, size = evaluate(data, model, params, i, mode="test")
+            print("{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{}) \n".format("test", loss, accuracy, corrects, size))
             if i not in average_accs:
                 average_accs[i] = [accuracy]
             else:
@@ -82,28 +79,28 @@ def active_train(data, params):
             else:
                 average_losses[i].append(loss)
 
-            print("New  accuracy: {}".format(sum(average_accs[i]) / len(average_accs[i])))
-            lg.scalar_summary("test-acc", accuracy, len(train_features))
-            lg.scalar_summary("test-acc-avg", sum(average_accs[i]) / len(average_accs[i]), len(train_features))
+            if params["LOG"]:
+                lg.scalar_summary("test-acc", accuracy, len(train_features))
+                lg.scalar_summary("test-acc-avg", sum(average_accs[i]) / len(average_accs[i]), len(train_features))
 
-            lg.scalar_summary("test-loss", loss, len(train_features))
-            lg.scalar_summary("test-loss-avg", sum(average_losses[i]) / len(average_losses[i]), len(train_features))
-            log_model(model, lg)
+                lg.scalar_summary("test-loss", loss, len(train_features))
+                lg.scalar_summary("test-loss-avg", sum(average_losses[i]) / len(average_losses[i]), len(train_features))
+                log_model(model, lg)
 
     best_model = {}
     return best_model
 
 
-def train(model, params, train_features, train_targets, data, lg):
+def train(model, params, train_features, train_targets, data):
     print("Labeled pool size: {}".format(len(train_features)))
 
     parameters = filter(lambda p: p.requires_grad, model.parameters())
-
     if params["MODEL"] == "rnn":
         optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"], weight_decay=params["WEIGHT_DECAY"])
     else:
         optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"])
 
+    # Softmax is included in CrossEntropyLoss
     criterion = nn.CrossEntropyLoss()
     model.train()
 
@@ -111,52 +108,51 @@ def train(model, params, train_features, train_targets, data, lg):
     best_acc = 0
     best_epoch = 0
 
-    for e in range(params["EPOCH"]):
-        shuffle(train_features, train_targets)
-        avg_loss = 0
-        corrects = 0
+    with output(initial_len=2, interval=0) as output_lines:
+        for e in range(params["EPOCH"]):
+            shuffle(train_features, train_targets)
+            avg_loss = 0
+            corrects = 0
 
-        for i in range(0, len(train_features), params["BATCH_SIZE"]):
-            batch_range = min(params["BATCH_SIZE"], len(train_features) - i)
-            batch_x = train_features[i:i + batch_range]
-            batch_y = train_targets[i:i + batch_range]
+            for i in range(0, len(train_features), params["BATCH_SIZE"]):
+                batch_range = min(params["BATCH_SIZE"], len(train_features) - i)
+                batch_x = train_features[i:i + batch_range]
+                batch_y = train_targets[i:i + batch_range]
 
-            feature = Variable(torch.LongTensor(batch_x))
-            target = Variable(torch.LongTensor(batch_y))
-            if params["CUDA"]:
-                feature, target = feature.cuda(params["DEVICE"]), target.cuda(params["DEVICE"])
+                feature = Variable(torch.LongTensor(batch_x))
+                target = Variable(torch.LongTensor(batch_y))
 
-            optimizer.zero_grad()
-            pred = model(feature)
-            loss = criterion(pred, target)
-            loss.backward()
-            optimizer.step()
-            avg_loss += loss.data[0]
-            new_corr = (torch.max(pred, 1)[1].view(target.size()).data == target.data).sum()
-            corrects += new_corr
+                if params["CUDA"]:
+                    feature, target = feature.cuda(params["DEVICE"]), target.cuda(params["DEVICE"])
 
-        print("Training process: {0:.0f}% completed ".format(100 * (e / params["EPOCH"])), end="\r")
+                optimizer.zero_grad()
+                pred = model(feature)
+                loss = criterion(pred, target)
+                loss.backward()
+                optimizer.step()
+                avg_loss += loss.data[0]
+                new_corr = (torch.max(pred, 1)[1].view(target.size()).data == target.data).sum()
+                corrects += new_corr
 
-        if params["SCORE_FN"] == "all":
-            evaluate(data, model, params, lg, e, mode="dev")
-        elif ((e + 1) % 10) == 0:
-            avg_loss = avg_loss * params["BATCH_SIZE"] / len(train_features)
-            size = len(train_features)
-            accuracy = 100.0 * corrects / size
-            print('{}: Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})'.format("train",
-                                                                              avg_loss, accuracy, corrects, size))
-            eval_acc, eval_loss = evaluate(data, model, params, lg, e, mode="dev")
+            if params["SCORE_FN"] == "all":
+                accuracy, loss, corrects, size = evaluate(data, model, params, e, mode="dev")
+            elif ((e + 1) % 10) == 0:
+                size = len(train_features)
+                avg_loss = avg_loss * params["BATCH_SIZE"] / size
+                accuracy = 100.0 * corrects / size
 
-            # TODO check if this should also apply for cnn
-            if eval_acc > best_acc:
-                print("New best model at epoch {}".format(e + 1))
-                best_acc = eval_acc
-                best_model = copy.deepcopy(model)
-                best_epoch = e
+                dev_accuracy, dev_loss, dev_corrects, dev_size = evaluate(data, model, params, e, mode="dev")
 
-    # WIMSEN ADAPTIVE LEARNING RATE
-    if best_epoch < 60 and params["MODEL"] == "rnn":
-        params["LEARNING_RATE"] = params["LEARNING_RATE"] * 0.65
+                s1 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format("train", avg_loss, accuracy, corrects, size)
+                s2 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format("dev", dev_loss, dev_accuracy, dev_corrects, dev_size)
+                output_lines[0] = s1
+                output_lines[1] = s2
+
+                # TODO check if this should also apply for cnn
+                if dev_accuracy > best_acc:
+                    best_acc = dev_accuracy
+                    best_model = copy.deepcopy(model)
+                    best_epoch = e
 
     # return best_model if best_model != None else model
     return best_model
@@ -169,23 +165,21 @@ def init_logger(params, average):
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
             str(params["FILTERS"]),
             str(params["FILTER_NUM"]),
-            str(params["WORD_DIM"]),
             str(params["MODEL"]),
             str(params["DROPOUT_PROB"]),
             str(params["SCORE_FN"]),
-            # str(params["N_AVERAGE"])
             str(average + 1)
         ))
 
     if (params["MODEL"] == "rnn"):
-        lg = logger.Logger('./logs/rnn/batch_size={},date={},WORD_DIM={},MODEL={},DROPOUT_PROB={},SCORE_FN={},AVERAGE={},LEARNING_RATE={},WEIGHT_DECAY={}'.format(
+        lg = logger.Logger('./logs/rnn/batch_size={},date={},WORD_DIM={},MODEL={},DROPOUT_PROB={},SCORE_FN={},HLAYERS={},HNODES={},AVERAGE={},LEARNING_RATE={},WEIGHT_DECAY={}'.format(
             str(params["BATCH_SIZE"]),
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-            str(params["WORD_DIM"]),
             str(params["MODEL"]),
             str(params["DROPOUT_PROB"]),
             str(params["SCORE_FN"]),
-            # str(params["N_AVERAGE"]),
+            str(params["HIDDEN_LAYERS"]),
+            str(params["HIDDEN_SIZE"]),
             str(average + 1),
             str(params["LEARNING_RATE"]),
             str(params["WEIGHT_DECAY"])
@@ -201,7 +195,7 @@ def log_model(model, lg):
             lg.histo_summary(tag + '/grad', to_np(value.grad), step + 1)
 
 
-def evaluate(data, model, params, lg, step, mode="test"):
+def evaluate(data, model, params, step, mode="test"):
     model.eval()
 
     if params["CUDA"]:
@@ -233,7 +227,4 @@ def evaluate(data, model, params, lg, step, mode="test"):
     avg_loss = avg_loss / size
     accuracy = 100.0 * corrects / size
 
-    print('{}: Evaluation - loss: {:.6f}  acc: {:.4f}%({}/{})\n'.format(mode,
-                                                                        avg_loss, accuracy, corrects, size))
-
-    return accuracy, avg_loss
+    return accuracy, avg_loss, corrects, size

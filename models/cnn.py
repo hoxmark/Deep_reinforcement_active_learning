@@ -71,7 +71,6 @@ class CNN(nn.Module):
         # x = (25 x 300) - concatenate all the filter results
         x = F.dropout(x, p=self.DROPOUT_PROB, training=self.training)
         x = self.fc(x)
-        x = self.softmax(x)
 
         return x
 

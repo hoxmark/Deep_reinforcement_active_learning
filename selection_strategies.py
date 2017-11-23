@@ -58,6 +58,8 @@ def select_egl(model, data, params):
         for s_index in range(batch_range):
             score = 0
             output = model(feature[s_index])
+            # Output is not a probability distribution - make it using softmax
+            output = nn.functional.softmax(output)
             # TODO: params["NUM_LABELS"]
             for index in range(2):
                 optimizer.zero_grad()
@@ -119,6 +121,8 @@ def select_entropy(model, data, params):
                 params["DEVICE"]), target.cuda(params["DEVICE"])
 
         output = model(feature)
+        # Output is not a probability distribution - make it using softmax
+        output = nn.functional.softmax(output)
 
         output = torch.mul(output, torch.log(output))
         output = torch.sum(output, dim=1)
@@ -133,6 +137,11 @@ def select_entropy(model, data, params):
 
     best_n_indexes = [n[0] for n in heapq.nlargest(
         params["BATCH_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
+
+    best_n_scores = [n[1] for n in heapq.nlargest(
+        params["BATCH_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
+    print("Average all scores: {}".format(sum(sample_scores) / len(sample_scores)))
+    print("Average top score: {}".format(sum(best_n_scores) / len(best_n_scores)))
 
     batch_feature = []
     batch_target = []
@@ -164,6 +173,25 @@ def select_random(model, data, params):
         all_targets.append(target)
         del data["train_x"][index]
         del data["train_y"][index]
+
+    return all_sentences, all_targets
+
+def select_first(model, data, params):
+    all_sentences = []
+    all_targets = []
+
+    for i in range(params["BATCH_SIZE"]):
+        sentence = [data["word_to_idx"][w]
+                    for w in data["train_x"][i]]
+        padding = [params["VOCAB_SIZE"] +
+                   1 for i in range(params["MAX_SENT_LEN"] - len(sentence))]
+        sentence.extend(padding)
+
+        target = data["classes"].index(data["train_y"][i])
+        all_sentences.append(sentence)
+        all_targets.append(target)
+        del data["train_x"][i]
+        del data["train_y"][i]
 
     return all_sentences, all_targets
 

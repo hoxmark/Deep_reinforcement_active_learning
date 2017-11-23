@@ -20,6 +20,7 @@ class RNN(nn.Module):
         self.FILTER_NUM = params["FILTER_NUM"]
         self.DROPOUT_PROB = params["DROPOUT_PROB"]
         self.EMBEDDING = params["EMBEDDING"]
+        self.DROPOUT_PROB = params["DROPOUT_PROB"]
 
         self.input_size = self.WORD_DIM
         self.hidden_size = params["HIDDEN_SIZE"]
@@ -38,9 +39,9 @@ class RNN(nn.Module):
         self.embed = nn.Embedding(self.NUM_EMBEDDINGS, self.WORD_DIM, padding_idx=self.VOCAB_SIZE + 1)
         if self.EMBEDDING != "random":
             self.embed.weight.data.copy_(torch.from_numpy(self.wv_matrix))
-        self.bigru = nn.GRU(self.WORD_DIM, self.hidden_size, dropout=0.5, num_layers=self.hidden_layers, bidirectional=True)
+        self.bigru = nn.GRU(self.WORD_DIM, self.hidden_size, dropout=self.DROPOUT_PROB, num_layers=self.hidden_layers, bidirectional=True)
         self.hidden2label = nn.Linear(self.hidden_size * 2, self.CLASS_SIZE)
-        self.dropout = nn.Dropout(0.5)
+        self.dropout = nn.Dropout(self.DROPOUT_PROB)
 
         if self.params["CUDA"]:
             self.cuda()
@@ -64,8 +65,7 @@ class RNN(nn.Module):
         # gru_out = (25 x 2400)
         gru_out = F.relu(gru_out)
         y = self.hidden2label(gru_out)
-        logit = y
-        return logit
+        return y
 
 
     def init_hidden(self, num_layers, batch_size):

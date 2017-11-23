@@ -27,6 +27,8 @@ def main():
                         help="number of max epoch")
     parser.add_argument("--learning_rate", default=0.1,
                         type=float, help="learning rate")
+    parser.add_argument("--dropout", default=0.5,
+                        type=float, help="Dropout probability. Default: 0.5")
     parser.add_argument('--device', type=int, default=0,
                         help='Cuda device to run on')
     parser.add_argument('--no-cuda', action='store_true',
@@ -35,12 +37,15 @@ def main():
                         help="available scoring functions: entropy, random, egl")
     parser.add_argument('--average', type=int, default=1,
                         help='Number of runs to average [default: 1]')
-    parser.add_argument('--hnodes', type=int, default=1200,
+    parser.add_argument('--hnodes', type=int, default=128,
                         help='Number of nodes in the hidden layer(s)')
-    parser.add_argument('--hlayers', type=int, default=2,
+    parser.add_argument('--hlayers', type=int, default=1,
                         help='Number of hidden layers')
     parser.add_argument('--weight_decay', type=float, default=1e-5,
                         help='Value of weight_decay')
+    parser.add_argument('--no-log', action='store_true',
+                        default=False, help='Disable logging')
+
 
     options = parser.parse_args()
     data = getattr(utils, "read_{}".format(options.dataset))()
@@ -67,14 +72,15 @@ def main():
         "CLASS_SIZE": len(data["classes"]),
         "FILTERS": [3, 4, 5],
         "FILTER_NUM": [100, 100, 100],
-        "DROPOUT_PROB": 0.5,
+        "DROPOUT_PROB": options.dropout,
         "DEVICE": options.device,
         "NO_CUDA": options.no_cuda,
         "SCORE_FN": options.scorefn,
         "N_AVERAGE": options.average,
         "HIDDEN_SIZE": options.hnodes,
         "HIDDEN_LAYERS": options.hlayers,
-        "WEIGHT_DECAY": options.weight_decay
+        "WEIGHT_DECAY": options.weight_decay,
+        "LOG": not options.no_log
     }
 
     params["CUDA"] = (not params["NO_CUDA"]) and torch.cuda.is_available()
