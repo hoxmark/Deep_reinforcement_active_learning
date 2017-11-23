@@ -160,7 +160,7 @@ def train(model, params, train_features, train_targets, data):
 
 def init_logger(params, average):
     if params["MODEL"] == "cnn":
-        lg = logger.Logger('./logs/cnn/batch_size={},date={},FILTERS={},FILTER_NUM={},WORD_DIM={},MODEL={},DROPOUT_PROB={},SCORE_FN={},AVERAGE={}'.format(
+        lg = logger.Logger('./logs/cnn/batch_size={},date={},FILTERS={},FILTER_NUM={},MODEL={},DROPOUT_PROB={},SCORE_FN={},AVERAGE={}'.format(
             str(params["BATCH_SIZE"]),
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
             str(params["FILTERS"]),
@@ -172,7 +172,7 @@ def init_logger(params, average):
         ))
 
     if (params["MODEL"] == "rnn"):
-        lg = logger.Logger('./logs/rnn/batch_size={},date={},WORD_DIM={},MODEL={},DROPOUT_PROB={},SCORE_FN={},HLAYERS={},HNODES={},AVERAGE={},LEARNING_RATE={},WEIGHT_DECAY={}'.format(
+        lg = logger.Logger('./logs/rnn/batch_size={},date={},MODEL={},DROPOUT_PROB={},SCORE_FN={},HLAYERS={},HNODES={},AVERAGE={},LEARNING_RATE={},WEIGHT_DECAY={}'.format(
             str(params["BATCH_SIZE"]),
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
             str(params["MODEL"]),
