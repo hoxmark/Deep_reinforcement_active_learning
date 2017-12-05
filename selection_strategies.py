@@ -10,7 +10,7 @@ import torch.nn as nn
 import train
 
 
-def select_all(model, data, params):
+def select_all(model, data, params, lg, i):
     ret_feature = []
     ret_target = []
 
@@ -30,7 +30,8 @@ def select_all(model, data, params):
     return ret_feature, ret_target
 
 
-def select_egl(model, data, params):
+def select_egl(model, data, params, lg, iteration):
+    model.eval()
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"])
     criterion = nn.CrossEntropyLoss()
@@ -87,6 +88,9 @@ def select_egl(model, data, params):
     best_n_indexes = [n[0] for n in heapq.nlargest(
         params["BATCH_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
 
+    best_n_scores = [n[1] for n in heapq.nlargest(
+        params["BATCH_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
+
     batch_feature = []
     batch_target = []
 
@@ -97,10 +101,18 @@ def select_egl(model, data, params):
         del data["train_x"][index]
         del data["train_y"][index]
 
+    avg_all_score = sum(sample_scores) / len(sample_scores)
+    avg_best_score = sum(best_n_scores) / len(best_n_scores)
+
+    if params["LOG"]:
+        lg.scalar_summary("avg-score", avg_all_score, iteration)
+        lg.scalar_summary("avg-best-score", avg_best_score, iteration)
+
     return batch_feature, batch_target
 
 
-def select_entropy(model, data, params):
+def select_entropy(model, data, params, lg, iteration):
+    model.eval()
     sample_scores = []
     completed = 0
 
@@ -123,7 +135,6 @@ def select_entropy(model, data, params):
         output = model(feature)
         # Output is not a probability distribution - make it using softmax
         output = nn.functional.softmax(output)
-
         output = torch.mul(output, torch.log(output))
         output = torch.sum(output, dim=1)
         output = output * -1
@@ -140,8 +151,6 @@ def select_entropy(model, data, params):
 
     best_n_scores = [n[1] for n in heapq.nlargest(
         params["BATCH_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
-    print("Average all scores: {}".format(sum(sample_scores) / len(sample_scores)))
-    print("Average top score: {}".format(sum(best_n_scores) / len(best_n_scores)))
 
     batch_feature = []
     batch_target = []
@@ -153,10 +162,18 @@ def select_entropy(model, data, params):
         del data["train_x"][index]
         del data["train_y"][index]
 
+
+    avg_all_score = sum(sample_scores) / len(sample_scores)
+    avg_best_score = sum(best_n_scores) / len(best_n_scores)
+
+    if params["LOG"]:
+        lg.scalar_summary("avg-score", avg_all_score, iteration)
+        lg.scalar_summary("avg-best-score", avg_best_score, iteration)
+
     return batch_feature, batch_target
 
 
-def select_random(model, data, params):
+def select_random(model, data, params, lg, iteration):
     all_sentences = []
     all_targets = []
 
@@ -176,7 +193,7 @@ def select_random(model, data, params):
 
     return all_sentences, all_targets
 
-def select_first(model, data, params):
+def select_first(model, data, params, lg, iteration):
     all_sentences = []
     all_targets = []
 

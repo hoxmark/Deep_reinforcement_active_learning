@@ -36,11 +36,13 @@ def active_train(data, params):
 
     for j in range(params["N_AVERAGE"]):
         params["LEARNING_RATE"] = init_learning_rate
-
+        lg = None
         if params["LOG"]:
             lg = init_logger(params, j)
-            lg.scalar_summary("test-acc", 50, 0)
-            lg.scalar_summary("test-acc-avg", 50, 0)
+            start_accuracy = 100 / params["CLASS_SIZE"]
+            lg.scalar_summary("test-acc", start_accuracy, 0)
+            lg.scalar_summary("test-acc-avg", start_accuracy, 0)
+
 
         print("-" * 20, "Round {}".format(j + 1), "-" * 20)
         model.init_model()
@@ -52,13 +54,13 @@ def active_train(data, params):
         n_rounds = int(500 / params["BATCH_SIZE"])
         for i in range(n_rounds):
             if params["SCORE_FN"] == "all":
-                t1, t2 = select_all(model, data, params)
+                t1, t2 = select_all(model, data, params, lg, i)
             elif params["SCORE_FN"] == "entropy":
-                t1, t2 = select_entropy(model, data, params)
+                t1, t2 = select_entropy(model, data, params, lg, i)
             elif params["SCORE_FN"] == "egl":
-                t1, t2 = select_egl(model, data, params)
+                t1, t2 = select_egl(model, data, params, lg, i)
             elif params["SCORE_FN"] == "random":
-                t1, t2 = select_random(model, data, params)
+                t1, t2 = select_random(model, data, params, lg, i)
 
             train_features.extend(t1)
             train_targets.extend(t2)
@@ -111,16 +113,33 @@ def train(model, params, train_features, train_targets, data):
     with output(initial_len=2, interval=0) as output_lines:
         for e in range(params["EPOCH"]):
             shuffle(train_features, train_targets)
+            size = len(train_features)
             avg_loss = 0
             corrects = 0
 
-            for i in range(0, len(train_features), params["BATCH_SIZE"]):
-                batch_range = min(params["BATCH_SIZE"], len(train_features) - i)
-                batch_x = train_features[i:i + batch_range]
-                batch_y = train_targets[i:i + batch_range]
+            if params["MINIBATCH"]:
+                for i in range(0, len(train_features), params["BATCH_SIZE"]):
+                    batch_range = min(params["BATCH_SIZE"], len(train_features) - i)
+                    batch_x = train_features[i:i + batch_range]
+                    batch_y = train_targets[i:i + batch_range]
 
-                feature = Variable(torch.LongTensor(batch_x))
-                target = Variable(torch.LongTensor(batch_y))
+                    feature = Variable(torch.LongTensor(batch_x))
+                    target = Variable(torch.LongTensor(batch_y))
+
+                    if params["CUDA"]:
+                        feature, target = feature.cuda(params["DEVICE"]), target.cuda(params["DEVICE"])
+
+                    optimizer.zero_grad()
+                    pred = model(feature)
+                    loss = criterion(pred, target)
+                    loss.backward()
+                    optimizer.step()
+                    avg_loss += loss.data[0]
+                    corrects += (torch.max(pred, 1)[1].view(target.size()).data == target.data).sum()
+                avg_loss = avg_loss * params["BATCH_SIZE"] / size
+            else:
+                feature = Variable(torch.LongTensor(train_features))
+                target = Variable(torch.LongTensor(train_targets))
 
                 if params["CUDA"]:
                     feature, target = feature.cuda(params["DEVICE"]), target.cuda(params["DEVICE"])
@@ -131,16 +150,25 @@ def train(model, params, train_features, train_targets, data):
                 loss.backward()
                 optimizer.step()
                 avg_loss += loss.data[0]
-                new_corr = (torch.max(pred, 1)[1].view(target.size()).data == target.data).sum()
-                corrects += new_corr
+                corrects += (torch.max(pred, 1)[1].view(target.size()).data == target.data).sum()
 
             if params["SCORE_FN"] == "all":
-                accuracy, loss, corrects, size = evaluate(data, model, params, e, mode="dev")
-            elif ((e + 1) % 10) == 0:
-                size = len(train_features)
-                avg_loss = avg_loss * params["BATCH_SIZE"] / size
                 accuracy = 100.0 * corrects / size
+                dev_accuracy, dev_loss, dev_corrects, dev_size = evaluate(data, model, params, e, mode="dev")
 
+                s1 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format("train", avg_loss, accuracy, corrects, size)
+                s2 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format("dev", dev_loss, dev_accuracy, dev_corrects, dev_size)
+                output_lines[0] = s1
+                output_lines[1] = s2
+
+                if dev_accuracy < best_acc:
+                    break
+
+                best_acc = max(dev_accuracy, best_acc)
+                best_model = model
+
+            elif ((e + 1) % 10) == 0:
+                accuracy = 100.0 * corrects / size
                 dev_accuracy, dev_loss, dev_corrects, dev_size = evaluate(data, model, params, e, mode="dev")
 
                 s1 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format("train", avg_loss, accuracy, corrects, size)
@@ -160,23 +188,29 @@ def train(model, params, train_features, train_targets, data):
 
 def init_logger(params, average):
     if params["MODEL"] == "cnn":
-        lg = logger.Logger('./logs/cnn/batch_size={},date={},FILTERS={},FILTER_NUM={},MODEL={},DROPOUT_PROB={},SCORE_FN={},AVERAGE={}'.format(
+        lg = logger.Logger('./logs/cnn/{},minibatch={},batch_size={},date={},FILTERS={},FILTER_NUM={},MODEL={},DROPOUT_EMBED={}, DROPOUT_MODEL={},SCORE_FN={},AVERAGE={}'.format(
+            str(params["DATASET"]),
+            str(params["MINIBATCH"]),
             str(params["BATCH_SIZE"]),
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
             str(params["FILTERS"]),
             str(params["FILTER_NUM"]),
             str(params["MODEL"]),
-            str(params["DROPOUT_PROB"]),
+            str(params["DROPOUT_EMBED"]),
+            str(params["DROPOUT_MODEL"]),
             str(params["SCORE_FN"]),
             str(average + 1)
         ))
 
     if (params["MODEL"] == "rnn"):
-        lg = logger.Logger('./logs/rnn/batch_size={},date={},MODEL={},DROPOUT_PROB={},SCORE_FN={},HLAYERS={},HNODES={},AVERAGE={},LEARNING_RATE={},WEIGHT_DECAY={}'.format(
+        lg = logger.Logger('./logs/rnn/{},minibatch={},batch_size={},date={},MODEL={},DROPOUT_EMBED={}, DROPOUT_MODEL={},SCORE_FN={},HLAYERS={},HNODES={},AVERAGE={},LEARNING_RATE={},WEIGHT_DECAY={}'.format(
+            str(params["DATASET"]),
+            str(params["MINIBATCH"]),
             str(params["BATCH_SIZE"]),
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
             str(params["MODEL"]),
-            str(params["DROPOUT_PROB"]),
+            str(params["DROPOUT_EMBED"]),
+            str(params["DROPOUT_MODEL"]),
             str(params["SCORE_FN"]),
             str(params["HIDDEN_LAYERS"]),
             str(params["HIDDEN_SIZE"]),

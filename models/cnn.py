@@ -18,7 +18,8 @@ class CNN(nn.Module):
         self.CLASS_SIZE = params["CLASS_SIZE"]
         self.FILTERS = params["FILTERS"]
         self.FILTER_NUM = params["FILTER_NUM"]
-        self.DROPOUT_PROB = params["DROPOUT_PROB"]
+        self.DROPOUT_EMBED_PROB = params["DROPOUT_EMBED"]
+        self.DROPOUT_MODEL_PROB = params["DROPOUT_MODEL"]
         self.IN_CHANNEL = 1
         self.EMBEDDING = params["EMBEDDING"]
 
@@ -51,6 +52,7 @@ class CNN(nn.Module):
 
         self.fc = nn.Linear(sum(self.FILTER_NUM), self.CLASS_SIZE)
         self.softmax = nn.Softmax()
+        self.dropout = nn.Dropout(self.DROPOUT_MODEL_PROB)
 
         if self.params["CUDA"]:
             self.cuda()
@@ -69,7 +71,7 @@ class CNN(nn.Module):
         # Each conv_result is (25 x 100)  - one max value for each application of each filter type, across each sentence
         x = torch.cat(conv_results, 1)
         # x = (25 x 300) - concatenate all the filter results
-        x = F.dropout(x, p=self.DROPOUT_PROB, training=self.training)
+        x = self.dropout(x)
         x = self.fc(x)
 
         return x

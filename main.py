@@ -27,8 +27,10 @@ def main():
                         help="number of max epoch")
     parser.add_argument("--learning_rate", default=0.1,
                         type=float, help="learning rate")
-    parser.add_argument("--dropout", default=0.5,
-                        type=float, help="Dropout probability. Default: 0.5")
+    parser.add_argument("--dropout_embed", default=0.2,
+                        type=float, help="Dropout embed probability. Default: 0.2")
+    parser.add_argument("--dropout_model", default=0.4,
+                        type=float, help="Dropout model probability. Default: 0.4")
     parser.add_argument('--device', type=int, default=0,
                         help='Cuda device to run on')
     parser.add_argument('--no-cuda', action='store_true',
@@ -45,7 +47,8 @@ def main():
                         help='Value of weight_decay')
     parser.add_argument('--no-log', action='store_true',
                         default=False, help='Disable logging')
-
+    parser.add_argument('--minibatch', action='store_true',
+                        default=False, help='Use  minibatch training')
 
     options = parser.parse_args()
     data = getattr(utils, "read_{}".format(options.dataset))()
@@ -72,7 +75,8 @@ def main():
         "CLASS_SIZE": len(data["classes"]),
         "FILTERS": [3, 4, 5],
         "FILTER_NUM": [100, 100, 100],
-        "DROPOUT_PROB": options.dropout,
+        "DROPOUT_EMBED": options.dropout_embed,
+        "DROPOUT_MODEL": options.dropout_model,
         "DEVICE": options.device,
         "NO_CUDA": options.no_cuda,
         "SCORE_FN": options.scorefn,
@@ -80,7 +84,8 @@ def main():
         "HIDDEN_SIZE": options.hnodes,
         "HIDDEN_LAYERS": options.hlayers,
         "WEIGHT_DECAY": options.weight_decay,
-        "LOG": not options.no_log
+        "LOG": not options.no_log,
+        "MINIBATCH": options.minibatch
     }
 
     params["CUDA"] = (not params["NO_CUDA"]) and torch.cuda.is_available()
