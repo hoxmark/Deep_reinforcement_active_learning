@@ -61,8 +61,8 @@ def select_egl(model, data, params, lg, iteration):
             output = model(feature[s_index])
             # Output is not a probability distribution - make it using softmax
             output = nn.functional.softmax(output)
-            # TODO: params["NUM_LABELS"]
-            for index in range(2):
+
+            for index in range(len(data["classes"])):
                 optimizer.zero_grad()
                 f_target = torch.autograd.Variable(torch.LongTensor([index]))
                 if params["CUDA"]:
