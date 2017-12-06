@@ -67,6 +67,34 @@ def read_MR():
 
     return data
 
+def read_UMICH():
+    data = {}
+    x, y = [], []
+
+    with open("data/UMICH/rt-polarity.pos", "r", encoding="utf-8") as f:
+        for line in f:
+            if line[-1] == "\n":
+                line = line[:-1]
+            x.append(line.split())
+            y.append(1)
+
+    with open("data/UMICH/rt-polarity.neg", "r", encoding="utf-8") as f:
+        for line in f:
+            if line[-1] == "\n":
+                line = line[:-1]
+            x.append(line.split())
+            y.append(0)
+
+    x, y = shuffle(x, y)
+    dev_idx = len(x) // 10 * 8
+    test_idx = len(x) // 10 * 9
+
+    data["train_x"], data["train_y"] = x[:dev_idx], y[:dev_idx]
+    data["dev_x"], data["dev_y"] = x[dev_idx:test_idx], y[dev_idx:test_idx]
+    data["test_x"], data["test_y"] = x[test_idx:], y[test_idx:]
+
+    return data
+
 
 def save_model(model, params):
     path = "saved_models/{}_{}_{}.pkl".format(params['DATASET'], params['MODEL'], params['EPOCH'])
