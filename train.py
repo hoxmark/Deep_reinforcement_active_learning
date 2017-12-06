@@ -43,14 +43,14 @@ def active_train(data, params):
             start_accuracy = 100 / params["CLASS_SIZE"]
             lg.scalar_summary("test-acc", start_accuracy, 0)
             lg.scalar_summary("test-acc-avg", start_accuracy, 0)
-            
+
 
         print("-" * 20, "Round {}".format(j + 1), "-" * 20)
         model.init_model()
         train_features = []
         train_targets = []
         distribution = {}
-        
+
         data["train_x"], data["train_y"] = shuffle(data["train_x"], data["train_y"])
 
         n_rounds = int(500 / params["BATCH_SIZE"])
@@ -69,7 +69,7 @@ def active_train(data, params):
 
             print("\n")
             model.init_model()
-            model = train(model, params, train_features, train_targets, data)        
+            model = train(model, params, train_features, train_targets, data)
             accuracy, loss, corrects, size = evaluate(data, model, params, i, mode="test")
             print("{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{}) \n".format("test", loss, accuracy, corrects, size))
             if i not in average_accs:
@@ -89,26 +89,26 @@ def active_train(data, params):
 
                 lg.scalar_summary("test-loss", loss, len(train_features))
                 lg.scalar_summary("test-loss-avg", sum(average_losses[i]) / len(average_losses[i]), len(train_features))
-                
-                for each in set(train_targets): 
+
+                for each in set(train_targets):
                     val = train_targets.count(each)/len(train_targets)
                     if each in distribution:
                         distribution[each].append(val)
-                    else: 
+                    else:
                         distribution[each] = [val]
 
-                #count number of positive and negativ added to labeledpool.                                                 
+                #count number of positive and negativ added to labeledpool.
                 nameOfFile = '{}/distribution{}'.format(lg.log_dir, j)
-                utils.logAreaGraph(distribution, nameOfFile)                                    
+                utils.logAreaGraph(distribution, nameOfFile)
                 log_model(model, lg)
-                
+
     best_model = {}
     return best_model
 
 
 def train(model, params, train_features, train_targets, data):
     print("Labeled pool size: {}".format(len(train_features)))
-  
+
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     if params["MODEL"] == "rnn":
         optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"], weight_decay=params["WEIGHT_DECAY"])
@@ -200,8 +200,10 @@ def train(model, params, train_features, train_targets, data):
 
 
 def init_logger(params, average):
+    basename = "./logs" if params["EMBEDDING"] == "static" else "./logs_random"
     if params["MODEL"] == "cnn":
-        lg = logger.Logger('./logs/cnn/{},minibatch={},batch_size={},date={},FILTERS={},FILTER_NUM={},MODEL={},DROPOUT_EMBED={}, DROPOUT_MODEL={},SCORE_FN={},AVERAGE={}'.format(
+        lg = logger.Logger('{}/cnn/{},minibatch={},batch_size={},date={},FILTERS={},FILTER_NUM={},MODEL={},DROPOUT_EMBED={}, DROPOUT_MODEL={},SCORE_FN={},AVERAGE={}'.format(
+            basename,
             str(params["DATASET"]),
             str(params["MINIBATCH"]),
             str(params["BATCH_SIZE"]),
@@ -216,7 +218,8 @@ def init_logger(params, average):
         ))
 
     if (params["MODEL"] == "rnn"):
-        lg = logger.Logger('./logs/rnn/{},minibatch={},batch_size={},date={},MODEL={},DROPOUT_EMBED={}, DROPOUT_MODEL={},SCORE_FN={},HLAYERS={},HNODES={},AVERAGE={},LEARNING_RATE={},WEIGHT_DECAY={}'.format(
+        lg = logger.Logger('{}/rnn/{},minibatch={},batch_size={},date={},MODEL={},DROPOUT_EMBED={}, DROPOUT_MODEL={},SCORE_FN={},HLAYERS={},HNODES={},AVERAGE={},LEARNING_RATE={},WEIGHT_DECAY={}'.format(
+            basename,
             str(params["DATASET"]),
             str(params["MINIBATCH"]),
             str(params["BATCH_SIZE"]),

@@ -155,13 +155,16 @@ def select_entropy(model, data, params, lg, iteration):
     batch_feature = []
     batch_target = []
 
+    print("Selected sentences: ")
+    for index in best_n_indexes:
+        print("{} - {:.4f} - {}".format(" ".join(data["train_x"][index]), sample_scores[index], data["train_y"][index]))
+
     for index in sorted(best_n_indexes, reverse=True):
         batch_feature.append([data["word_to_idx"][w] for w in data["train_x"][index]] +
                              [params["VOCAB_SIZE"] + 1 for i in range(params["MAX_SENT_LEN"] - len(data["train_x"][index]))])
         batch_target.append(data["classes"].index(data["train_y"][index]))
         del data["train_x"][index]
         del data["train_y"][index]
-
 
     avg_all_score = sum(sample_scores) / len(sample_scores)
     avg_best_score = sum(best_n_scores) / len(best_n_scores)
