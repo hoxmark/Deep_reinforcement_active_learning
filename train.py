@@ -50,14 +50,10 @@ def active_train(data, params):
         train_features = []
         train_targets = []
         distribution = {}
-<<<<<<< HEAD
         print(data["classes"])
         for key in range(len(data["classes"])):
             distribution[key] = []
         
-=======
-
->>>>>>> c4dcb575c302b13873954dea80ff9f4857a5fcc6
         data["train_x"], data["train_y"] = shuffle(data["train_x"], data["train_y"])
 
         n_rounds = int(500 / params["BATCH_SIZE"])
@@ -95,7 +91,6 @@ def active_train(data, params):
                 lg.scalar_summary("test-acc-avg", sum(average_accs[i]) / len(average_accs[i]), len(train_features))
 
                 lg.scalar_summary("test-loss", loss, len(train_features))
-<<<<<<< HEAD
                 lg.scalar_summary("test-loss-avg", sum(average_losses[i]) / len(average_losses[i]), len(train_features))                                                    
 
                 
@@ -103,24 +98,10 @@ def active_train(data, params):
                 for each in range(len(data["classes"])):
                     val = train_targets.count(each)/len(train_targets)
                     distribution[each].append(val)
-=======
-                lg.scalar_summary("test-loss-avg", sum(average_losses[i]) / len(average_losses[i]), len(train_features))
-
-                for each in set(train_targets):
-                    val = train_targets.count(each)/len(train_targets)
-                    if each in distribution:
-                        distribution[each].append(val)
-                    else:
-                        distribution[each] = [val]
->>>>>>> c4dcb575c302b13873954dea80ff9f4857a5fcc6
 
                 #count number of positive and negativ added to labeledpool.
                 nameOfFile = '{}/distribution{}'.format(lg.log_dir, j)
-<<<<<<< HEAD
                 utils.logAreaGraph(distribution, data["classes"], nameOfFile)                                    
-=======
-                utils.logAreaGraph(distribution, nameOfFile)
->>>>>>> c4dcb575c302b13873954dea80ff9f4857a5fcc6
                 log_model(model, lg)
 
     best_model = {}
