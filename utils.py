@@ -2,6 +2,9 @@ from sklearn.utils import shuffle
 
 import pickle
 
+import plotly.graph_objs as go
+import plotly
+from plotly.graph_objs import Scatter, Layout
 
 def read_TREC():
     data = {}
@@ -77,3 +80,14 @@ def load_model(params):
     except:
         print("No available model such as {}.".format(path))
         exit()
+
+def logAreaGraph(distribution, name):
+    data = []
+    for key, value in distribution.items(): 
+        xValues = range(0,len(value))
+        data.append(go.Scatter(
+            x=list(range(0,len(value))),
+            y=value, 
+            fill='tozeroy'
+        ))
+    plotly.offline.plot(data, filename=name)
