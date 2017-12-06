@@ -52,6 +52,7 @@ class CNN(nn.Module):
 
         self.fc = nn.Linear(sum(self.FILTER_NUM), self.CLASS_SIZE)
         self.softmax = nn.Softmax()
+        self.dropout_embed = nn.Dropout(self.DROPOUT_EMBED_PROB)
         self.dropout = nn.Dropout(self.DROPOUT_MODEL_PROB)
 
         if self.params["CUDA"]:
@@ -60,6 +61,7 @@ class CNN(nn.Module):
     def forward(self, inp):
         # inp = (25 x 59) - (mini_batch_size x sentence_length)
         x = self.embed(inp).view(-1, 1, self.WORD_DIM * self.MAX_SENT_LEN)
+        x = self.dropout_embed(x)
         # x = (25 x 1 x 17700) - mini_batch_size x embedding_for_each_sentence
 
         conv_results = [
