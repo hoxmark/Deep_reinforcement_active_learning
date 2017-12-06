@@ -109,11 +109,13 @@ def load_model(params):
         print("No available model such as {}.".format(path))
         exit()
 
-def logAreaGraph(distribution, name):
+def logAreaGraph(distribution, classes, name):
     data = []
+    print(distribution)
     for key, value in distribution.items(): 
         xValues = range(0,len(value))
         data.append(go.Scatter(
+            name=classes[key],
             x=list(range(0,len(value))),
             y=value, 
             fill='tozeroy'
