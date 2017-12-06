@@ -10,14 +10,19 @@ def read_TREC():
     data = {}
 
     def read(mode):
-        x, y = [], []
-
+        z = []
         with open("data/TREC/TREC_" + mode + ".txt", "r", encoding="utf-8") as f:
             for line in f:
                 if line[-1] == "\n":
                     line = line[:-1]
-                y.append(line.split()[0].split(":")[0])
-                x.append(line.split()[1:])
+                feature = " ".join(line.split()[1:])
+                target = line.split()[0].split(":")[0]
+                z.append((feature, target))
+
+        # Remove duplicates
+        z = list(set(z))
+        x = [tup[0].split() for tup in z]
+        y = [tup[1] for tup in z]
 
         x, y = shuffle(x, y)
 
@@ -111,13 +116,12 @@ def load_model(params):
 
 def logAreaGraph(distribution, classes, name):
     data = []
-    print(distribution)
     for key, value in distribution.items(): 
         xValues = range(0,len(value))
         data.append(go.Scatter(
             name=classes[key],
             x=list(range(0,len(value))),
-            y=value, 
+            y=value,
             fill='tozeroy'
         ))
     plotly.offline.plot(data, filename=name)
