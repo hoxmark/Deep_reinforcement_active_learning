@@ -147,17 +147,17 @@ def select_entropy(model, data, params, lg, iteration):
             100 * (completed / (len(data["train_x"]) // params["BATCH_SIZE"] + 1))), end="\r")
 
     best_n_indexes = [n[0] for n in heapq.nlargest(
-        params["BATCH_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
+        params["SELECTION_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
 
     best_n_scores = [n[1] for n in heapq.nlargest(
-        params["BATCH_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
+        params["SELECTION_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
 
     batch_feature = []
     batch_target = []
 
-    print("Selected sentences: ")
-    for index in best_n_indexes:
-        print("{} - {:.4f} - {}".format(" ".join(data["train_x"][index]), sample_scores[index], data["train_y"][index]))
+    # print("Selected sentences: ")
+    # for index in best_n_indexes:
+    #     print("{} - {:.4f} - {}".format(" ".join(data["train_x"][index]), sample_scores[index], data["train_y"][index]))
 
     for index in sorted(best_n_indexes, reverse=True):
         batch_feature.append([data["word_to_idx"][w] for w in data["train_x"][index]] +

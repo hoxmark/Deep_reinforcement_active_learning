@@ -50,14 +50,18 @@ def active_train(data, params):
         train_features = []
         train_targets = []
         distribution = {}
-        print(data["classes"])
+
         for key in range(len(data["classes"])):
             distribution[key] = []
         
         data["train_x"], data["train_y"] = shuffle(data["train_x"], data["train_y"])
 
-        n_rounds = int(500 / params["BATCH_SIZE"])
-        for i in range(n_rounds):
+        n_rounds = int(500 / params["SELECTION_SIZE"])
+        # n_rest_rounds = 500-(n_rounds*params["SELECTION_SIZE"])
+        for i in range(n_rounds+1):
+            if (n_rounds==i):
+                params["SELECTION_SIZE"] = 500%params["SELECTION_SIZE"]
+            
             if params["SCORE_FN"] == "all":
                 t1, t2 = select_all(model, data, params, lg, i)
             elif params["SCORE_FN"] == "entropy":

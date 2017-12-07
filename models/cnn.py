@@ -12,6 +12,7 @@ class CNN(nn.Module):
         self.params = params
 
         self.BATCH_SIZE = params["BATCH_SIZE"]
+        self.SELECTION_SIZE = params["SELECTION_SIZE"]
         self.MAX_SENT_LEN = params["MAX_SENT_LEN"]
         self.WORD_DIM = params["WORD_DIM"]
         self.VOCAB_SIZE = params["VOCAB_SIZE"]

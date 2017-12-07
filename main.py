@@ -19,6 +19,8 @@ def main():
                         help="available datasets: MR, TREC")
     parser.add_argument('--batch-size', type=int, default=25,
                         help='batch size for training [default: 25]')
+    parser.add_argument('--selection-size', type=int, default=25,
+                        help='selection size for selection function [default: 25]')
     parser.add_argument("--save_model", default="F",
                         help="whether saving model or not (T/F)")
     parser.add_argument("--early_stopping", default="F",
@@ -69,6 +71,7 @@ def main():
         "LEARNING_RATE": options.learning_rate,
         "MAX_SENT_LEN": max([len(sent) for sent in data["train_x"]
                              + data["dev_x"] + data["test_x"]]),
+        "SELECTION_SIZE": options.selection_size,
         "BATCH_SIZE": options.batch_size,
         "WORD_DIM": 300,
         "VOCAB_SIZE": len(data["vocab"]),
