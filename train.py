@@ -22,6 +22,7 @@ def to_np(x):
 
 def active_train(data, params):
     init_learning_rate = params["LEARNING_RATE"]
+    init_selection_size = params["SELECTION_SIZE"]
     average_accs = {}
     average_losses = {}
 
@@ -37,6 +38,8 @@ def active_train(data, params):
 
     for j in range(params["N_AVERAGE"]):
         params["LEARNING_RATE"] = init_learning_rate
+        params["SELECTION_SIZE"] = init_selection_size
+        
         lg = None
         if params["LOG"]:
             lg = init_logger(params, j)
@@ -56,6 +59,9 @@ def active_train(data, params):
         
         data["train_x"], data["train_y"] = shuffle(data["train_x"], data["train_y"])
 
+        # print(params["SELECTION_SIZE"])
+        # print(n_rounds)
+        # originalSelectionSize = params["SELECTION_SIZE"]
         n_rounds = int(500 / params["SELECTION_SIZE"])
         # n_rest_rounds = 500-(n_rounds*params["SELECTION_SIZE"])
         for i in range(n_rounds+1):
@@ -107,6 +113,7 @@ def active_train(data, params):
                 nameOfFile = '{}/distribution{}'.format(lg.log_dir, j)
                 utils.logAreaGraph(distribution, data["classes"], nameOfFile)                                    
                 log_model(model, lg)
+        params["SELECTION_SIZE"] = init_selection_size
 
     best_model = {}
     return best_model
