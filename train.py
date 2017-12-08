@@ -39,7 +39,7 @@ def active_train(data, params):
     for j in range(params["N_AVERAGE"]):
         params["LEARNING_RATE"] = init_learning_rate
         params["SELECTION_SIZE"] = init_selection_size
-        
+
         lg = None
         if params["LOG"]:
             lg = init_logger(params, j)
@@ -56,18 +56,20 @@ def active_train(data, params):
 
         for key in range(len(data["classes"])):
             distribution[key] = []
-        
+
         data["train_x"], data["train_y"] = shuffle(data["train_x"], data["train_y"])
 
-        # print(params["SELECTION_SIZE"])
-        # print(n_rounds)
-        # originalSelectionSize = params["SELECTION_SIZE"]
-        n_rounds = int(500 / params["SELECTION_SIZE"])
-        # n_rest_rounds = 500-(n_rounds*params["SELECTION_SIZE"])
-        for i in range(n_rounds+1):
-            if (n_rounds==i):
-                params["SELECTION_SIZE"] = 500%params["SELECTION_SIZE"]
-            
+        if 500 % params["SELECTION_SIZE"] == 0:
+            n_rounds = int(500 / params["SELECTION_SIZE"])
+            last_selection_size = params["SELECTION_SIZE"]
+        else:
+            n_rounds = int(500 / params["SELECTION_SIZE"]) + 1
+            last_selection_size = 500 % params["SELECTION_SIZE"]
+
+        for i in range(n_rounds):
+            if (n_rounds - 1 == i):
+                params["SELECTION_SIZE"] = last_selection_size
+
             if params["SCORE_FN"] == "all":
                 t1, t2 = select_all(model, data, params, lg, i)
             elif params["SCORE_FN"] == "entropy":
@@ -101,9 +103,7 @@ def active_train(data, params):
                 lg.scalar_summary("test-acc-avg", sum(average_accs[i]) / len(average_accs[i]), len(train_features))
 
                 lg.scalar_summary("test-loss", loss, len(train_features))
-                lg.scalar_summary("test-loss-avg", sum(average_losses[i]) / len(average_losses[i]), len(train_features))                                                    
-
-                
+                lg.scalar_summary("test-loss-avg", sum(average_losses[i]) / len(average_losses[i]), len(train_features))
 
                 for each in range(len(data["classes"])):
                     val = train_targets.count(each)/len(train_targets)
@@ -111,9 +111,8 @@ def active_train(data, params):
 
                 #count number of positive and negativ added to labeledpool.
                 nameOfFile = '{}/distribution{}'.format(lg.log_dir, j)
-                utils.logAreaGraph(distribution, data["classes"], nameOfFile)                                    
+                utils.logAreaGraph(distribution, data["classes"], nameOfFile)
                 log_model(model, lg)
-        params["SELECTION_SIZE"] = init_selection_size
 
     best_model = {}
     return best_model
