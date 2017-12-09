@@ -214,11 +214,11 @@ def train(model, params, train_features, train_targets, data):
 def init_logger(params, average):
     basename = "./logs" if params["EMBEDDING"] == "static" else "./logs_random"
     if params["MODEL"] == "cnn":
-        lg = logger.Logger('{}/cnn/{},minibatch={},batch_size={},date={},FILTERS={},FILTER_NUM={},MODEL={},DROPOUT_EMBED={}, DROPOUT_MODEL={},SCORE_FN={},AVERAGE={}'.format(
+        lg = logger.Logger('{}/cnn/{},minibatch={},selection_size={},date={},FILTERS={},FILTER_NUM={},MODEL={},DROPOUT_EMBED={}, DROPOUT_MODEL={},SCORE_FN={},AVERAGE={}'.format(
             basename,
             str(params["DATASET"]),
             str(params["MINIBATCH"]),
-            str(params["BATCH_SIZE"]),
+            str(params["SELECTION_SIZE"]),
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
             str(params["FILTERS"]),
             str(params["FILTER_NUM"]),
@@ -230,11 +230,11 @@ def init_logger(params, average):
         ))
 
     if (params["MODEL"] == "rnn"):
-        lg = logger.Logger('{}/rnn/{},minibatch={},batch_size={},date={},MODEL={},DROPOUT_EMBED={}, DROPOUT_MODEL={},SCORE_FN={},HLAYERS={},HNODES={},AVERAGE={},LEARNING_RATE={},WEIGHT_DECAY={}'.format(
+        lg = logger.Logger('{}/rnn/{},minibatch={},selection_size={},date={},MODEL={},DROPOUT_EMBED={}, DROPOUT_MODEL={},SCORE_FN={},HLAYERS={},HNODES={},AVERAGE={},LEARNING_RATE={},WEIGHT_DECAY={}'.format(
             basename,
             str(params["DATASET"]),
             str(params["MINIBATCH"]),
-            str(params["BATCH_SIZE"]),
+            str(params["SELECTION_SIZE"]),
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
             str(params["MODEL"]),
             str(params["DROPOUT_EMBED"]),

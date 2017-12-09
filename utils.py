@@ -67,6 +67,34 @@ def read_MR():
 
     return data
 
+def read_rotten_imdb():
+    data = {}
+    x, y = [], []
+
+    with open("data/rotten_imdb/rt-polarity.pos", "r", encoding="ISO-8859-1") as f:
+        for line in f:
+            if line[-1] == "\n":
+                line = line[:-1]
+            x.append(line.split())
+            y.append(1)
+
+    with open("data/rotten_imdb/rt-polarity.neg", "r", encoding="ISO-8859-1") as f:
+        for line in f:
+            if line[-1] == "\n":
+                line = line[:-1]
+            x.append(line.split())
+            y.append(0)
+
+    x, y = shuffle(x, y)
+    dev_idx = len(x) // 10 * 8
+    test_idx = len(x) // 10 * 9
+
+    data["train_x"], data["train_y"] = x[:dev_idx], y[:dev_idx]
+    data["dev_x"], data["dev_y"] = x[dev_idx:test_idx], y[dev_idx:test_idx]
+    data["test_x"], data["test_y"] = x[test_idx:], y[test_idx:]
+
+    return data
+
 def read_UMICH():
     data = {}
     x, y = [], []
