@@ -1,37 +1,30 @@
 
-# Convolutional Neural Networks for Sentence Classification
+# Active Deep Learning for Sentence Classification using CNN and RNN in pytorch
 
-This is the implementation of [Convolutional Neural Networks for Sentence Classification (Y.Kim, EMNLP 2014)](http://www.aclweb.org/anthology/D14-1181) on **Pytorch**.
+This is the implementation of "Active Discriminative Text Representation Learning" (http://www.aaai.org/ocs/index.php/AAAI/AAAI17/paper/download/14174/14265) with modification. it is implmented using **Pytorch**.
 
 
 ## Results
 
-Below are results corresponding to all 4 models proposed in the paper for each dataset.
-Experiments have been done with a learning rate = 0.1 up to 300 epochs and all details are tuned to follow the settings defined in the paper. 
+Below are results corresponding to RNN and CNN using out 3 different selection scores, random, entropy and EGL. We are using a dataset with 500 samples.
 
 (Measure: Accuracy)
 
-| Model        | Dataset  | MR   | TREC |
-|--------------|:----------:|:------:|:----:|
-| Rand         | Results  | 70.0 | 87.8 |
-|              | Baseline | 76.1 | 91.2 |
-| Static       | Results  | **82.4** | **93.8** |
-|              | Baseline | 81.0 | 92.8 |
-| Non-static   | Results  | 81.4 | **93.6** |
-|              | Baseline | 81.5 | 93.6 |
-| Multichannel | Results  | **81.6** | **92.6** |
-|              | Baseline | 81.1 | 92.2 |
+| Model        | Selection score    | MR        | TREC |
+|--------------|:------------------:|:---------:|:----:|
+| CNN          | Random             | 73.29     |       | 
+|              | Entropy            | 74.57     |       |
+|              | EGL                | **76.80** |    31.82   |
+| RNN          | Random             | 72.60     |       |
+|              | Entropy            | 75.87     |       |
+|              | EGL                | **77.77** |   28.86    |
 
 
-## Specification
-- **model.py**: CNN sentnece classifier implementation proposed by Y. Kim.
-- **run.py**: train and test a model with configs. 
- 
 
 ## Development Environment
-- OS: Ubuntu 16.04 LTS (64bit)
-- Language: Python 3.6.2.
-- GPU: GTX 1080
+- OS: Ubuntu Ubuntu 16.04.2 LTS (64bit)
+- Language: Python 3.5.2
+- GPU: 2xTesla P100
 
 
 ## Requirements
@@ -41,27 +34,87 @@ You should download this file and place it in the root folder.
 
 Also you should follow library requirements specified in the **requirements.txt**.
 
-    numpy==1.12.1
+    backports.shutil-get-terminal-size==1.0.0
+    bleach==1.5.0
+    boto==2.48.0
+    bz2file==0.98
+    certifi==2017.7.27.1
+    chardet==3.0.4
+    decorator==4.1.2
     gensim==2.3.0
-    scikit_learn==0.19.0
+    html5lib==0.9999999
+    idna==2.6
+    ipython-genutils==0.2.0
+    jsonschema==2.6.0
+    jupyter-core==4.4.0
+    Markdown==2.6.9
+    nbformat==4.4.0
+    numpy==1.13.3
+    pkg-resources==0.0.0
+    plotly==2.2.2
+    protobuf==3.4.0
+    pytz==2017.3
+    PyYAML==3.12
+    reprint==0.5.0.1
+    requests==2.18.4
+    scikit-learn==0.19.0
+    scipy==0.19.1
+    six==1.11.0
+    smart-open==1.5.3
+    tensorboardX==0.8
+    tensorflow==1.3.0
+    tensorflow-tensorboard==0.1.7
+    torch==0.2.0.post3
+    traitlets==4.3.2
+    urllib3==1.22
+    Werkzeug==0.12.2
 
 
 ## Execution
 
-> python run.py 
+> usage: main.py [-h] [--mode MODE] [--model MODEL] [--embedding EMBEDDING]
+               [--dataset DATASET] [--batch-size BATCH_SIZE]
+               [--selection-size SELECTION_SIZE] [--save_model SAVE_MODEL]
+               [--early_stopping EARLY_STOPPING] [--epoch EPOCH]
+               [--learning_rate LEARNING_RATE] [--dropout_embed DROPOUT_EMBED]
+               [--dropout_model DROPOUT_MODEL] [--device DEVICE] [--no-cuda]
+               [--scorefn SCOREFN] [--average AVERAGE] [--hnodes HNODES]
+               [--hlayers HLAYERS] [--weight_decay WEIGHT_DECAY] [--no-log]
+               [--minibatch]
 
-    usage: run.py [-h] [--mode MODE] [--model MODEL] [--dataset DATASET]
-              [--save_model SAVE_MODEL] [--early_stopping EARLY_STOPPING]
-              [--epoch EPOCH] [--learning_rate LEARNING_RATE]
+-----[CNN-classifier]-----
 
-    -----[CNN-classifier]-----
-
-    optional arguments:
-      -h, --help                        show this help message and exit
-      --mode MODE                       train: train (with test) a model / test: test saved models
-      --model MODEL                     available models: rand, static, non-static, multichannel
-      --dataset DATASET                 available datasets: MR, TREC
-      --save_model SAVE_MODEL           whether saving model or not (T/F)
-      --early_stopping EARLY_STOPPING   whether to apply early stopping(T/F)
-      --epoch EPOCH                     number of max epoch
-      --learning_rate LEARNING_RATE     learning rate
+optional arguments:
+  -h, --help            show this help message and exit
+  --mode MODE           train: train (with test) a model / test: test saved
+                        models
+  --model MODEL         Type of model to use. Default: CNN. Available models:
+                        CNN, RNN
+  --embedding EMBEDDING
+                        available embedings: random, static
+  --dataset DATASET     available datasets: MR, TREC
+  --batch-size BATCH_SIZE
+                        batch size for training [default: 25]
+  --selection-size SELECTION_SIZE
+                        selection size for selection function [default: 25]
+  --save_model SAVE_MODEL
+                        whether saving model or not (T/F)
+  --early_stopping EARLY_STOPPING
+                        whether to apply early stopping(T/F)
+  --epoch EPOCH         number of max epoch
+  --learning_rate LEARNING_RATE
+                        learning rate
+  --dropout_embed DROPOUT_EMBED
+                        Dropout embed probability. Default: 0.2
+  --dropout_model DROPOUT_MODEL
+                        Dropout model probability. Default: 0.4
+  --device DEVICE       Cuda device to run on
+  --no-cuda             disable the gpu
+  --scorefn SCOREFN     available scoring functions: entropy, random, egl
+  --average AVERAGE     Number of runs to average [default: 1]
+  --hnodes HNODES       Number of nodes in the hidden layer(s)
+  --hlayers HLAYERS     Number of hidden layers
+  --weight_decay WEIGHT_DECAY
+                        Value of weight_decay
+  --no-log              Disable logging
+  --minibatch           Use minibatch training
