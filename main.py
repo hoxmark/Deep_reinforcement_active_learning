@@ -50,7 +50,7 @@ def main():
     parser.add_argument('--no-log', action='store_true',
                         default=False, help='Disable logging')
     parser.add_argument('--minibatch', action='store_true',
-                        default=False, help='Use  minibatch training')
+                        default=True, help='Use  minibatch training')
 
     options = parser.parse_args()
     data = getattr(utils, "read_{}".format(options.dataset))()
