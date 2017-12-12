@@ -38,13 +38,13 @@ Below are results corresponding to RNN and CNN using out 3 different selection s
 
 ```sh
 $ wget -c "https://s3.amazonaws.com/dl4j-distribution/GoogleNews-vectors-negative300.bin.gz"
+$ gunzip GoogleNews-vectors-negative300.bin.gz
 ```
 
 3.  Install pytorch, we are running python 3.5.2 and cuda so we used the following command: 
 
 ```sh
 $ pip3 install http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl 
-$ pip3 install torchvision 
 ```
 
   if you are using a different version, we do not know if it will work as intended, head over to http://pytorch.org to download it. 
@@ -57,18 +57,42 @@ $ pip3 install -r /path/to/requirements.txt
 
 ## Execution
 
-> usage: main.py [-h] [--mode MODE] [--model MODEL] [--embedding EMBEDDING]
-               [--dataset DATASET] [--batch-size BATCH_SIZE]
-               [--selection-size SELECTION_SIZE] [--save_model SAVE_MODEL]
-               [--early_stopping EARLY_STOPPING] [--epoch EPOCH]
-               [--learning_rate LEARNING_RATE] [--dropout_embed DROPOUT_EMBED]
-               [--dropout_model DROPOUT_MODEL] [--device DEVICE] [--no-cuda]
-               [--scorefn SCOREFN] [--average AVERAGE] [--hnodes HNODES]
-               [--hlayers HLAYERS] [--weight_decay WEIGHT_DECAY] [--no-log]
-               [--minibatch]
+Example: 
+```sh
+$ python  main.py  --embedding static --scorefn entropy --model cnn --average 10 
+```
 
+The help commpand if you want to run it with different hyperparamters. 
 
-> optional arguments:
+```sh
+$ python  main.py  --help 
+
+usage: main.py
+  [-h] 
+  [--mode MODE] 
+  [--model MODEL] 
+  [--embedding EMBEDDING]
+  [--dataset DATASET] 
+  [--batch-size BATCH_SIZE]
+  [--selection-size SELECTION_SIZE] 
+  [--save_model SAVE_MODEL]
+  [--early_stopping EARLY_STOPPING] 
+  [--epoch EPOCH]
+  [--learning_rate LEARNING_RATE] 
+  [--dropout_embed DROPOUT_EMBED]
+  [--dropout_model DROPOUT_MODEL] 
+  [--device DEVICE] 
+  [--no-cuda]
+  [--scorefn SCOREFN] 
+  [--average AVERAGE] 
+  [--hnodes HNODES]
+  [--hlayers HLAYERS] 
+  [--weight_decay WEIGHT_DECAY] 
+  [--no-log]
+  [--minibatch]
+
+...
+optional arguments:
   -h, --help            show this help message and exit
   --mode MODE           train: train (with test) a model / test: test saved
                         models
@@ -102,3 +126,7 @@ $ pip3 install -r /path/to/requirements.txt
                         Value of weight_decay
   --no-log              Disable logging
   --minibatch           Use minibatch training, default true
+  ...
+
+```
+
