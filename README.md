@@ -52,7 +52,7 @@ $ pip3 install torchvision
 4. I nstall all the rquired python dependecies using pip3. 
 
 ```sh
-$ pip3 install  
+$ pip3 install -r /path/to/requirements.txt
 ```
 
 ## Execution
