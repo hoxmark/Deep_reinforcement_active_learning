@@ -3,6 +3,8 @@
 
 This is the implementation of "Active Discriminative Text Representation Learning" (http://www.aaai.org/ocs/index.php/AAAI/AAAI17/paper/download/14174/14265) with modification. it is implmented using **Pytorch**.
 
+This model is based on pre-trained Word2vec([GoogleNews-vectors-negative300.bin](https://drive.google.com/uc?id=0B7XkCwpI5KDYNlNUTTlSS21pQmM&export=download)) by T.Mikolov et al.
+
 
 ## Results
 
@@ -10,14 +12,14 @@ Below are results corresponding to RNN and CNN using out 3 different selection s
 
 (Measure: Accuracy)
 
-| Model        | Selection score    | MR        | TREC |
-|--------------|:------------------:|:---------:|:----:|
-| CNN          | Random             | 73.29     |       | 
-|              | Entropy            | 74.57     |       |
-|              | EGL                | **76.80** |    31.82   |
-| RNN          | Random             | 72.60     |       |
-|              | Entropy            | 75.87     |       |
-|              | EGL                | **77.77** |   28.86    |
+| Model        | Selection score    | MR        | TREC  |
+|--------------|:------------------:|:---------:|:-----:|
+| CNN          | Random             | 73.29     |82.05  | 
+|              | Entropy            | 74.57     |82.82  |
+|              | EGL                | **76.80** |79.30  |
+| RNN          | Random             | 72.60     |78.07  |
+|              | Entropy            | 75.87     |75.65  |
+|              | EGL                | **77.77** |74.0   |
 
 
 
@@ -27,48 +29,31 @@ Below are results corresponding to RNN and CNN using out 3 different selection s
 - GPU: 2xTesla P100
 
 
-## Requirements
 
-This model is based on pre-trained Word2vec([GoogleNews-vectors-negative300.bin](https://drive.google.com/uc?id=0B7XkCwpI5KDYNlNUTTlSS21pQmM&export=download)) by T.Mikolov et al.
-You should download this file and place it in the root folder.
+## Installing and running the project 
 
-Also you should follow library requirements specified in the **requirements.txt**.
+1. Clone this github repo to you machine. 
 
-    backports.shutil-get-terminal-size==1.0.0
-    bleach==1.5.0
-    boto==2.48.0
-    bz2file==0.98
-    certifi==2017.7.27.1
-    chardet==3.0.4
-    decorator==4.1.2
-    gensim==2.3.0
-    html5lib==0.9999999
-    idna==2.6
-    ipython-genutils==0.2.0
-    jsonschema==2.6.0
-    jupyter-core==4.4.0
-    Markdown==2.6.9
-    nbformat==4.4.0
-    numpy==1.13.3
-    pkg-resources==0.0.0
-    plotly==2.2.2
-    protobuf==3.4.0
-    pytz==2017.3
-    PyYAML==3.12
-    reprint==0.5.0.1
-    requests==2.18.4
-    scikit-learn==0.19.0
-    scipy==0.19.1
-    six==1.11.0
-    smart-open==1.5.3
-    tensorboardX==0.8
-    tensorflow==1.3.0
-    tensorflow-tensorboard==0.1.7
-    torch==0.2.0.post3
-    traitlets==4.3.2
-    urllib3==1.22
-    Werkzeug==0.12.2
+2.  Download [GoogleNews-vectors-negative300.bin] and place it in the root folder.
 
+```sh
+$ wget -c "https://s3.amazonaws.com/dl4j-distribution/GoogleNews-vectors-negative300.bin.gz"
+```
+
+3.  Install pytorch, we are running python 3.5.2 and cuda so we used the following command: 
+
+```sh
+$ pip3 install http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl 
+$ pip3 install torchvision 
+```
+
+  if you are using a different version, we do not know if it will work as intended, head over to http://pytorch.org to download it. 
+
+4. I nstall all the rquired python dependecies using pip3. 
+
+```sh
+$ pip3 install  
+```
 
 ## Execution
 
@@ -82,9 +67,8 @@ Also you should follow library requirements specified in the **requirements.txt*
                [--hlayers HLAYERS] [--weight_decay WEIGHT_DECAY] [--no-log]
                [--minibatch]
 
------[CNN-classifier]-----
 
-optional arguments:
+> optional arguments:
   -h, --help            show this help message and exit
   --mode MODE           train: train (with test) a model / test: test saved
                         models
@@ -117,4 +101,4 @@ optional arguments:
   --weight_decay WEIGHT_DECAY
                         Value of weight_decay
   --no-log              Disable logging
-  --minibatch           Use minibatch training
+  --minibatch           Use minibatch training, default true
