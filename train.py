@@ -110,7 +110,7 @@ def active_train(data, params):
                     distribution[each].append(val)
 
                 #count number of positive and negativ added to labeledpool.
-                nameOfFile = '{}/distribution{}'.format(lg.log_dir, j)
+                nameOfFile = '{}/distribution{}.html'.format(lg.log_dir, j)
                 utils.logAreaGraph(distribution, data["classes"], nameOfFile)
                 log_model(model, lg)
 
