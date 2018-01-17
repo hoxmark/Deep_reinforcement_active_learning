@@ -1,7 +1,10 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torch.optim as optim
+from torch.autograd import Variable
 import numpy as np
+from sklearn.utils import shuffle
 
 from gensim.models.keyedvectors import KeyedVectors
 
@@ -10,9 +13,10 @@ class CNN(nn.Module):
     def __init__(self, data, params):
         super(CNN, self).__init__()
         self.params = params
+        self.data = data
 
         self.BATCH_SIZE = params["BATCH_SIZE"]
-        self.SELECTION_SIZE = params["SELECTION_SIZE"]
+        # self.SELECTION_SIZE = params["SELECTION_SIZE"]
         self.MAX_SENT_LEN = params["MAX_SENT_LEN"]
         self.WORD_DIM = params["WORD_DIM"]
         self.VOCAB_SIZE = params["VOCAB_SIZE"]
@@ -31,7 +35,7 @@ class CNN(nn.Module):
         assert (len(self.FILTERS) == len(self.FILTER_NUM))
 
         if self.EMBEDDING != "random":
-            self.wv_matrix = self.load_word2vec()
+            self.wv_matrix = data["w2v"]
 
         self.init_model()
 
@@ -79,13 +83,13 @@ class CNN(nn.Module):
 
         return x
 
-    def train(self, train_features, train_targets):
-        parameters = filter(lambda p: p.requires_grad, model.parameters())
+    def train_model(self, train_features, train_targets):
+        parameters = filter(lambda p: p.requires_grad, self.parameters())
         optimizer = optim.Adam(parameters, self.params["LEARNING_RATE"])
 
         # Softmax is included in CrossEntropyLoss
         criterion = nn.CrossEntropyLoss()
-        model.train()
+        self.train()
 
         best_model = None
         best_acc = 0
@@ -97,42 +101,37 @@ class CNN(nn.Module):
             avg_loss = 0
             corrects = 0
 
-            if self.params["MINIBATCH"]:
-                for i in range(0, len(train_features), self.params["BATCH_SIZE"]):
-                    batch_range = min(self.params["BATCH_SIZE"], len(train_features) - i)
-                    batch_x = train_features[i:i + batch_range]
-                    batch_y = train_targets[i:i + batch_range]
 
-                    feature = Variable(torch.LongTensor(batch_x))
-                    target = Variable(torch.LongTensor(batch_y))
+            for i in range(0, len(train_features), self.params["BATCH_SIZE"]):
+                batch_range = min(self.params["BATCH_SIZE"], len(train_features) - i)
+                batch_x = train_features[i:i + batch_range]
+                batch_y = train_targets[i:i + batch_range]
 
-                    if self.params["CUDA"]:
-                        feature, target = feature.cuda(self.params["DEVICE"]), target.cuda(params["DEVICE"])
+                feature = Variable(torch.LongTensor(batch_x))
+                target = Variable(torch.LongTensor(batch_y))
 
-                    optimizer.zero_grad()
-                    pred = self(feature)
-                    loss = criterion(pred, target)
-                    loss.backward()
-                    optimizer.step()
-                    avg_loss += loss.data[0]
-                    corrects += (torch.max(pred, 1)[1].view(target.size()).data == target.data).sum()
-                # avg_loss = avg_loss * params["BATCH_SIZE"] / size
+                if self.params["CUDA"]:
+                    feature, target = feature.cuda(), target.cuda()
+
+                optimizer.zero_grad()
+                pred = self(feature)
+                loss = criterion(pred, target)
+                loss.backward()
+                optimizer.step()
+            # print("{} of {}".format(e, self.params["EPOCH"]))
+
     def test(self, test_x, test_y):
-        model.eval()
+        self.eval()
 
         if self.params["CUDA"]:
-            model.cuda()
+            self.cuda()
 
         corrects, avg_loss = 0, 0
         for i in range(0, len(test_x), self.params["BATCH_SIZE"]):
             batch_range = min(self.params["BATCH_SIZE"], len(test_x) - i)
 
-            feature = [[data["word_to_idx"][w] for w in sent] +
-                       [self.params["VOCAB_SIZE"] + 1] *
-                       (self.params["MAX_SENT_LEN"] - len(sent))
-                       for sent in data["{}_x".format(mode)][i:i + batch_range]]
-            target = [data["classes"].index(c)
-                      for c in data["{}_y".format(mode)][i:i + batch_range]]
+            feature = test_x[i : i + batch_range]
+            target = test_y[i : i + batch_range]
 
             feature = Variable(torch.LongTensor(feature))
             target = Variable(torch.LongTensor(target))
@@ -142,34 +141,11 @@ class CNN(nn.Module):
 
             logit = self(feature)
             loss = torch.nn.functional.cross_entropy(logit, target, size_average=False)
-            avg_loss += loss.data[0]
+            # avg_loss += loss.data[0]
             corrects += (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
 
-        size = len(data["{}_x".format(mode)])
-        avg_loss = avg_loss / size
+        size = len(test_x)
+        # avg_loss = avg_loss / size
         accuracy = 100.0 * corrects / size
 
         return accuracy
-
-
-    """
-    load word2vec pre trained vectors
-    """
-    def load_word2vec(self):
-        print("loading word2vec...")
-        word_vectors = KeyedVectors.load_word2vec_format(
-            "GoogleNews-vectors-negative300.bin", binary=True)
-
-        wv_matrix = []
-        for word in self.data["vocab"]:
-            if word in word_vectors.vocab:
-                wv_matrix.append(word_vectors.word_vec(word))
-            else:
-                wv_matrix.append(
-                    np.random.uniform(-0.01, 0.01, 300).astype("float32"))
-
-        # one for UNK and one for zero padding
-        wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32"))
-        wv_matrix.append(np.zeros(300).astype("float32"))
-        wv_matrix = np.array(wv_matrix)
-        return wv_matrix

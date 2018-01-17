@@ -1,5 +1,5 @@
 import utils
-import logger
+
 import datetime
 import argparse
 import torch
@@ -13,7 +13,7 @@ def main():
                         help="train: train (with test) a model / test: test saved models")
     parser.add_argument("--model", default="cnn",
                         help="Type of model to use. Default: CNN. Available models: CNN, RNN")
-    parser.add_argument("--embedding", default="static",
+    parser.add_argument("--embedding", default="random",
                         help="available embedings: random, static")
     parser.add_argument("--dataset", default="MR",
                         help="available datasets: MR, TREC")
@@ -52,6 +52,9 @@ def main():
     data["word_to_idx"] = {w: i for i, w in enumerate(data["vocab"])}
 
     params = {
+        "EPOCH": 100,
+        "ACTIONS": 2,
+        "BUDGET": 100,
         "MODEL": options.model,
         "EMBEDDING": options.embedding,
         "DATASET": options.dataset,
@@ -61,6 +64,7 @@ def main():
         "MAX_SENT_LEN": max([len(sent) for sent in data["train_x"]
                              + data["dev_x"] + data["test_x"]]),
         "BATCH_SIZE": options.batch_size,
+        "NO_CUDA": False,
         "WORD_DIM": 300,
         "VOCAB_SIZE": len(data["vocab"]),
         "CLASS_SIZE": len(data["classes"]),
@@ -80,8 +84,8 @@ def main():
     params["CUDA"] = (not params["NO_CUDA"]) and torch.cuda.is_available()
     del params["NO_CUDA"]
 
-    if params["CUDA"]:
-        torch.cuda.set_device(params["DEVICE"])
+    # if params["CUDA"]:
+        # torch.cuda.set_device(params["DEVICE"])
 
     print("=" * 20 + "INFORMATION" + "=" * 20)
     for key, value in params.items():

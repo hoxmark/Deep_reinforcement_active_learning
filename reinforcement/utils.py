@@ -6,6 +6,9 @@ import plotly.graph_objs as go
 import plotly
 from plotly.graph_objs import Scatter, Layout
 
+from gensim.models.keyedvectors import KeyedVectors
+import numpy as np
+
 def read_TREC():
     data = {}
 
@@ -181,3 +184,25 @@ def logAreaGraph(distribution, classes, name):
             fill='tozeroy'
         ))
     plotly.offline.plot(data, filename=name)
+
+"""
+load word2vec pre trained vectors
+"""
+def load_word2vec(data):
+    print("loading word2vec...")
+    word_vectors = KeyedVectors.load_word2vec_format(
+        "../GoogleNews-vectors-negative300.bin", binary=True)
+
+    wv_matrix = []
+    for word in self.data["vocab"]:
+        if word in word_vectors.vocab:
+            wv_matrix.append(word_vectors.word_vec(word))
+        else:
+            wv_matrix.append(
+                np.random.uniform(-0.01, 0.01, 300).astype("float32"))
+
+    # one for UNK and one for zero padding
+    wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32"))
+    wv_matrix.append(np.zeros(300).astype("float32"))
+    wv_matrix = np.array(wv_matrix)
+    return wv_matrix

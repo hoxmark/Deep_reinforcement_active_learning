@@ -5,6 +5,10 @@ from collections import deque
 from models.dqn import DQN
 from torch import optim
 import torch
+print(torch.__version__)
+from torch.autograd import Variable
+import torch.nn.functional as F
+
 
 # Hyper Parameters:
 GAMMA = 0.99  # decay rate of past observations
@@ -27,28 +31,31 @@ class RobotCNNDQN:
         print("Creating a robot: CNN-DQN")
         # replay memory
         # TODO not use deque
+        self.params = params
         self.replay_memory = deque()
         self.time_step = 0
-        self.action = actions
-        self.w_embeddings = embeddings
-        self.max_len = max_len
-        self.num_classes = 5
+        self.action = params["ACTIONS"]
+        # self.max_len = max_len
+        # self.num_classes = 5
         self.epsilon = INITIAL_EPSILON
 
-        self.vocab_size = vocab_size
-        self.max_len = max_len
-        self.embedding_size = 40
+        # self.vocab_size = vocab_size
+        # self.max_len = max_len
+        # self.embedding_size = 40
         self.qnetwork = DQN(params)
-        self.optimizer = optim.Adam(qnetwork.parameters(), 0.001)
+
+        if params["CUDA"]:
+            self.qnetwork = self.qnetwork.cuda()
+        # self.optimizer = optim.Adam(self.qnetwork.parameters(), 0.001)
 
 
     def initialise(self, params):
-        self.max_len = max_len
-        self.w_embeddings = embeddings
-        self.vocab_size = len(self.w_embeddings)
-        self.embedding_size = len(self.w_embeddings[0])
+        # self.max_len = max_len
+        # self.w_embeddings = embeddings
+        # self.vocab_size = len(self.w_embeddings)
+        # self.embedding_size = len(self.w_embeddings[0])
         self.qnetwork = DQN(params)
-        self.optimizer = optim.Adam(qnetwork.parameters(), 0.001)
+        # self.optimizer = optim.Adam(self.qnetwork.parameters(), 0.001)
         # self.create_qnetwork()
         # self.saver = tf.train.Saver()
 
@@ -90,24 +97,59 @@ class RobotCNNDQN:
     #     self.sess.run(tf.global_variables_initializer())
 
     def train_qnetwork(self):
+        optimizer = optim.Adam(self.qnetwork.parameters(), 0.001)
         # Step 1: obtain random minibatch from replay memory
         minibatch = random.sample(self.replay_memory, BATCH_SIZE)
 
-        batch_state, batch_action, batch_next_state, batch_reward = zip(*minibatch)
+        batch_state, batch_action, batch_reward, batch_next_state, batch_terminal  = zip(*minibatch)
+        batch_state = torch.cat(batch_state)
+        # print(batch_state)
+        # print(batch_reward)
+        batch_action = Variable(torch.LongTensor(list(batch_action)).unsqueeze(1))
+        batch_reward = Variable(torch.FloatTensor(list(batch_reward)))
+        # print(batch_state)
+        # print(batch_action)
 
-        batch_state = Variable(torch.cat(batch_state))
-        batch_action = Variable(torch.cat(batch_action))
-        batch_reward = Variable(torch.cat(batch_reward))
-        batch_next_state = Variable(torch.cat(batch_next_state))
+        if self.params["CUDA"]:
+            batch_action = batch_action.cuda()
+            batch_reward = batch_reward.cuda()
+
+        batch_next_state = torch.cat(batch_next_state)
+
+        # print(self.qnetwork(batch_state))
+        # print(batch_action)
 
         # current Q values are estimated by NN for all actions
         current_q_values = self.qnetwork(batch_state).gather(1, batch_action)
+        # print(current_q_values)
+
+        # current_q_values = torch.max(current_q_values, 1)[0]
+        # print(current_q_values)
+        # print(torch.max(current_q_values, 1)[0])
+
         # expected Q values are estimated from actions which gives maximum Q value
-        max_next_q_values = self.qnetwork(batch_next_state).detach().max(1)[0]
+        max_next_q_values = self.qnetwork(batch_next_state).max(1)[0]
+        # print(max_next_q_values)
         expected_q_values = batch_reward + (GAMMA * max_next_q_values)
+        # expected_q_values = Variable(torch.rand((32, 1)))
+
+        print(expected_q_values)
+        print(current_q_values)
+        # expected_q_values = Variable(expected_q_values)
 
         # loss is measured from error between current and newly expected Q values
+        # rand = Variable(torch.rand((32, 1)))
+        # rand2 = Variable(torch.rand((32, 1)))
+
+        if self.params["CUDA"]:
+            # rand, rand2 = rand.cuda(), rand2.cuda()
+            expected_q_values = expected_q_values.cuda()
+        # print(rand2)
         loss = F.smooth_l1_loss(current_q_values, expected_q_values)
+        # loss = F.cross_entropy(current_q_values, expected_q_values)
+        # loss = F.mse_loss(current_q_values, expected_q_values)
+        # F.mse_loss
+        print(loss)
 
         # backpropagation of loss to NN
         optimizer.zero_grad()
@@ -177,20 +219,24 @@ class RobotCNNDQN:
         self.time_step += 1
 
     def get_action(self, observation):
-        print "DQN is smart."
-        sent, confidence, predictions = observation
+        print("DQN is smart.")
+        # sentence, entropy = observation
 
         action = 0
         if random.random() <= self.epsilon:
             action = random.randrange(self.action)
         else:
-            qvalue = self.qnetwork(Variable(state))
-            action = np.argmax(qvalue)
+            qvalue = self.qnetwork(observation)
+            # print(qvalue.data[0])
+            action = np.argmax(qvalue.data[0])
+            # print("Returning action": action)
         # change episilon
         if self.epsilon > FINAL_EPSILON and self.time_step > OBSERVE:
-        self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
+            self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 
-        return action
+        # action = torch.FloatTensor([action])
+        # return action
+        return 0
 
     # def process_sentence(self):
     #     seq_len = self.max_len
@@ -297,12 +343,12 @@ class RobotCNNDQN:
     #         self.state_marginals = tf.nn.dropout(
     #             ph_pool_flat, dropout_keep_prob)
 
-    def update_embeddings(self, embeddings):
-        self.w_embeddings = embeddings
-        self.vocab_size = len(self.w_embeddings)
-        self.embedding_size = len(self.w_embeddings[0])
-        print "Assigning new word embeddings"
-        print "New size", self.vocab_size
-        self.sess.run(self.w.assign(self.w_embeddings))
-        self.time_step = 0
-        self.replay_memory = deque()
+    # def update_embeddings(self, embeddings):
+    #     # self.w_embeddings = embeddings
+    #     # self.vocab_size = len(self.w_embeddings)
+    #     # self.embedding_size = len(self.w_embeddings[0])
+    #     print("Assigning new word embeddings")
+    #     print("New size", self.vocab_size)
+    #     self.sess.run(self.w.assign(self.w_embeddings))
+    #     self.time_step = 0
+    #     self.replay_memory = deque()

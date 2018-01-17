@@ -2,9 +2,10 @@ import numpy as np
 import sys
 import random
 from models.cnndqn import CNNDQN
-import helpers
+# import helpers
 #from gensim.models import doc2vec, word2vec
-import tensorflow as tf
+import torch
+import torch.nn as nn
 
 
 class Game:
@@ -13,6 +14,7 @@ class Game:
         # build environment
         # load data as story
         print("Initilizing the game:")
+        self.params = params
         self.train_x = [[data["word_to_idx"][w] for w in sent] +
                    [params["VOCAB_SIZE"] + 1] *
                    (params["MAX_SENT_LEN"] - len(sent))
@@ -40,8 +42,8 @@ class Game:
         self.feature_extractor = CNNDQN(data, params)
         # self.w2v = w2v
 
-        print "Story: length = ", len(self.train_x)
-        self.order = range(0, len(self.train_x))
+        print("Story: length = ", len(self.train_x))
+        self.order = list(range(0, len(self.train_x)))
         # if re-order, use random.shuffle(self.order)
         # load word embeddings, pretrained - w2v
         # print "Dictionary size", len(self.w2v), "Embedding size",
@@ -57,7 +59,7 @@ class Game:
         self.queried_set_idx = []
 
         # let's start
-        self.episode = 0
+        # self.episode = 0
         # story frame
         self.current_frame = 0
         #self.nextFrame = self.current_frame + 1
@@ -68,7 +70,14 @@ class Game:
     def get_frame(self, model):
         self.make_query = False
         sentence = self.train_x[self.order[self.current_frame]]
+        # print(sentence)
+        # sentence = torch.FloatTensor(sentence).unsqueeze(0)
+        sentence = torch.autograd.Variable(torch.LongTensor(sentence).unsqueeze(0))
+        if self.params["CUDA"]:
+            sentence = sentence.cuda()
+        # sentence =
         sentence_embedding = self.feature_extractor(sentence)
+        # print(sentence_embedding)
 
         # confidence = 0.
         # predictions = []
@@ -90,13 +99,22 @@ class Game:
         #     preds_padding = predictions
 
         # Entropy
-        output = model(feature)
-        output = nn.functional.softmax(output)
-        output = torch.mul(output, torch.log(output))
-        output = torch.sum(output, dim=1)
-        output = output * -1
+        # output = model(sentence_embedding)
+        # output = nn.functional.softmax(output)
+        # output = torch.mul(output, torch.log(output))
+        # output = torch.sum(output, dim=1)
+        # entorpy = output * -
+        entropy = self.calculate_entropy(model, sentence).unsqueeze(1)
+        # print(sentence_embedding)
+        # print(entropy)
 
-        observation = [sentence_embedding, entropy]
+        print(sentence_embedding)
+        print(entropy)
+        observation = torch.cat((sentence_embedding,entropy), dim=-1)
+        # torch.a
+        # print(observation)
+
+        # observation = torch.FloatTensor([sentence_embedding, entropy])
         return observation
 
     # tagger = crf model
@@ -130,6 +148,11 @@ class Game:
         else:
             self.current_frame += 1
             next_sentence = self.train_x[self.order[self.current_frame]]
+            next_sentence = torch.autograd.Variable(torch.LongTensor(next_sentence).unsqueeze(0))
+            if self.params["CUDA"]:
+                next_sentence = next_sentence.cuda()
+
+            next_sentence_embedding = self.feature_extractor(next_sentence)
 
         confidence = 0.
         # predictions = []
@@ -151,11 +174,11 @@ class Game:
         #     preds_padding = predictions
 
         # next_observation = [next_sentence, confidence, preds_padding]
-        entropy = calculate_entropy(model, next_sentence)
-        next_observation = [next_sentence, entropy]
+        entropy = self.calculate_entropy(model, next_sentence).unsqueeze(1)
+        next_observation = torch.cat((next_sentence_embedding, entropy), dim=-1)
         return reward, next_observation, is_terminal
 
-    def calculate_entropy(self, model, sample):
+    def calculate_entropy(self, model, feature):
         output = model(feature)
         output = nn.functional.softmax(output)
         output = torch.mul(output, torch.log(output))
@@ -171,33 +194,32 @@ class Game:
         # print "Select:", sentence, label
         self.queried_set_x.append(sentence)
         self.queried_set_y.append(label)
-        print "> Queried times", len(self.queried_set_x)
+        print("> Queried times", len(self.queried_set_x))
 
     # tagger = model
     def get_performance(self, model):
         # train with {queried_set_x, queried_set_y}
         # train with examples: self.model.train(self.queried_set_x,
         # self.queried_set_y)
-        print len(self.queried_set_x), len(self.queried_set_y)
+        print(len(self.queried_set_x), len(self.queried_set_y))
 
         # print train_sents
         model.init_model()
-        model.train(self.train_x, self.train_y)
+        model.train_model(self.queried_set_x, self.queried_set_y)
         # test on development data
         performance = model.test(self.test_x, self.test_y)
         #performance = self.model.test2conlleval(self.dev_x, self.dev_y)
         return performance
     #
-    # def reboot(self):
-    #     # resort story
-    #     # why not use docvecs? TypeError: 'DocvecsArray' object does not
-    #     # support item assignment
-    #     random.shuffle(self.order)
-    #     self.queried_times = 0
-    #     self.terminal = False
-    #     self.queried_set_x = []
-    #     self.queried_set_y = []
-    #     self.queried_set_idx = []
-    #     self.current_frame = 0
-    #     self.episode += 1
-    #     print "> Next episode", self.episode
+    def reboot(self):
+        # resort story
+        # why not use docvecs? TypeError: 'DocvecsArray' object does not
+        # support item assignment
+        random.shuffle(self.order)
+        self.queried_times = 0
+        self.terminal = False
+        self.queried_set_x = []
+        self.queried_set_y = []
+        self.current_frame = 0
+        # self.episode += 1
+        # print "> Next episode", self.episode

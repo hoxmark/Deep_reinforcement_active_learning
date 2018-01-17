@@ -12,7 +12,7 @@ class CNNDQN(nn.Module):
         self.params = params
 
         self.BATCH_SIZE = params["BATCH_SIZE"]
-        self.SELECTION_SIZE = params["SELECTION_SIZE"]
+
         self.MAX_SENT_LEN = params["MAX_SENT_LEN"]
         self.WORD_DIM = params["WORD_DIM"]
         self.VOCAB_SIZE = params["VOCAB_SIZE"]
@@ -22,6 +22,7 @@ class CNNDQN(nn.Module):
         self.DROPOUT_EMBED_PROB = params["DROPOUT_EMBED"]
         self.DROPOUT_MODEL_PROB = params["DROPOUT_MODEL"]
         self.EMBEDDING = params["EMBEDDING"]
+        self.IN_CHANNEL = 1
 
         self.data = data
 
@@ -30,7 +31,7 @@ class CNNDQN(nn.Module):
         assert (len(self.FILTERS) == len(self.FILTER_NUM))
 
         if self.EMBEDDING != "random":
-            self.wv_matrix = self.load_word2vec()
+            self.wv_matrix = data["w2v"]
 
         self.init_model()
 
@@ -50,7 +51,6 @@ class CNNDQN(nn.Module):
                 self.IN_CHANNEL, self.FILTER_NUM[i], self.WORD_DIM * self.FILTERS[i], stride=self.WORD_DIM)
             setattr(self, 'conv_{}'.format(i), conv)
 
-        self.fc = nn.Linear(sum(self.FILTER_NUM), self.CLASS_SIZE)
         self.softmax = nn.Softmax()
         self.dropout_embed = nn.Dropout(self.DROPOUT_EMBED_PROB)
         self.dropout = nn.Dropout(self.DROPOUT_MODEL_PROB)
@@ -60,7 +60,9 @@ class CNNDQN(nn.Module):
 
     def forward(self, inp):
         # inp = (25 x 59) - (mini_batch_size x sentence_length)
+        # print(inp)
         x = self.embed(inp).view(-1, 1, self.WORD_DIM * self.MAX_SENT_LEN)
+        # x = self.embed(inp).view(1, self.WORD_DIM * self.MAX_SENT_LEN)
         x = self.dropout_embed(x)
         # x = (25 x 1 x 17700) - mini_batch_size x embedding_for_each_sentence
 
@@ -76,25 +78,3 @@ class CNNDQN(nn.Module):
         x = self.dropout(x)
 
         return x
-
-    """
-    load word2vec pre trained vectors
-    """
-    def load_word2vec(self):
-        print("loading word2vec...")
-        word_vectors = KeyedVectors.load_word2vec_format(
-            "GoogleNews-vectors-negative300.bin", binary=True)
-
-        wv_matrix = []
-        for word in self.data["vocab"]:
-            if word in word_vectors.vocab:
-                wv_matrix.append(word_vectors.word_vec(word))
-            else:
-                wv_matrix.append(
-                    np.random.uniform(-0.01, 0.01, 300).astype("float32"))
-
-        # one for UNK and one for zero padding
-        wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32"))
-        wv_matrix.append(np.zeros(300).astype("float32"))
-        wv_matrix = np.array(wv_matrix)
-        return wv_matrix
