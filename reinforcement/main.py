@@ -4,7 +4,7 @@ import datetime
 import argparse
 import torch
 
-import train
+from train import train
 
 
 def main():
@@ -64,6 +64,7 @@ def main():
         "WORD_DIM": 300,
         "VOCAB_SIZE": len(data["vocab"]),
         "CLASS_SIZE": len(data["classes"]),
+        "ACTIONS": 2,
         "FILTERS": [3, 4, 5],
         "FILTER_NUM": [100, 100, 100],
         "DROPOUT_EMBED": options.dropout_embed,
@@ -87,7 +88,8 @@ def main():
         print("{}: {}".format(key.upper(), value))
 
     print("=" * 20 + "TRAINING STARTED" + "=" * 20)
-    train.active_train(data, params)
+    # train.active_train(data, params)
+    train(data, params)
     print("=" * 20 + "TRAINING FINISHED" + "=" * 20)
 
 

@@ -79,6 +79,79 @@ class CNN(nn.Module):
 
         return x
 
+    def train(self, train_features, train_targets):
+        parameters = filter(lambda p: p.requires_grad, model.parameters())
+        optimizer = optim.Adam(parameters, self.params["LEARNING_RATE"])
+
+        # Softmax is included in CrossEntropyLoss
+        criterion = nn.CrossEntropyLoss()
+        model.train()
+
+        best_model = None
+        best_acc = 0
+        best_epoch = 0
+
+        for e in range(self.params["EPOCH"]):
+            shuffle(train_features, train_targets)
+            size = len(train_features)
+            avg_loss = 0
+            corrects = 0
+
+            if self.params["MINIBATCH"]:
+                for i in range(0, len(train_features), self.params["BATCH_SIZE"]):
+                    batch_range = min(self.params["BATCH_SIZE"], len(train_features) - i)
+                    batch_x = train_features[i:i + batch_range]
+                    batch_y = train_targets[i:i + batch_range]
+
+                    feature = Variable(torch.LongTensor(batch_x))
+                    target = Variable(torch.LongTensor(batch_y))
+
+                    if self.params["CUDA"]:
+                        feature, target = feature.cuda(self.params["DEVICE"]), target.cuda(params["DEVICE"])
+
+                    optimizer.zero_grad()
+                    pred = self(feature)
+                    loss = criterion(pred, target)
+                    loss.backward()
+                    optimizer.step()
+                    avg_loss += loss.data[0]
+                    corrects += (torch.max(pred, 1)[1].view(target.size()).data == target.data).sum()
+                # avg_loss = avg_loss * params["BATCH_SIZE"] / size
+    def test(self, test_x, test_y):
+        model.eval()
+
+        if self.params["CUDA"]:
+            model.cuda()
+
+        corrects, avg_loss = 0, 0
+        for i in range(0, len(test_x), self.params["BATCH_SIZE"]):
+            batch_range = min(self.params["BATCH_SIZE"], len(test_x) - i)
+
+            feature = [[data["word_to_idx"][w] for w in sent] +
+                       [self.params["VOCAB_SIZE"] + 1] *
+                       (self.params["MAX_SENT_LEN"] - len(sent))
+                       for sent in data["{}_x".format(mode)][i:i + batch_range]]
+            target = [data["classes"].index(c)
+                      for c in data["{}_y".format(mode)][i:i + batch_range]]
+
+            feature = Variable(torch.LongTensor(feature))
+            target = Variable(torch.LongTensor(target))
+            if self.params["CUDA"]:
+                feature = feature.cuda()
+                target = target.cuda()
+
+            logit = self(feature)
+            loss = torch.nn.functional.cross_entropy(logit, target, size_average=False)
+            avg_loss += loss.data[0]
+            corrects += (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
+
+        size = len(data["{}_x".format(mode)])
+        avg_loss = avg_loss / size
+        accuracy = 100.0 * corrects / size
+
+        return accuracy
+
+
     """
     load word2vec pre trained vectors
     """

@@ -6,9 +6,9 @@ import numpy as np
 from gensim.models.keyedvectors import KeyedVectors
 
 
-class CNN(nn.Module):
+class CNNDQN(nn.Module):
     def __init__(self, data, params):
-        super(CNN, self).__init__()
+        super(CNNDQN, self).__init__()
         self.params = params
 
         self.BATCH_SIZE = params["BATCH_SIZE"]
@@ -16,12 +16,11 @@ class CNN(nn.Module):
         self.MAX_SENT_LEN = params["MAX_SENT_LEN"]
         self.WORD_DIM = params["WORD_DIM"]
         self.VOCAB_SIZE = params["VOCAB_SIZE"]
-        self.CLASS_SIZE = params["CLASS_SIZE"]
+        self.ACTIONS = params["ACTIONS"]
         self.FILTERS = params["FILTERS"]
         self.FILTER_NUM = params["FILTER_NUM"]
         self.DROPOUT_EMBED_PROB = params["DROPOUT_EMBED"]
         self.DROPOUT_MODEL_PROB = params["DROPOUT_MODEL"]
-        self.IN_CHANNEL = 1
         self.EMBEDDING = params["EMBEDDING"]
 
         self.data = data
@@ -75,7 +74,6 @@ class CNN(nn.Module):
         x = torch.cat(conv_results, 1)
         # x = (25 x 300) - concatenate all the filter results
         x = self.dropout(x)
-        x = self.fc(x)
 
         return x
 
