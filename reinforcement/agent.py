@@ -5,7 +5,6 @@ from collections import deque
 from models.dqn import DQN
 from torch import optim
 import torch
-print(torch.__version__)
 from torch.autograd import Variable
 import torch.nn.functional as F
 
@@ -50,161 +49,55 @@ class RobotCNNDQN:
 
 
     def initialise(self, params):
-        # self.max_len = max_len
-        # self.w_embeddings = embeddings
-        # self.vocab_size = len(self.w_embeddings)
-        # self.embedding_size = len(self.w_embeddings[0])
         self.qnetwork = DQN(params)
         # self.optimizer = optim.Adam(self.qnetwork.parameters(), 0.001)
-        # self.create_qnetwork()
-        # self.saver = tf.train.Saver()
-
-    # def create_qnetwork(self):
-    #     # read a sentence
-    #     self.process_sentence()
-    #     self.state_confidence = tf.placeholder(
-    #         tf.float32, [None, 1], name="input_confidence")
-    #     self.process_prediction()
-    #
-    #     # network weights
-    #     # size of a sentence = 384
-    #     self.w_fc1_s = self.weight_variable([384, 256])
-    #     self.w_fc1_c = self.weight_variable([1, 256])
-    #     self.w_fc1_p = self.weight_variable([20, 256])
-    #     self.b_fc1 = self.bias_variable([256])
-    #     self.w_fc2 = self.weight_variable([256, self.action])
-    #     self.b_fc2 = self.bias_variable([self.action])
-    #
-    #     # hidden layers
-    #     self.h_fc1_all = tf.nn.relu(tf.matmul(self.state_content, self.w_fc1_s) + tf.matmul(
-    #         self.state_marginals, self.w_fc1_p) + tf.matmul(self.state_confidence, self.w_fc1_c) + self.b_fc1)
-    #     # Q Value layer
-    #     self.qvalue = tf.matmul(self.h_fc1_all, self.w_fc2) + self.b_fc2
-    #     # action input
-    #     self.action_input = tf.placeholder("float", [None, self.action])
-    #     # reword input
-    #     self.y_input = tf.placeholder("float", [None])
-    #
-    #     q_action = tf.reduce_sum(
-    #         tf.multiply(self.qvalue, self.action_input), reduction_indices=1)
-    #     # error function
-    #     self.cost = tf.reduce_mean(tf.square(self.y_input - q_action))
-    #     # train method
-    #     self.trainStep = tf.train.AdamOptimizer(1e-6).minimize(self.cost)
-    #
-    #     self.sess = tf.Session()
-    #     # ? multiple graphs: how to initialise variables ?
-    #     self.sess.run(tf.global_variables_initializer())
 
     def train_qnetwork(self):
-        optimizer = optim.Adam(self.qnetwork.parameters(), 0.001)
         # Step 1: obtain random minibatch from replay memory
+        optimizer = optim.Adam(self.qnetwork.parameters(), 0.001)
         minibatch = random.sample(self.replay_memory, BATCH_SIZE)
 
         batch_state, batch_action, batch_reward, batch_next_state, batch_terminal  = zip(*minibatch)
         batch_state = torch.cat(batch_state)
-        # print(batch_state)
-        # print(batch_reward)
         batch_action = Variable(torch.LongTensor(list(batch_action)).unsqueeze(1))
         batch_reward = Variable(torch.FloatTensor(list(batch_reward)))
-        # print(batch_state)
-        # print(batch_action)
+        #
+        # batch_state.detach()
+        # detached_batch_state = Variable(torch.FloatTensor(batch_state.detach().numpy()))
+
+        detached_batch_state = Variable(torch.FloatTensor(batch_state.detach().cpu().data.numpy()))
+        if self.params["CUDA"]:
+            detached_batch_state = detached_batch_state.cuda()
+
+        # batch_reward.detach()
+        # batch_action.detach()
 
         if self.params["CUDA"]:
             batch_action = batch_action.cuda()
             batch_reward = batch_reward.cuda()
+        # batch_reward.detach()
 
         batch_next_state = torch.cat(batch_next_state)
-
-        # print(self.qnetwork(batch_state))
-        # print(batch_action)
-
-        # current Q values are estimated by NN for all actions
-        current_q_values = self.qnetwork(batch_state).gather(1, batch_action)
-        # print(current_q_values)
-
-        # current_q_values = torch.max(current_q_values, 1)[0]
-        # print(current_q_values)
-        # print(torch.max(current_q_values, 1)[0])
-
+        current_q_values = self.qnetwork(detached_batch_state).gather(1, batch_action)
         # expected Q values are estimated from actions which gives maximum Q value
-        max_next_q_values = self.qnetwork(batch_next_state).max(1)[0]
+        max_next_q_values = self.qnetwork(batch_next_state).detach().max(1)[0]
         # print(max_next_q_values)
         expected_q_values = batch_reward + (GAMMA * max_next_q_values)
-        # expected_q_values = Variable(torch.rand((32, 1)))
-
-        print(expected_q_values)
-        print(current_q_values)
-        # expected_q_values = Variable(expected_q_values)
-
-        # loss is measured from error between current and newly expected Q values
-        # rand = Variable(torch.rand((32, 1)))
-        # rand2 = Variable(torch.rand((32, 1)))
 
         if self.params["CUDA"]:
             # rand, rand2 = rand.cuda(), rand2.cuda()
             expected_q_values = expected_q_values.cuda()
         # print(rand2)
+        # loss = F.l1_loss(current_q_values, expected_q_values)
         loss = F.smooth_l1_loss(current_q_values, expected_q_values)
-        # loss = F.cross_entropy(current_q_values, expected_q_values)
-        # loss = F.mse_loss(current_q_values, expected_q_values)
-        # F.mse_loss
-        print(loss)
 
-        # backpropagation of loss to NN
         optimizer.zero_grad()
         loss.backward()
         optimizer.step()
-
-
-        # (state, action, reward, next_state)
-        # state_batch = [data[0] for data in minibatch]
-        # action_batch = [data[1] for data in minibatch]
-        # reward_batch = [data[2] for data in minibatch]
-        # next_state_batch = [data[3] for data in minibatch]
-        # next_state_sent_batch = []
-        # next_state_confidence_batch = []
-        # next_state_predictions_batch = []
-        # for item in next_state_batch:
-        #     sent, confidence, predictions = item
-        #     next_state_sent_batch.append(sent)
-        #     next_state_confidence_batch.append(confidence)
-        #     next_state_predictions_batch.append(predictions)
-        #
-        # # Step 2: calculate y
-        # y_batch = []
-        # # qvalue_batch = self.sess.run(self.qvalue, feed_dict={
-        # #                              self.sent: next_state_sent_batch, self.state_confidence: next_state_confidence_batch, self.predictions: next_state_predictions_batch})
-        # batch = []
-        #
-        # qvalue_batch = self.qnetwork(batch)
-        # for i in range(0, BATCH_SIZE):
-        #     terminal = minibatch[i][4]
-        #     if terminal:
-        #         y_batch.append(reward_batch[i])
-        #     else:
-        #         y_batch.append(reward_batch[i] +
-        #                        GAMMA * np.max(qvalue_batch[i]))
-        # sent_batch = []
-        # confidence_batch = []
-        # predictions_batch = []
-        # for item in state_batch:
-        #     sent, confidence, predictions = item
-        #     sent_batch.append(sent)
-        #     confidence_batch.append(confidence)
-        #     predictions_batch.append(predictions)
-        #
-        # max_next_q_values = model(batch_next_state).detach().max(1)[0]
-        # expected_q_values = reward_batch + (GAMMA * max_next_q_values)
-        #
-        # # loss is measured from error between current and newly expected Q values
-        # loss = F.smooth_l1_loss(current_q_values, expected_q_values)
-
-
-        # save network every 10000 iteration
-        # if self.time_step % 10000 == 0:
-        #    self.saver.save(self.sess, './' +
-        #                    'network' + '-dqn', global_step=self.time_step)
+        # current_q_values.detach()
+        # expected_q_values.detach()
+        # loss.detach()
+        print("AFTER STEP ")
 
     def update(self, observation, action, reward, observation2, terminal):
         self.replay_memory.append(
@@ -219,7 +112,6 @@ class RobotCNNDQN:
         self.time_step += 1
 
     def get_action(self, observation):
-        print("DQN is smart.")
         # sentence, entropy = observation
 
         action = 0
@@ -235,8 +127,8 @@ class RobotCNNDQN:
             self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 
         # action = torch.FloatTensor([action])
-        # return action
-        return 0
+        return action
+        # return 0
 
     # def process_sentence(self):
     #     seq_len = self.max_len

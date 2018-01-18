@@ -84,6 +84,7 @@ class CNN(nn.Module):
         return x
 
     def train_model(self, train_features, train_targets):
+        print(torch.cuda.is_available())
         parameters = filter(lambda p: p.requires_grad, self.parameters())
         optimizer = optim.Adam(parameters, self.params["LEARNING_RATE"])
 
@@ -118,7 +119,8 @@ class CNN(nn.Module):
                 loss = criterion(pred, target)
                 loss.backward()
                 optimizer.step()
-            # print("{} of {}".format(e, self.params["EPOCH"]))
+            print("{} of {}".format(e, self.params["EPOCH"]), end='\r')
+
 
     def test(self, test_x, test_y):
         self.eval()

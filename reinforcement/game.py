@@ -108,8 +108,8 @@ class Game:
         # print(sentence_embedding)
         # print(entropy)
 
-        print(sentence_embedding)
-        print(entropy)
+        # print(sentence_embedding)
+        # print(entropy)
         observation = torch.cat((sentence_embedding,entropy), dim=-1)
         # torch.a
         # print(observation)
@@ -126,11 +126,7 @@ class Game:
             self.query()
             new_performance = self.get_performance(model)
             reward = new_performance - self.performance
-
-            # TODO float comparison
-            if new_performance != self.performance:
-                #reward = 3.
-                self.performance = new_performance
+            self.performance = new_performance
             # else:
                 #reward = -1.
         else:
@@ -139,20 +135,16 @@ class Game:
         # next frame
         next_sentence = []
         if self.queried_times == self.budget:
-            is_terminal = True
-            # update special reward
-            # reward = new_performance * 100
-            # prepare the next game
-            # self.reboot()  # set the current frame = 0
-            # next_sentence = self.train_x[self.order[self.current_frame]]
-        else:
-            self.current_frame += 1
-            next_sentence = self.train_x[self.order[self.current_frame]]
-            next_sentence = torch.autograd.Variable(torch.LongTensor(next_sentence).unsqueeze(0))
-            if self.params["CUDA"]:
-                next_sentence = next_sentence.cuda()
+            # Return terminal
+            return None, None, True
 
-            next_sentence_embedding = self.feature_extractor(next_sentence)
+        self.current_frame += 1
+        next_sentence = self.train_x[self.order[self.current_frame]]
+        next_sentence = torch.autograd.Variable(torch.LongTensor(next_sentence).unsqueeze(0))
+        if self.params["CUDA"]:
+            next_sentence = next_sentence.cuda()
+
+        next_sentence_embedding = self.feature_extractor(next_sentence)
 
         confidence = 0.
         # predictions = []
@@ -176,6 +168,7 @@ class Game:
         # next_observation = [next_sentence, confidence, preds_padding]
         entropy = self.calculate_entropy(model, next_sentence).unsqueeze(1)
         next_observation = torch.cat((next_sentence_embedding, entropy), dim=-1)
+        print("Reward: {} - accuracy {}".format(reward, self.performance))
         return reward, next_observation, is_terminal
 
     def calculate_entropy(self, model, feature):

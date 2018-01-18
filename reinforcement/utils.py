@@ -194,7 +194,7 @@ def load_word2vec(data):
         "../GoogleNews-vectors-negative300.bin", binary=True)
 
     wv_matrix = []
-    for word in self.data["vocab"]:
+    for word in data["vocab"]:
         if word in word_vectors.vocab:
             wv_matrix.append(word_vectors.word_vec(word))
         else:
