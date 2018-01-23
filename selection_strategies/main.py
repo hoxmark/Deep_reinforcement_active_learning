@@ -6,9 +6,12 @@ import torch
 
 import train
 
+from config import params, data
+
 
 def main():
     parser = argparse.ArgumentParser(description="-----[CNN-classifier]-----")
+    parser.add_argument("--similarity", default=0.025, type=float, help="similarity threshold")
     parser.add_argument("--mode", default="train",
                         help="train: train (with test) a model / test: test saved models")
     parser.add_argument("--model", default="cnn",
@@ -61,7 +64,9 @@ def main():
     data["classes"] = sorted(list(set(data["train_y"])))
     data["word_to_idx"] = {w: i for i, w in enumerate(data["vocab"])}
 
-    params = {
+
+    params_local = {
+        "SIMILARITY_THRESHOLD": options.similarity,
         "MODEL": options.model,
         "EMBEDDING": options.embedding,
         "DATASET": options.dataset,
@@ -91,18 +96,24 @@ def main():
         "MINIBATCH": options.minibatch
     }
 
+    for key in params_local:
+        params[key] = params_local[key]
+
     params["CUDA"] = (not params["NO_CUDA"]) and torch.cuda.is_available()
     del params["NO_CUDA"]
 
     if params["CUDA"]:
         torch.cuda.set_device(params["DEVICE"])
 
+    if params["EMBEDDING"] == "static":
+        utils.load_word2vec()
+
     print("=" * 20 + "INFORMATION" + "=" * 20)
     for key, value in params.items():
         print("{}: {}".format(key.upper(), value))
 
     print("=" * 20 + "TRAINING STARTED" + "=" * 20)
-    train.active_train(data, params)
+    train.active_train()
     print("=" * 20 + "TRAINING FINISHED" + "=" * 20)
 
 

@@ -2,15 +2,20 @@ import heapq
 import random
 import time
 
+import numpy as np
 from torch.autograd import Variable
 import torch
 import torch.optim as optim
 import torch.nn as nn
 
+import utils
 import train
+from scipy import spatial
+
+from config import params, data, w2v
 
 
-def select_all(model, data, params, lg, i):
+def select_all(model, lg, i):
     ret_feature = []
     ret_target = []
 
@@ -30,7 +35,7 @@ def select_all(model, data, params, lg, i):
     return ret_feature, ret_target
 
 
-def select_egl(model, data, params, lg, iteration):
+def select_egl(model, lg, iteration):
     model.eval()
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"])
@@ -111,7 +116,7 @@ def select_egl(model, data, params, lg, iteration):
     return batch_feature, batch_target
 
 
-def select_entropy(model, data, params, lg, iteration):
+def select_entropy(model, lg, iteration):
     model.eval()
     sample_scores = []
     completed = 0
@@ -146,26 +151,51 @@ def select_entropy(model, data, params, lg, iteration):
         print("Selection process: {0:.0f}% completed ".format(
             100 * (completed / (len(data["train_x"]) // params["BATCH_SIZE"] + 1))), end="\r")
 
-    best_n_indexes = [n[0] for n in heapq.nlargest(
-        params["SELECTION_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
 
-    best_n_scores = [n[1] for n in heapq.nlargest(
-        params["SELECTION_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
+    #
 
+
+    # argsort = np.argsort(sample_scores).tolist()
+    # sorted_scores_indices = reversed(np.argsort(sample_scores).tolist())
+    # print(argsort)
+    # sorted_scores_indices = reversed(argsort)
+    sorted_scores_indices = np.flip(np.argsort(sample_scores), 0).tolist()
+    batch_indices = []
     batch_feature = []
     batch_target = []
 
-    # print("Selected sentences: ")
-    # for index in best_n_indexes:
-    #     print("{} - {:.4f} - {}".format(" ".join(data["train_x"][index]), sample_scores[index], data["train_y"][index]))
+    # while len(batch_feature) < params["BATCH_SIZE"]:
+    # for i in range(len(data["train_x"]), step=params["BATCH_SIZE"]):
+    for i in range(0, len(sorted_scores_indices), params["BATCH_SIZE"]):
+        batch_range = min(params["BATCH_SIZE"], len(sorted_scores_indices) - i)
+        next_indices = sorted_scores_indices[i : i + batch_range]
 
-    for index in sorted(best_n_indexes, reverse=True):
-        batch_feature.append([data["word_to_idx"][w] for w in data["train_x"][index]] +
-                             [params["VOCAB_SIZE"] + 1 for i in range(params["MAX_SENT_LEN"] - len(data["train_x"][index]))])
-        batch_target.append(data["classes"].index(data["train_y"][index]))
+        next_features = [[data["word_to_idx"][w] for w in data["train_x"][index]] +
+                        [params["VOCAB_SIZE"] + 1 for i in range(params["MAX_SENT_LEN"] - len(data["train_x"][index]))] for index in next_indices]
+
+        next_targets = [data["classes"].index(data["train_y"][index]) for index in next_indices]
+
+
+        batch_feature.extend(next_features)
+        batch_target.extend(next_targets)
+        batch_indices.extend(next_indices)
+
+        print("len before clean {}".format(len(batch_feature)))
+        batch_feature, batch_target, batch_indices = clean(batch_feature, batch_target, batch_indices)
+        print("len after clean {}".format(len(batch_feature)))
+
+        if len(batch_feature) >= params["BATCH_SIZE"]:
+            break
+    # We only want to add batch_size elements each time 
+    batch_feature = batch_feature[0 : params["BATCH_SIZE"]]
+    batch_target = batch_target[0 : params["BATCH_SIZE"]]
+    batch_indices = batch_indices[0 : params["BATCH_SIZE"]]
+
+    for index in sorted(batch_indices, reverse=True):
         del data["train_x"][index]
         del data["train_y"][index]
 
+    best_n_scores = [sample_scores[i] for i in batch_indices]
     avg_all_score = sum(sample_scores) / len(sample_scores)
     avg_best_score = sum(best_n_scores) / len(best_n_scores)
 
@@ -175,8 +205,33 @@ def select_entropy(model, data, params, lg, iteration):
 
     return batch_feature, batch_target
 
+def clean(features, targets, indices):
+    to_delete = []
+    for j in range(len(features)):
+        for k in range(j + 1, len(features)):
+            first = features[j]
+            second = features[k]
 
-def select_random(model, data, params, lg, iteration):
+            first_w2v = utils.average_feature_vector(first, w2v["w2v_kv"])
+            second_w2v = utils.average_feature_vector(second, w2v["w2v_kv"])
+
+            distance = spatial.distance.cosine(first_w2v, second_w2v)
+            # print("{} < {}".format(distance, params["SIMILARITY_THRESHOLD"]))
+            if distance < params["SIMILARITY_THRESHOLD"]:
+                to_delete.append(k)
+    to_delete = list(set(to_delete))
+
+    print("Deleting {} entries. Feature len is {}".format(len(to_delete), len(features)))
+    print(to_delete)
+    for delete in sorted(to_delete, reverse=True):
+        del features[delete]
+        del targets[delete]
+        del indices[delete]
+
+    return features, targets, indices
+
+
+def select_random(model, lg, iteration):
     all_sentences = []
     all_targets = []
 
@@ -193,25 +248,6 @@ def select_random(model, data, params, lg, iteration):
         all_targets.append(target)
         del data["train_x"][index]
         del data["train_y"][index]
-
-    return all_sentences, all_targets
-
-def select_first(model, data, params, lg, iteration):
-    all_sentences = []
-    all_targets = []
-
-    for i in range(params["BATCH_SIZE"]):
-        sentence = [data["word_to_idx"][w]
-                    for w in data["train_x"][i]]
-        padding = [params["VOCAB_SIZE"] +
-                   1 for i in range(params["MAX_SENT_LEN"] - len(sentence))]
-        sentence.extend(padding)
-
-        target = data["classes"].index(data["train_y"][i])
-        all_sentences.append(sentence)
-        all_targets.append(target)
-        del data["train_x"][i]
-        del data["train_y"][i]
 
     return all_sentences, all_targets
 

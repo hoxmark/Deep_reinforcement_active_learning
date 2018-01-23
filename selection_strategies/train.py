@@ -13,14 +13,16 @@ import torch.nn as nn
 
 from models.cnn import CNN
 from models.rnn import RNN
-from selection_strategies import select_first, select_random, select_entropy, select_egl, select_all
+from selection_strategies import select_random, select_entropy, select_egl, select_all
+
+from config import params, data
 
 
 def to_np(x):
     return x.data.cpu().numpy()
 
 
-def active_train(data, params):
+def active_train():
     init_learning_rate = params["LEARNING_RATE"]
     init_selection_size = params["SELECTION_SIZE"]
     average_accs = {}
@@ -42,7 +44,7 @@ def active_train(data, params):
 
         lg = None
         if params["LOG"]:
-            lg = init_logger(params, j)
+            lg = init_logger(j)
             start_accuracy = 100 / params["CLASS_SIZE"]
             lg.scalar_summary("test-acc", start_accuracy, 0)
             lg.scalar_summary("test-acc-avg", start_accuracy, 0)
@@ -71,21 +73,21 @@ def active_train(data, params):
                 params["SELECTION_SIZE"] = last_selection_size
 
             if params["SCORE_FN"] == "all":
-                t1, t2 = select_all(model, data, params, lg, i)
+                t1, t2 = select_all(model, lg, i)
             elif params["SCORE_FN"] == "entropy":
-                t1, t2 = select_entropy(model, data, params, lg, i)
+                t1, t2 = select_entropy(model, lg, i)
             elif params["SCORE_FN"] == "egl":
-                t1, t2 = select_egl(model, data, params, lg, i)
+                t1, t2 = select_egl(model, lg, i)
             elif params["SCORE_FN"] == "random":
-                t1, t2 = select_random(model, data, params, lg, i)
+                t1, t2 = select_random(model, lg, i)
 
             train_features.extend(t1)
             train_targets.extend(t2)
 
             print("\n")
             model.init_model()
-            model = train(model, params, train_features, train_targets, data)
-            accuracy, loss, corrects, size = evaluate(data, model, params, i, mode="test")
+            model = train(model, train_features, train_targets)
+            accuracy, loss, corrects, size = evaluate(model, i, mode="test")
             print("{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{}) \n".format("test", loss, accuracy, corrects, size))
             if i not in average_accs:
                 average_accs[i] = [accuracy]
@@ -118,7 +120,7 @@ def active_train(data, params):
     return best_model
 
 
-def train(model, params, train_features, train_targets, data):
+def train(model, train_features, train_targets):
     print("Labeled pool size: {}".format(len(train_features)))
 
     parameters = filter(lambda p: p.requires_grad, model.parameters())
@@ -194,7 +196,7 @@ def train(model, params, train_features, train_targets, data):
 
             elif ((e + 1) % 10) == 0:
                 accuracy = 100.0 * corrects / size
-                dev_accuracy, dev_loss, dev_corrects, dev_size = evaluate(data, model, params, e, mode="dev")
+                dev_accuracy, dev_loss, dev_corrects, dev_size = evaluate(model, e, mode="dev")
 
                 s1 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format("train", avg_loss, accuracy, corrects, size)
                 s2 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format("dev", dev_loss, dev_accuracy, dev_corrects, dev_size)
@@ -211,10 +213,10 @@ def train(model, params, train_features, train_targets, data):
     return best_model
 
 
-def init_logger(params, average):
+def init_logger(average):
     basename = "./logs" if params["EMBEDDING"] == "static" else "./logs_random"
     if params["MODEL"] == "cnn":
-        lg = logger.Logger('{}/cnn/{},minibatch={},selection_size={},date={},FILTERS={},FILTER_NUM={},MODEL={},DROPOUT_EMBED={}, DROPOUT_MODEL={},SCORE_FN={},AVERAGE={}'.format(
+        lg = logger.Logger('{}/cnn/{},minibatch={},selection_size={},date={},FILTERS={},FILTER_NUM={},MODEL={},DROPOUT_EMBED={}, DROPOUT_MODEL={},SCORE_FN={},AVERAGE={},SIMILARITY={}'.format(
             basename,
             str(params["DATASET"]),
             str(params["MINIBATCH"]),
@@ -226,7 +228,8 @@ def init_logger(params, average):
             str(params["DROPOUT_EMBED"]),
             str(params["DROPOUT_MODEL"]),
             str(params["SCORE_FN"]),
-            str(average + 1)
+            str(average + 1),
+            str(params["SIMILARITY_THRESHOLD"])
         ))
 
     if (params["MODEL"] == "rnn"):
@@ -257,7 +260,7 @@ def log_model(model, lg):
             lg.histo_summary(tag + '/grad', to_np(value.grad), step + 1)
 
 
-def evaluate(data, model, params, step, mode="test"):
+def evaluate(model, step, mode="test"):
     model.eval()
 
     if params["CUDA"]:

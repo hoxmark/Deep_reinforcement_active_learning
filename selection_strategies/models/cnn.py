@@ -5,6 +5,8 @@ import numpy as np
 
 from gensim.models.keyedvectors import KeyedVectors
 
+from config import params, data, w2v
+
 
 class CNN(nn.Module):
     def __init__(self, data, params):
@@ -24,20 +26,17 @@ class CNN(nn.Module):
         self.IN_CHANNEL = 1
         self.EMBEDDING = params["EMBEDDING"]
 
-        self.data = data
-
         # one for UNK and one for zero padding
         self.NUM_EMBEDDINGS = self.VOCAB_SIZE + 2
         assert (len(self.FILTERS) == len(self.FILTER_NUM))
 
         if self.EMBEDDING != "random":
-            self.wv_matrix = self.load_word2vec()
+            self.wv_matrix = w2v["w2v"]
 
         self.init_model()
 
     def get_conv(self, i):
         return getattr(self, 'conv_{}'.format(i))
-
 
     def init_model(self):
         self.embed = nn.Embedding(
@@ -78,25 +77,3 @@ class CNN(nn.Module):
         x = self.fc(x)
 
         return x
-
-    """
-    load word2vec pre trained vectors
-    """
-    def load_word2vec(self):
-        print("loading word2vec...")
-        word_vectors = KeyedVectors.load_word2vec_format(
-            "GoogleNews-vectors-negative300.bin", binary=True)
-
-        wv_matrix = []
-        for word in self.data["vocab"]:
-            if word in word_vectors.vocab:
-                wv_matrix.append(word_vectors.word_vec(word))
-            else:
-                wv_matrix.append(
-                    np.random.uniform(-0.01, 0.01, 300).astype("float32"))
-
-        # one for UNK and one for zero padding
-        wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32"))
-        wv_matrix.append(np.zeros(300).astype("float32"))
-        wv_matrix = np.array(wv_matrix)
-        return wv_matrix

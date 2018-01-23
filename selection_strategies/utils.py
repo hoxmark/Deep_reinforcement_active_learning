@@ -5,10 +5,12 @@ import pickle
 import plotly.graph_objs as go
 import plotly
 from plotly.graph_objs import Scatter, Layout
+from gensim.models.keyedvectors import KeyedVectors
+
+from config import data, params, w2v
+import numpy as np
 
 def read_TREC():
-    data = {}
-
     def read(mode):
         z = []
         with open("data/TREC/TREC_" + mode + ".txt", "r", encoding="utf-8") as f:
@@ -40,7 +42,7 @@ def read_TREC():
 
 
 def read_MR():
-    data = {}
+    # data = {}
     x, y = [], []
 
     with open("data/MR/rt-polarity.pos", "r", encoding="utf-8") as f:
@@ -68,7 +70,7 @@ def read_MR():
     return data
 
 def read_MR7025():
-    data = {}
+    # data = {}
     x, y = [], []
 
     with open("data/MR/rt-polarity.pos", "r", encoding="utf-8") as f:
@@ -96,7 +98,7 @@ def read_MR7025():
     return data
 
 def read_rotten_imdb():
-    data = {}
+    # data = {}
     x, y = [], []
 
     with open("data/rotten_imdb/rt-polarity.pos", "r", encoding="ISO-8859-1") as f:
@@ -124,7 +126,7 @@ def read_rotten_imdb():
     return data
 
 def read_UMICH():
-    data = {}
+    # data = {}
     x, y = [], []
 
     with open("data/UMICH/rt-polarity.pos", "r", encoding="utf-8") as f:
@@ -172,7 +174,7 @@ def load_model(params):
 
 def logAreaGraph(distribution, classes, name):
     data = []
-    for key, value in distribution.items(): 
+    for key, value in distribution.items():
         xValues = range(0,len(value))
         data.append(go.Scatter(
             name=classes[key],
@@ -181,3 +183,45 @@ def logAreaGraph(distribution, classes, name):
             fill='tozeroy'
         ))
     plotly.offline.plot(data, filename=name)
+
+"""
+load word2vec pre trained vectors
+"""
+def load_word2vec():
+    print("loading word2vec...")
+    word_vectors = KeyedVectors.load_word2vec_format(
+        "../GoogleNews-vectors-negative300.bin", binary=True)
+
+    # data["w2v_kv"] = word_vectors
+
+    wv_matrix = []
+    for word in data["vocab"]:
+        if word in word_vectors.vocab:
+            wv_matrix.append(word_vectors.word_vec(word))
+        else:
+            wv_matrix.append(
+                np.random.uniform(-0.01, 0.01, 300).astype("float32"))
+
+    # one for UNK and one for zero padding
+    wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32"))
+    wv_matrix.append(np.zeros(300).astype("float32"))
+    wv_matrix = np.array(wv_matrix)
+    w2v["w2v"] = wv_matrix
+    w2v["w2v_kv"] = word_vectors
+    # return word_vectors, wv_matrix
+
+
+def average_feature_vector(sentence, embedding):
+    num_features = 300
+    feature_vector = np.zeros((num_features, ), dtype="float32")
+
+    for word in sentence:
+        # word_vector = embedding(word)
+        if word in embedding.vocab:
+            word_vector = embedding.word_vec(word)
+        else:
+            word_vector = np.random.uniform(-0.01, 0.01, num_features).astype("float32")
+        feature_vector = np.add(feature_vector, word_vector)
+
+    feature_vector = np.divide(feature_vector, len(sentence))
+    return feature_vector
