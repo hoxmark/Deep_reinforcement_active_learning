@@ -7,9 +7,9 @@ def train(data, params):
     if params["EMBEDDING"] == "static":
         w2v = utils.load_word2vec(data)
         data["w2v"] = w2v
-        
     agent = RobotCNNDQN(params)
     model = CNN(data, params)
+    model.init_model()
     game = Game(data, params)
 
     for episode in range(params["EPISODES"]):
