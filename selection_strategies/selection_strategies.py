@@ -171,10 +171,11 @@ def select_entropy(model, lg, iteration):
         batch_target.extend(next_targets)
         batch_indices.extend(next_indices)
 
-        print("len before clean {}".format(len(batch_feature)))
-        batch_feature, batch_target, batch_indices, n_deleted = clean(batch_feature, batch_target, batch_indices)
-        print("len after clean {}".format(len(batch_feature)))
-        total_deleted += n_deleted
+        if params["EMBEDDING"] == "static":
+            print("len before clean {}".format(len(batch_feature)))
+            batch_feature, batch_target, batch_indices, n_deleted = clean(batch_feature, batch_target, batch_indices)
+            print("len after clean {}".format(len(batch_feature)))
+            total_deleted += n_deleted
 
         if len(batch_feature) >= params["BATCH_SIZE"]:
             break
@@ -194,7 +195,7 @@ def select_entropy(model, lg, iteration):
     if params["LOG"]:
         lg.scalar_summary("avg-score", avg_all_score, iteration)
         lg.scalar_summary("avg-best-score", avg_best_score, iteration)
-        lg.scalar_summary("n-deleted", n_deleted, iteration)
+        lg.scalar_summary("n-deleted", total_deleted, iteration)
 
     return batch_feature, batch_target
 
@@ -207,11 +208,15 @@ def clean(features, targets, indices):
 
             first_w2v = utils.average_feature_vector(first, w2v["w2v_kv"])
             second_w2v = utils.average_feature_vector(second, w2v["w2v_kv"])
-
             distance = spatial.distance.cosine(first_w2v, second_w2v)
-            # print("{} < {}".format(distance, params["SIMILARITY_THRESHOLD"]))
+
             if distance < params["SIMILARITY_THRESHOLD"]:
                 to_delete.append(k)
+                print("Similar sentence: ")
+                print(*[data["vocab"][i] for i in filter(lambda a: a < len(data["vocab"]), first)])
+                print(*[data["vocab"][i] for i in filter(lambda a: a < len(data["vocab"]), second)])
+                print("\n\n")
+
     to_delete = list(set(to_delete))
 
     print("Deleting {} entries. Feature len is {}".format(len(to_delete), len(features)))

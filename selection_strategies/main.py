@@ -10,7 +10,7 @@ from config import params, data
 
 def main():
     parser = argparse.ArgumentParser(description="-----[CNN-classifier]-----")
-    parser.add_argument("--similarity", default=0.025, type=float, help="similarity threshold")
+    parser.add_argument("--similarity", default=0.85, type=float, help="similarity threshold")
     parser.add_argument("--mode", default="train",
                         help="train: train (with test) a model / test: test saved models")
     parser.add_argument("--model", default="cnn",
@@ -106,9 +106,14 @@ def main():
     if params["EMBEDDING"] == "static":
         utils.load_word2vec()
 
+
     print("=" * 20 + "INFORMATION" + "=" * 20)
     for key, value in params.items():
         print("{}: {}".format(key.upper(), value))
+
+    if params["EMBEDDING"] == "random" and params["SIMILARITY_THRESHOLD"] > 0:
+        print("********** WARNING *********")
+        print("Random embedding makes similarity threshold have no effect. \n")
 
     print("=" * 20 + "TRAINING STARTED" + "=" * 20)
     train.active_train()
