@@ -5,7 +5,6 @@ import argparse
 import torch
 
 import train
-
 from config import params, data
 
 
@@ -63,7 +62,6 @@ def main():
             + data["test_x"] for w in sent])))
     data["classes"] = sorted(list(set(data["train_y"])))
     data["word_to_idx"] = {w: i for i, w in enumerate(data["vocab"])}
-
 
     params_local = {
         "SIMILARITY_THRESHOLD": options.similarity,

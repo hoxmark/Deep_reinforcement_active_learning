@@ -151,21 +151,12 @@ def select_entropy(model, lg, iteration):
         print("Selection process: {0:.0f}% completed ".format(
             100 * (completed / (len(data["train_x"]) // params["BATCH_SIZE"] + 1))), end="\r")
 
-
-    #
-
-
-    # argsort = np.argsort(sample_scores).tolist()
-    # sorted_scores_indices = reversed(np.argsort(sample_scores).tolist())
-    # print(argsort)
-    # sorted_scores_indices = reversed(argsort)
     sorted_scores_indices = np.flip(np.argsort(sample_scores), 0).tolist()
     batch_indices = []
     batch_feature = []
     batch_target = []
+    total_deleted = 0
 
-    # while len(batch_feature) < params["BATCH_SIZE"]:
-    # for i in range(len(data["train_x"]), step=params["BATCH_SIZE"]):
     for i in range(0, len(sorted_scores_indices), params["BATCH_SIZE"]):
         batch_range = min(params["BATCH_SIZE"], len(sorted_scores_indices) - i)
         next_indices = sorted_scores_indices[i : i + batch_range]
@@ -181,12 +172,13 @@ def select_entropy(model, lg, iteration):
         batch_indices.extend(next_indices)
 
         print("len before clean {}".format(len(batch_feature)))
-        batch_feature, batch_target, batch_indices = clean(batch_feature, batch_target, batch_indices)
+        batch_feature, batch_target, batch_indices, n_deleted = clean(batch_feature, batch_target, batch_indices)
         print("len after clean {}".format(len(batch_feature)))
+        total_deleted += n_deleted
 
         if len(batch_feature) >= params["BATCH_SIZE"]:
             break
-    # We only want to add batch_size elements each time 
+    # We only want to add batch_size elements each time
     batch_feature = batch_feature[0 : params["BATCH_SIZE"]]
     batch_target = batch_target[0 : params["BATCH_SIZE"]]
     batch_indices = batch_indices[0 : params["BATCH_SIZE"]]
@@ -202,6 +194,7 @@ def select_entropy(model, lg, iteration):
     if params["LOG"]:
         lg.scalar_summary("avg-score", avg_all_score, iteration)
         lg.scalar_summary("avg-best-score", avg_best_score, iteration)
+        lg.scalar_summary("n-deleted", n_deleted, iteration)
 
     return batch_feature, batch_target
 
@@ -228,7 +221,7 @@ def clean(features, targets, indices):
         del targets[delete]
         del indices[delete]
 
-    return features, targets, indices
+    return features, targets, indices, len(to_delete)
 
 
 def select_random(model, lg, iteration):
