@@ -29,7 +29,7 @@ def active_train():
     average_losses = {}
 
     if params["MODEL"] == "cnn":
-        model = CNN(data, params)
+        model = CNN()
     elif params["MODEL"] == "rnn":
         model = RNN(params, data)
     else:
