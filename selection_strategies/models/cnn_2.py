@@ -4,27 +4,25 @@ import torch.nn.functional as F
 import numpy as np
 
 from gensim.models.keyedvectors import KeyedVectors
-
 from config import params, data, w2v
+# from config import para
 
 
-class CNN(nn.Module):
+class CNN2(nn.Module):
     def __init__(self):
-        super(CNN, self).__init__()
-        self.params = params
-
+        super(CNN2, self).__init__()
         self.BATCH_SIZE = params["BATCH_SIZE"]
-        self.SELECTION_SIZE = params["SELECTION_SIZE"]
         self.MAX_SENT_LEN = params["MAX_SENT_LEN"]
         self.WORD_DIM = params["WORD_DIM"]
         self.VOCAB_SIZE = params["VOCAB_SIZE"]
-        self.CLASS_SIZE = params["CLASS_SIZE"]
         self.FILTERS = params["FILTERS"]
         self.FILTER_NUM = params["FILTER_NUM"]
         self.DROPOUT_EMBED_PROB = params["DROPOUT_EMBED"]
         self.DROPOUT_MODEL_PROB = params["DROPOUT_MODEL"]
-        self.IN_CHANNEL = 1
         self.EMBEDDING = params["EMBEDDING"]
+        self.IN_CHANNEL = 1
+
+        self.data = data
 
         # one for UNK and one for zero padding
         self.NUM_EMBEDDINGS = self.VOCAB_SIZE + 2
@@ -38,6 +36,7 @@ class CNN(nn.Module):
     def get_conv(self, i):
         return getattr(self, 'conv_{}'.format(i))
 
+
     def init_model(self):
         self.embed = nn.Embedding(
             self.NUM_EMBEDDINGS, self.WORD_DIM, padding_idx=self.VOCAB_SIZE + 1)
@@ -50,17 +49,18 @@ class CNN(nn.Module):
                 self.IN_CHANNEL, self.FILTER_NUM[i], self.WORD_DIM * self.FILTERS[i], stride=self.WORD_DIM)
             setattr(self, 'conv_{}'.format(i), conv)
 
-        self.fc = nn.Linear(sum(self.FILTER_NUM), self.CLASS_SIZE)
         self.softmax = nn.Softmax()
         self.dropout_embed = nn.Dropout(self.DROPOUT_EMBED_PROB)
         self.dropout = nn.Dropout(self.DROPOUT_MODEL_PROB)
 
-        if self.params["CUDA"]:
+        if params["CUDA"]:
             self.cuda()
 
     def forward(self, inp):
         # inp = (25 x 59) - (mini_batch_size x sentence_length)
+        # print(inp)
         x = self.embed(inp).view(-1, 1, self.WORD_DIM * self.MAX_SENT_LEN)
+        # x = self.embed(inp).view(1, self.WORD_DIM * self.MAX_SENT_LEN)
         x = self.dropout_embed(x)
         # x = (25 x 1 x 17700) - mini_batch_size x embedding_for_each_sentence
 
@@ -74,6 +74,5 @@ class CNN(nn.Module):
         x = torch.cat(conv_results, 1)
         # x = (25 x 300) - concatenate all the filter results
         x = self.dropout(x)
-        x = self.fc(x)
 
         return x
