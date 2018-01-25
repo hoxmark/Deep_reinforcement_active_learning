@@ -4,6 +4,8 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 import numpy as np
 from gensim.models.keyedvectors import KeyedVectors
+from config import params, data, w2v
+
 
 class RNN(nn.Module):
     def __init__(self, params, data):
@@ -33,8 +35,8 @@ class RNN(nn.Module):
         assert (len(self.FILTERS) == len(self.FILTER_NUM))
 
         if self.EMBEDDING != "random":
-            self.wv_matrix = self.load_word2vec()
-
+            self.wv_matrix = w2v["w2v"]
+            
         self.init_model()
 
     def init_model(self):
