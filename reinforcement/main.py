@@ -5,7 +5,7 @@ import argparse
 import torch
 
 from train import train
-
+from config import params, data
 
 def main():
     parser = argparse.ArgumentParser(description="-----[CNN-classifier]-----")
@@ -43,15 +43,15 @@ def main():
                         default=False, help='Disable logging')
 
     options = parser.parse_args()
-    data = getattr(utils, "read_{}".format(options.dataset))()
 
+    getattr(utils, "read_{}".format(options.dataset))()
     data["vocab"] = sorted(list(set(
         [w for sent in data["train_x"] + data["dev_x"]
             + data["test_x"] for w in sent])))
     data["classes"] = sorted(list(set(data["train_y"])))
     data["word_to_idx"] = {w: i for i, w in enumerate(data["vocab"])}
 
-    params = {
+    params_local = {
         "EPOCH": 100,
         "ACTIONS": 2,
         "BUDGET": 100,
@@ -81,6 +81,9 @@ def main():
         "LOG": not options.no_log
     }
 
+    for key in params_local:
+        params[key] = params_local[key]
+
     params["CUDA"] = (not params["NO_CUDA"]) and torch.cuda.is_available()
     del params["NO_CUDA"]
 
@@ -93,7 +96,7 @@ def main():
 
     print("=" * 20 + "TRAINING STARTED" + "=" * 20)
     # train.active_train(data, params)
-    train(data, params)
+    train()
     print("=" * 20 + "TRAINING FINISHED" + "=" * 20)
 
 

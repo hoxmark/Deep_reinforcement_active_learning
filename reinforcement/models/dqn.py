@@ -1,12 +1,15 @@
 import torch.nn as nn
 import torch.nn.functional as F
 
+from config import params
+
 class DQN(nn.Module):
-    def __init__(self, params):
+    def __init__(self):
         # super(DQN, self).__init__()
         nn.Module.__init__(self)
-        self.IN_SIZE = params["WORD_DIM"] + 1
-        self.HIDDEN_SIZE = 512
+        # self.IN_SIZE = params["WORD_DIM"] + 1
+        self.IN_SIZE = 2
+        self.HIDDEN_SIZE = 256
         self.OUT_SIZE = params["ACTIONS"]
 
         self.fc = nn.Linear(self.IN_SIZE, self.HIDDEN_SIZE)

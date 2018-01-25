@@ -4,13 +4,17 @@ import pickle
 
 import plotly.graph_objs as go
 import plotly
-from plotly.graph_objs import Scatter, Layout
 
+from plotly.graph_objs import Scatter, Layout
 from gensim.models.keyedvectors import KeyedVectors
+
+from logger import Logger
 import numpy as np
 
+from datetime import datetime
+from config import data, w2v
+
 def read_TREC():
-    data = {}
 
     def read(mode):
         z = []
@@ -39,11 +43,8 @@ def read_TREC():
     read("train")
     read("test")
 
-    return data
-
 
 def read_MR():
-    data = {}
     x, y = [], []
 
     with open("data/MR/rt-polarity.pos", "r", encoding="utf-8") as f:
@@ -68,10 +69,8 @@ def read_MR():
     data["dev_x"], data["dev_y"] = x[dev_idx:test_idx], y[dev_idx:test_idx]
     data["test_x"], data["test_y"] = x[test_idx:], y[test_idx:]
 
-    return data
 
 def read_MR7025():
-    data = {}
     x, y = [], []
 
     with open("data/MR/rt-polarity.pos", "r", encoding="utf-8") as f:
@@ -96,7 +95,6 @@ def read_MR7025():
     data["dev_x"], data["dev_y"] = x[dev_idx:test_idx], y[dev_idx:test_idx]
     data["test_x"], data["test_y"] = x[test_idx:], y[test_idx:]
 
-    return data
 
 def read_rotten_imdb():
     data = {}
@@ -188,10 +186,12 @@ def logAreaGraph(distribution, classes, name):
 """
 load word2vec pre trained vectors
 """
-def load_word2vec(data):
+def load_word2vec():
     print("loading word2vec...")
     word_vectors = KeyedVectors.load_word2vec_format(
         "../GoogleNews-vectors-negative300.bin", binary=True)
+
+    # data["w2v_kv"] = word_vectors
 
     wv_matrix = []
     for word in data["vocab"]:
@@ -205,4 +205,16 @@ def load_word2vec(data):
     wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32"))
     wv_matrix.append(np.zeros(300).astype("float32"))
     wv_matrix = np.array(wv_matrix)
-    return wv_matrix
+    w2v["w2v"] = wv_matrix
+    w2v["w2v_kv"] = word_vectors
+    # return word_vectors, wv_matrix
+
+
+def init_logger():
+    basename = "./logs/reinforcement"
+    lg = Logger('{}-{}'.format(
+        basename,
+        datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    ))
+
+    return lg
