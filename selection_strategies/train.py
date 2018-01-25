@@ -25,6 +25,11 @@ def to_np(x):
 def active_train():
     init_learning_rate = params["LEARNING_RATE"]
     init_selection_size = params["SELECTION_SIZE"]
+
+    init_data = {}
+    init_data["train_y"] = copy.deepcopy(data["train_y"])
+    init_data["train_x"] = copy.deepcopy(data["train_x"])
+
     average_accs = {}
     average_losses = {}
 
@@ -42,6 +47,9 @@ def active_train():
         params["LEARNING_RATE"] = init_learning_rate
         params["SELECTION_SIZE"] = init_selection_size
 
+        data["train_x"]  = init_data["train_x"]
+        data["train_y"]  = init_data["train_y"]
+
         lg = None
         if params["LOG"]:
             lg = init_logger(j)
@@ -58,7 +66,7 @@ def active_train():
 
         for key in range(len(data["classes"])):
             distribution[key] = []
-
+            
         data["train_x"], data["train_y"] = shuffle(data["train_x"], data["train_y"])
 
         if 500 % params["SELECTION_SIZE"] == 0:
