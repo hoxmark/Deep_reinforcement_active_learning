@@ -3,7 +3,9 @@ import sys
 import random
 from models.cnndqn import CNNDQN
 import torch
+import torch.optim as optim
 import torch.nn as nn
+from torch.autograd import Variable
 from config import params, data
 
 
@@ -43,7 +45,6 @@ class Game:
         self.performance = 0
 
     def get_frame(self, model):
-        print("CURRENT FRAME", self.current_frame)
         sentence = self.train_x[self.order[self.current_frame]]
         sentence = torch.autograd.Variable(torch.LongTensor(sentence).unsqueeze(0))
         if params["CUDA"]:
@@ -58,6 +59,7 @@ class Game:
         if params["CUDA"]:
             observation = observation.cuda()
 
+        self.current_frame += 1
         return observation
 
     def feedback(self, action, model):
@@ -76,9 +78,8 @@ class Game:
             # Return terminal
             return None, None, True
 
-        self.current_frame += 1
+        print("> Action {:2} - reward {:4} - accuracy {:4}".format(action, reward, self.performance))
         next_observation = self.get_frame(model)
-        print("Reward: {} - accuracy {}".format(reward, self.performance))
         return reward, next_observation, is_terminal
 
     def calculate_entropy(self, model, feature):
@@ -91,20 +92,44 @@ class Game:
 
     def query(self):
         sentence = self.train_x[self.order[self.current_frame]]
-        # simulate: obtain the label
         label = self.train_y[self.order[self.current_frame]]
         self.queried_times += 1
-        # print "Select:", sentence, label
         self.queried_set_x.append(sentence)
         self.queried_set_y.append(label)
-        print("> Queried times", len(self.queried_set_x))
 
     def get_performance(self, model):
         # model.init_model()
-        print(self.queried_set_x)
-        model.train_model(self.queried_set_x, self.queried_set_y)
+        self.train_model(model)
         performance = model.test(self.test_x, self.test_y)
         return performance
+
+
+    def train_model(self, model):
+        model.train()
+        print("Training model. Training set contains {} elements".format(len(self.queried_set_x)))
+        parameters = filter(lambda p: p.requires_grad, model.parameters())
+        optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"])
+        criterion = nn.CrossEntropyLoss()
+
+        for e in range(params["EPOCH"]):
+            for i in range(0, len(self.queried_set_x), params["BATCH_SIZE"]):
+                batch_range = min(params["BATCH_SIZE"], len(self.queried_set_x) - i)
+                batch_x = self.queried_set_x[i:i + batch_range]
+                batch_y = self.queried_set_y[i:i + batch_range]
+
+                feature = Variable(torch.LongTensor(batch_x))
+                target = Variable(torch.LongTensor(batch_y))
+
+                if params["CUDA"]:
+                    feature, target = feature.cuda(params["DEVICE"]), target.cuda(params["DEVICE"])
+
+                optimizer.zero_grad()
+                pred = model(feature)
+                loss = criterion(pred, target)
+                loss.backward()
+                optimizer.step()
+
+            print("{} of {}".format(e, params["EPOCH"]), end='\r')
 
     def reboot(self):
         random.shuffle(self.order)

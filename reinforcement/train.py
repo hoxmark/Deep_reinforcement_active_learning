@@ -11,7 +11,6 @@ def train():
     lg = utils.init_logger()
     agent = RobotCNNDQN()
     model = CNN()
-    # model.init_model()
     game = Game()
 
     for episode in range(params["EPISODES"]):
@@ -23,14 +22,10 @@ def train():
         while not terminal:
             observation = game.get_frame(model)
             action = agent.get_action(observation)
-            print('> Action', action)
             reward, observation2, terminal = game.feedback(action, model)
             if terminal:
                 break
-            # print('> Reward', reward)
 
             agent.update(observation, action, reward, observation2, terminal)
+            print("\n")
         lg.scalar_summary("episode-acc", game.performance, episode)
-
-
-    # Test agent here

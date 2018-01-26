@@ -9,6 +9,7 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 from config import params
 
+# TODO put in params
 # Hyper Parameters:
 GAMMA = 0.99  # decay rate of past observations
 OBSERVE = 32  # timesteps to observe before training
@@ -94,5 +95,4 @@ class RobotCNNDQN:
         if self.epsilon > FINAL_EPSILON and self.time_step > OBSERVE:
             self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 
-        # return action
-        return 1
+        return action

@@ -79,47 +79,8 @@ class CNN(nn.Module):
         x = self.dropout(x)
         x = self.fc(x)
 
-        print(x)
 
         return x
-
-    def train_model(self, train_features, train_targets):
-        print(torch.cuda.is_available())
-        parameters = filter(lambda p: p.requires_grad, self.parameters())
-        optimizer = optim.Adam(parameters, params["LEARNING_RATE"])
-
-        # Softmax is included in CrossEntropyLoss
-        criterion = nn.CrossEntropyLoss()
-        self.train()
-
-        best_model = None
-        best_acc = 0
-        best_epoch = 0
-
-        for e in range(params["EPOCH"]):
-            shuffle(train_features, train_targets)
-            size = len(train_features)
-            avg_loss = 0
-            corrects = 0
-
-            for i in range(0, len(train_features), params["BATCH_SIZE"]):
-                batch_range = min(params["BATCH_SIZE"], len(train_features) - i)
-                batch_x = train_features[i:i + batch_range]
-                batch_y = train_targets[i:i + batch_range]
-
-                feature = Variable(torch.LongTensor(batch_x))
-                target = Variable(torch.LongTensor(batch_y))
-
-                if params["CUDA"]:
-                    feature, target = feature.cuda(), target.cuda()
-
-                optimizer.zero_grad()
-                pred = self(feature)
-                loss = criterion(pred, target)
-                loss.backward()
-                optimizer.step()
-            print("{} of {}".format(e, params["EPOCH"]), end='\r')
-
 
     def test(self, test_x, test_y):
         self.eval()
