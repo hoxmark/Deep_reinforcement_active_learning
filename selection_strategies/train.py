@@ -13,7 +13,16 @@ import torch.nn as nn
 
 from models.cnn import CNN
 from models.rnn import RNN
+
+# from models.vae import VAE
+# from models import vae, ae
+# from models.rnnae import AttnDecoderRNN, EncoderRNN
+from models import rnnae
+# import vae2
+from models import vae2
 from selection_strategies import select_random, select_entropy, select_egl, select_all
+
+
 
 from config import params, data
 
@@ -37,6 +46,29 @@ def active_train():
 
     if params["CUDA"]:
         model.cuda()
+
+
+    # # Train the autoencoder
+    # # autoencoder = vae.VAE()
+    # autoencoder = ae.AE()
+    # if params["CUDA"]:
+    #     autoencoder.cuda()
+    #
+    # ae.train(autoencoder)
+
+    encoder1 = rnnae.EncoderRNN()
+    attn_decoder1 = rnnae.AttnDecoderRNN()
+
+    if params["CUDA"]:
+        encoder1, attn_decoder1 = encoder1.cuda(), attn_decoder1.cuda()
+
+
+    rnnae.train(encoder1, attn_decoder1)
+    # print("After train ")
+
+    # vae2.train()
+
+
 
     for j in range(params["N_AVERAGE"]):
         params["LEARNING_RATE"] = init_learning_rate

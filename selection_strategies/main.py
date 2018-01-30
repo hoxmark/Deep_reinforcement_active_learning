@@ -21,6 +21,8 @@ def main():
                         help="available datasets: MR, TREC")
     parser.add_argument('--batch-size', type=int, default=32,
                         help='batch size for training [default: 32]')
+    parser.add_argument('--selection-size', type=int, default=25,
+                        help='selection size for selection function [default: 25]')
     parser.add_argument("--save_model", default="F",
                         help="whether saving model or not (T/F)")
     parser.add_argument("--early_stopping", default="F",
@@ -53,7 +55,9 @@ def main():
                         default=True, help='Use  minibatch training')
 
     options = parser.parse_args()
-    data = getattr(utils, "read_{}".format(options.dataset))()
+
+
+    getattr(utils, "read_{}".format(options.dataset))()
 
     data["vocab"] = sorted(list(set(
         [w for sent in data["train_x"] + data["dev_x"]
