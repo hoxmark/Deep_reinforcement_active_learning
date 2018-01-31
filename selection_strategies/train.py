@@ -11,20 +11,11 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 
+from config import params, data
 from models.cnn import CNN
 from models.rnn import RNN
-
-# from models.vae import VAE
-# from models import vae, ae
-# from models.rnnae import AttnDecoderRNN, EncoderRNN
 from models import rnnae
-# import vae2
-from models import vae2
 from selection_strategies import select_random, select_entropy, select_egl, select_all
-
-
-
-from config import params, data
 
 
 def to_np(x):
@@ -47,28 +38,13 @@ def active_train():
     if params["CUDA"]:
         model.cuda()
 
-
-    # # Train the autoencoder
-    # # autoencoder = vae.VAE()
-    # autoencoder = ae.AE()
-    # if params["CUDA"]:
-    #     autoencoder.cuda()
-    #
-    # ae.train(autoencoder)
-
-    encoder1 = rnnae.EncoderRNN()
-    attn_decoder1 = rnnae.AttnDecoderRNN()
+    encoder = rnnae.EncoderRNN()
+    decoder = rnnae.DecoderRNN()
 
     if params["CUDA"]:
-        encoder1, attn_decoder1 = encoder1.cuda(), attn_decoder1.cuda()
+        encoder, decoder = encoder.cuda(), decoder.cuda()
 
-
-    rnnae.train(encoder1, attn_decoder1)
-    # print("After train ")
-
-    # vae2.train()
-
-
+    rnnae.train(encoder, decoder)
 
     for j in range(params["N_AVERAGE"]):
         params["LEARNING_RATE"] = init_learning_rate
@@ -80,7 +56,6 @@ def active_train():
             start_accuracy = 100 / params["CLASS_SIZE"]
             lg.scalar_summary("test-acc", start_accuracy, 0)
             lg.scalar_summary("test-acc-avg", start_accuracy, 0)
-
 
         print("-" * 20, "Round {}".format(j + 1), "-" * 20)
         model.init_model()
@@ -120,7 +95,8 @@ def active_train():
             model.init_model()
             model = train(model, train_features, train_targets)
             accuracy, loss, corrects, size = evaluate(model, i, mode="test")
-            print("{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{}) \n".format("test", loss, accuracy, corrects, size))
+            print("{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{}) \n".format("test",
+                                                                          loss, accuracy, corrects, size))
             if i not in average_accs:
                 average_accs[i] = [accuracy]
             else:
@@ -134,16 +110,18 @@ def active_train():
 
             if params["LOG"]:
                 lg.scalar_summary("test-acc", accuracy, len(train_features))
-                lg.scalar_summary("test-acc-avg", sum(average_accs[i]) / len(average_accs[i]), len(train_features))
+                lg.scalar_summary(
+                    "test-acc-avg", sum(average_accs[i]) / len(average_accs[i]), len(train_features))
 
                 lg.scalar_summary("test-loss", loss, len(train_features))
-                lg.scalar_summary("test-loss-avg", sum(average_losses[i]) / len(average_losses[i]), len(train_features))
+                lg.scalar_summary(
+                    "test-loss-avg", sum(average_losses[i]) / len(average_losses[i]), len(train_features))
 
                 for each in range(len(data["classes"])):
-                    val = train_targets.count(each)/len(train_targets)
+                    val = train_targets.count(each) / len(train_targets)
                     distribution[each].append(val)
 
-                #count number of positive and negativ added to labeledpool.
+                # count number of positive and negativ added to labeledpool.
                 nameOfFile = '{}/distribution{}.html'.format(lg.log_dir, j)
                 utils.logAreaGraph(distribution, data["classes"], nameOfFile)
                 log_model(model, lg)
@@ -157,7 +135,8 @@ def train(model, train_features, train_targets):
 
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     if params["MODEL"] == "rnn":
-        optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"], weight_decay=params["WEIGHT_DECAY"])
+        optimizer = optim.Adadelta(
+            parameters, params["LEARNING_RATE"], weight_decay=params["WEIGHT_DECAY"])
     else:
         optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"])
 
@@ -186,7 +165,8 @@ def train(model, train_features, train_targets):
                     target = Variable(torch.LongTensor(batch_y))
 
                     if params["CUDA"]:
-                        feature, target = feature.cuda(params["DEVICE"]), target.cuda(params["DEVICE"])
+                        feature, target = feature.cuda(
+                            params["DEVICE"]), target.cuda(params["DEVICE"])
 
                     optimizer.zero_grad()
                     pred = model(feature)
@@ -194,7 +174,8 @@ def train(model, train_features, train_targets):
                     loss.backward()
                     optimizer.step()
                     avg_loss += loss.data[0]
-                    corrects += (torch.max(pred, 1)[1].view(target.size()).data == target.data).sum()
+                    corrects += (torch.max(pred, 1)
+                                 [1].view(target.size()).data == target.data).sum()
                 avg_loss = avg_loss * params["BATCH_SIZE"] / size
             else:
                 feature = Variable(torch.LongTensor(train_features))
@@ -213,10 +194,13 @@ def train(model, train_features, train_targets):
 
             if params["SCORE_FN"] == "all":
                 accuracy = 100.0 * corrects / size
-                dev_accuracy, dev_loss, dev_corrects, dev_size = evaluate(data, model, params, e, mode="dev")
+                dev_accuracy, dev_loss, dev_corrects, dev_size = evaluate(
+                    data, model, params, e, mode="dev")
 
-                s1 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format("train", avg_loss, accuracy, corrects, size)
-                s2 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format("dev", dev_loss, dev_accuracy, dev_corrects, dev_size)
+                s1 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format(
+                    "train", avg_loss, accuracy, corrects, size)
+                s2 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format(
+                    "dev", dev_loss, dev_accuracy, dev_corrects, dev_size)
                 output_lines[0] = s1
                 output_lines[1] = s2
 
@@ -230,8 +214,10 @@ def train(model, train_features, train_targets):
                 accuracy = 100.0 * corrects / size
                 dev_accuracy, dev_loss, dev_corrects, dev_size = evaluate(model, e, mode="dev")
 
-                s1 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format("train", avg_loss, accuracy, corrects, size)
-                s2 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format("dev", dev_loss, dev_accuracy, dev_corrects, dev_size)
+                s1 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format(
+                    "train", avg_loss, accuracy, corrects, size)
+                s2 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format(
+                    "dev", dev_loss, dev_accuracy, dev_corrects, dev_size)
                 output_lines[0] = s1
                 output_lines[1] = s2
 
