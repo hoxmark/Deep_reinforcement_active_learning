@@ -43,18 +43,11 @@ class DecoderRNN(nn.Module):
         self.softmax = nn.LogSoftmax(dim=1)
 
     def forward(self, input, hidden):
-        embedded = self.embedding(input).view(1, hidden.size()[1], self.hidden_size)
+        embedded = self.embedding(input).unsqueeze(0)
         output = F.relu(embedded)
         output, hidden = self.gru(output, hidden)
         output = self.softmax(self.out(output[0]))
         return output, hidden
-
-    def initHidden(self):
-        result = Variable(torch.zeros(1, 1, self.hidden_size))
-        if use_cuda:
-            return result.cuda()
-        else:
-            return result
 
 class AttnDecoderRNN(nn.Module):
     def __init__(self, dropout_p=0.1):
