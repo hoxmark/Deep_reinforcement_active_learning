@@ -38,14 +38,6 @@ def active_train():
     if params["CUDA"]:
         model.cuda()
 
-    encoder = rnnae.EncoderRNN()
-    decoder = rnnae.DecoderRNN()
-
-    if params["CUDA"]:
-        encoder, decoder = encoder.cuda(), decoder.cuda()
-
-    rnnae.train(encoder, decoder)
-
     for j in range(params["N_AVERAGE"]):
         params["LEARNING_RATE"] = init_learning_rate
         params["SELECTION_SIZE"] = init_selection_size

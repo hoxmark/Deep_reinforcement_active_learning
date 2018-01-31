@@ -10,17 +10,13 @@ from torch.autograd import Variable
 
 from config import params, data
 
-learning_rate = 1e-3
-hidden_size = 256
-max_length = 10
-
-
 class EncoderRNN(nn.Module):
     def __init__(self):
         super(EncoderRNN, self).__init__()
+        self.hidden_size = params["HIDDEN_SIZE"]
 
-        self.embedding = nn.Embedding(params["VOCAB_SIZE"] + 2, hidden_size, padding_idx=params["VOCAB_SIZE"] + 1)
-        self.gru = nn.GRU(hidden_size, hidden_size)
+        self.embedding = nn.Embedding(params["VOCAB_SIZE"] + 2, self.hidden_size, padding_idx=params["VOCAB_SIZE"] + 1)
+        self.gru = nn.GRU(self.hidden_size, self.hidden_size)
 
     def forward(self, input):
         output = self.embedding(input)
@@ -38,7 +34,7 @@ class EncoderRNN(nn.Module):
 class DecoderRNN(nn.Module):
     def __init__(self):
         super(DecoderRNN, self).__init__()
-        self.hidden_size = hidden_size
+        self.hidden_size = params["HIDDEN_SIZE"]
         self.output_size = params["VOCAB_SIZE"] + 2
 
         self.embedding = nn.Embedding(self.output_size, self.hidden_size, padding_idx=params["VOCAB_SIZE"] + 1)
@@ -63,12 +59,12 @@ class DecoderRNN(nn.Module):
 class AttnDecoderRNN(nn.Module):
     def __init__(self, dropout_p=0.1):
         super(AttnDecoderRNN, self).__init__()
-        self.hidden_size = hidden_size
+        self.hidden_size = params["HIDDEN_SIZE"]
         self.output_size = params["VOCAB_SIZE"] + 2
         self.dropout_p = dropout_p
         self.max_length = max_length
 
-        self.embedding = nn.Embedding(self.output_size, hidden_size, padding_idx=params["VOCAB_SIZE"] + 1)
+        self.embedding = nn.Embedding(self.output_size, self.hidden_size, padding_idx=params["VOCAB_SIZE"] + 1)
         self.attn = nn.Linear(self.hidden_size * 2, self.max_length)
         self.attn_combine = nn.Linear(self.hidden_size * 2, self.hidden_size)
         self.dropout = nn.Dropout(self.dropout_p)
@@ -104,8 +100,8 @@ class AttnDecoderRNN(nn.Module):
 def train(encoder, decoder):
     print("Training autoencoder ")
 
-    encoder_optimizer = optim.SGD(encoder.parameters(), lr=learning_rate)
-    decoder_optimizer = optim.SGD(decoder.parameters(), lr=learning_rate)
+    encoder_optimizer = optim.SGD(encoder.parameters(), lr=params["LEARNING_RATE"])
+    decoder_optimizer = optim.SGD(decoder.parameters(), lr=params["LEARNING_RATE"])
     criterion = nn.NLLLoss()
 
     for epoch in range(params["EPOCH"]):
