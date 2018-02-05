@@ -223,27 +223,18 @@ def train(model, train_features, train_targets):
 
 def init_logger(average):
     basename = "./logs" if params["EMBEDDING"] == "static" else "./logs_random"
-    if params["MODEL"] == "cnn":
-        lg = logger.Logger('{}/cnn/{},date={},MODEL={},SCORE_FN={},AVERAGE={},SIMILARITY={}'.format(
-            basename,
-            str(params["DATASET"]),
-            datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-            str(params["MODEL"]),
-            str(params["SCORE_FN"]),
-            str(average + 1),
-            str(params["SIMILARITY_THRESHOLD"])
-        ))
 
-    if (params["MODEL"] == "rnn"):
-        lg = logger.Logger('{}/rnn/{},date={},MODEL={},SCORE_FN={},AVERAGE={},SIMILARITY={}'.format(
-            basename,
-            str(params["DATASET"]),
-            datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-            str(params["MODEL"]),
-            str(params["SCORE_FN"]),
-            str(average + 1),
-            str(params["SIMILARITY_THRESHOLD"])
-        ))
+    lg = logger.Logger('{}/{}/{},date={},MODEL={},SCORE_FN={},AVG={},SIM_REP={},SIMILARITY={}'.format(
+        basename,
+        str(params["DATASET"]),
+        str(params["MODEL"]),
+        datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
+        str(params["MODEL"]),
+        str(params["SCORE_FN"]),
+        str(average + 1),
+        str(params["SIMILARITY_REPRESENTATION"]),
+        str(params["SIMILARITY_THRESHOLD"])
+    ))
     return lg
 
 
