@@ -241,7 +241,7 @@ def init_logger(average):
         ))
 
     if (params["MODEL"] == "rnn"):
-        lg = logger.Logger('{}/rnn/{},minibatch={},selection_size={},date={},MODEL={},DROPOUT_EMBED={}, DROPOUT_MODEL={},SCORE_FN={},HLAYERS={},HNODES={},AVERAGE={},LEARNING_RATE={},WEIGHT_DECAY={}'.format(
+        lg = logger.Logger('{}/rnn/{},minibatch={},selection_size={},date={},MODEL={},DROPOUT_EMBED={},DROPOUT_MODEL={},SCORE_FN={},HLAYERS={},HNODES={},AVERAGE={},LEARNING_RATE={},WEIGHT_DECAY={},SIMILARITY={}'.format(
             basename,
             str(params["DATASET"]),
             str(params["MINIBATCH"]),
@@ -255,7 +255,8 @@ def init_logger(average):
             str(params["HIDDEN_SIZE"]),
             str(average + 1),
             str(params["LEARNING_RATE"]),
-            str(params["WEIGHT_DECAY"])
+            str(params["WEIGHT_DECAY"]),
+            str(params["SIMILARITY_THRESHOLD"])
         ))
     return lg
 
