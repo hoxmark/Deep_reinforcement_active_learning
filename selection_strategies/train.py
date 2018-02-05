@@ -234,38 +234,25 @@ def train(model, train_features, train_targets):
 def init_logger(average):
     basename = "./logs" if params["EMBEDDING"] == "static" else "./logs_random"
     if params["MODEL"] == "cnn":
-        lg = logger.Logger('{}/cnn/{},minibatch={},selection_size={},date={},FILTERS={},FILTER_NUM={},MODEL={},DROPOUT_EMBED={}, DROPOUT_MODEL={},SCORE_FN={},AVERAGE={},SIMILARITY={}'.format(
+        lg = logger.Logger('{}/cnn/{},date={},MODEL={},SCORE_FN={},AVERAGE={},SIMILARITY={}'.format(
             basename,
             str(params["DATASET"]),
-            str(params["MINIBATCH"]),
-            str(params["SELECTION_SIZE"]),
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
-            str(params["FILTERS"]),
-            str(params["FILTER_NUM"]),
             str(params["MODEL"]),
-            str(params["DROPOUT_EMBED"]),
-            str(params["DROPOUT_MODEL"]),
             str(params["SCORE_FN"]),
             str(average + 1),
             str(params["SIMILARITY_THRESHOLD"])
         ))
 
     if (params["MODEL"] == "rnn"):
-        lg = logger.Logger('{}/rnn/{},minibatch={},selection_size={},date={},MODEL={},DROPOUT_EMBED={}, DROPOUT_MODEL={},SCORE_FN={},HLAYERS={},HNODES={},AVERAGE={},LEARNING_RATE={},WEIGHT_DECAY={}'.format(
+        lg = logger.Logger('{}/rnn/{},date={},MODEL={},SCORE_FN={},AVERAGE={},SIMILARITY={}'.format(
             basename,
             str(params["DATASET"]),
-            str(params["MINIBATCH"]),
-            str(params["SELECTION_SIZE"]),
             datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S'),
             str(params["MODEL"]),
-            str(params["DROPOUT_EMBED"]),
-            str(params["DROPOUT_MODEL"]),
             str(params["SCORE_FN"]),
-            str(params["HIDDEN_LAYERS"]),
-            str(params["HIDDEN_SIZE"]),
             str(average + 1),
-            str(params["LEARNING_RATE"]),
-            str(params["WEIGHT_DECAY"])
+            str(params["SIMILARITY_THRESHOLD"])
         ))
     return lg
 
