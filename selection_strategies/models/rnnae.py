@@ -18,9 +18,10 @@ class EncoderRNN(nn.Module):
         self.embedding = nn.Embedding(params["VOCAB_SIZE"] + 2, self.hidden_size, padding_idx=params["VOCAB_SIZE"] + 1)
         self.gru = nn.GRU(self.hidden_size, self.hidden_size)
 
-    def forward(self, input):
+    def forward(self, input, batch_lengths):
         output = self.embedding(input)
-        hidden = self.initHidden(output.size()[1])
+        output = torch.nn.utils.rnn.pack_padded_sequence(output, batch_lengths)
+        hidden = self.initHidden(input.size()[1])
         output, hidden = self.gru(output, hidden)
         return output, hidden
 
@@ -101,33 +102,40 @@ def train(encoder, decoder):
         for i in range(0, len(data["train_x"]), params["BATCH_SIZE"]):
             batch_range = min(params["BATCH_SIZE"], len(data["train_x"]) - i)
 
-            batch_x = [[data["word_to_idx"][w] for w in sent] +
-                       [params["VOCAB_SIZE"] + 1] *
-                       (params["MAX_SENT_LEN"] - len(sent))
-                       for sent in data["train_x"][i:i + batch_range]]
+            batch_x = [[data["word_to_idx"][w] for w in sent] for sent in data["train_x"][i:i + batch_range]]
 
-            feature = Variable(torch.LongTensor(batch_x))
-            target = Variable(torch.LongTensor(batch_x))
+            batch_x_sorted = sorted(batch_x, key=lambda x: len(x), reverse=True)
+
+            batch_lengths = [len(sent) for sent in batch_x_sorted]
+            # print(batch_lengths)
+
+            batch_x_padded = [sent +[params["VOCAB_SIZE"] + 1] * (params["MAX_SENT_LEN"] - len(sent)) for sent in batch_x_sorted]
+            feature = Variable(torch.LongTensor(batch_x_padded))
+            target = Variable(torch.LongTensor(batch_x_padded))
 
             feature, target = feature.transpose(0, 1), target.transpose(0, 1)
-
             if params["CUDA"]:
                 feature, target = feature.cuda(), target.cuda()
+
+            # feature = Variable(torch.nn.utils.rnn.pack_padded_sequence(feature, batch_lengths))
+            # target = Variable(torch.nn.utils.rnn.pack_padded_sequence(target, batch_lengths))
 
             encoder_optimizer.zero_grad()
             decoder_optimizer.zero_grad()
 
-            encoder_outputs, encoder_hidden = encoder(feature)
+            encoder_outputs, encoder_hidden = encoder(feature, batch_lengths)
 
-            decoder_input = Variable(torch.LongTensor([params["VOCAB_SIZE"] + 1] * len(batch_x)))
+            decoder_input = Variable(torch.LongTensor([params["VOCAB_SIZE"]] * len(batch_x)))
             if params["CUDA"]:
                 decoder_input = decoder_input.cuda()
-
 
             decoder_hidden = encoder_hidden
             loss = 0
 
             # Teacher forcing: Feed the target as the next input
+            all_decoded = torch.LongTensor()
+            if params["CUDA"]:
+                all_decoded = all_decoded.cuda()
             for di in range(params["MAX_SENT_LEN"]):
                 decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
                 loss += criterion(decoder_output, target[di])

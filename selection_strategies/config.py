@@ -1,4 +1,5 @@
-# Global config imported elsewhere. 
+# Global config imported elsewhere.
 params = {}
 data = {}
 w2v = {}
+models = {}
