@@ -1,39 +1,33 @@
 import utils
-
+import logger
 import datetime
 import argparse
 import torch
 
-from train import train
+import train
 from config import params, data
+from models import rnnae
+
 
 def main():
     parser = argparse.ArgumentParser(description="-----[CNN-classifier]-----")
-    parser.add_argument("--mode", default="train",
-                        help="train: train (with test) a model / test: test saved models")
-    parser.add_argument("--model", default="cnn",
-                        help="Type of model to use. Default: CNN. Available models: CNN, RNN")
-    parser.add_argument("--embedding", default="static",
+    parser.add_argument("--embedding", default="random",
                         help="available embedings: random, static")
     parser.add_argument("--dataset", default="MR",
                         help="available datasets: MR, TREC")
     parser.add_argument('--batch-size', type=int, default=32,
                         help='batch size for training [default: 32]')
-    parser.add_argument("--save_model", default="F",
-                        help="whether saving model or not (T/F)")
-    parser.add_argument("--episodes", default=100, type=int,
-                        help="number of episodes")
-    parser.add_argument("--learning_rate", default=0.1,
+    parser.add_argument("--epoch", default=100, type=int,
+                        help="number of max epoch")
+    parser.add_argument("--learning_rate", default=1e-3,
                         type=float, help="learning rate")
     parser.add_argument("--dropout_embed", default=0.2,
                         type=float, help="Dropout embed probability. Default: 0.2")
-    parser.add_argument("--dropout_model", default=0.4,
-                        type=float, help="Dropout model probability. Default: 0.4")
     parser.add_argument('--device', type=int, default=0,
                         help='Cuda device to run on')
-    parser.add_argument('--average', type=int, default=1,
-                        help='Number of runs to average [default: 1]')
-    parser.add_argument('--hnodes', type=int, default=128,
+    parser.add_argument('--no-cuda', action='store_true',
+                        default=False, help='disable the gpu')
+    parser.add_argument('--hsize', type=int, default=128,
                         help='Number of nodes in the hidden layer(s)')
     parser.add_argument('--hlayers', type=int, default=1,
                         help='Number of hidden layers')
@@ -44,7 +38,9 @@ def main():
 
     options = parser.parse_args()
 
+
     getattr(utils, "read_{}".format(options.dataset))()
+
     data["vocab"] = sorted(list(set(
         [w for sent in data["train_x"] + data["dev_x"]
             + data["test_x"] for w in sent])))
@@ -52,30 +48,22 @@ def main():
     data["word_to_idx"] = {w: i for i, w in enumerate(data["vocab"])}
 
     params_local = {
-        "EPOCH": 100,
-        "ACTIONS": 2,
-        "BUDGET": 100,
-        "MODEL": options.model,
         "EMBEDDING": options.embedding,
         "DATASET": options.dataset,
-        "SAVE_MODEL": bool(options.save_model == "T"),
-        "EPISODES": options.episodes,
+        "EPOCH": options.epoch,
         "LEARNING_RATE": options.learning_rate,
         "MAX_SENT_LEN": max([len(sent) for sent in data["train_x"]
                              + data["dev_x"] + data["test_x"]]),
         "BATCH_SIZE": options.batch_size,
-        "NO_CUDA": False,
         "WORD_DIM": 300,
         "VOCAB_SIZE": len(data["vocab"]),
         "CLASS_SIZE": len(data["classes"]),
-        "ACTIONS": 2,
         "FILTERS": [3, 4, 5],
         "FILTER_NUM": [100, 100, 100],
         "DROPOUT_EMBED": options.dropout_embed,
-        "DROPOUT_MODEL": options.dropout_model,
         "DEVICE": options.device,
-        "N_AVERAGE": options.average,
-        "HIDDEN_SIZE": options.hnodes,
+        "NO_CUDA": options.no_cuda,
+        "HIDDEN_SIZE": options.hsize,
         "HIDDEN_LAYERS": options.hlayers,
         "WEIGHT_DECAY": options.weight_decay,
         "LOG": not options.no_log
@@ -90,15 +78,18 @@ def main():
     if params["CUDA"]:
         torch.cuda.set_device(params["DEVICE"])
 
-    print("=" * 20 + "INFORMATION" + "=" * 20)
-    for key, value in params.items():
-        print("{}: {}".format(key.upper(), value))
+    if params["EMBEDDING"] == "static":
+        utils.load_word2vec()
 
-    print("=" * 20 + "TRAINING STARTED" + "=" * 20)
-    # train.active_train(data, params)
-    train()
-    print("=" * 20 + "TRAINING FINISHED" + "=" * 20)
+    encoder = rnnae.EncoderRNN()
+    decoder = rnnae.DecoderRNN()
 
+    if params["CUDA"]:
+        encoder, decoder = encoder.cuda(), decoder.cuda()
+
+    rnnae.train(encoder, decoder)
+    torch.save(encoder.state_dict(), "./saved_models/rnn-encoder-{}-{}".format(params["DATASET"], datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')))
+    torch.save(decoder.state_dict(), "./saved_models/rnn-decoder-{}-{}".format(params["DATASET"], datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')))
 
 if __name__ == "__main__":
     main()

@@ -5,7 +5,8 @@ import argparse
 import torch
 
 import train
-from config import params, data
+from config import params, data, models
+from models import rnnae
 
 
 def main():
@@ -20,8 +21,12 @@ def main():
                         help="available embedings: random, static")
     parser.add_argument("--dataset", default="MR",
                         help="available datasets: MR, TREC")
-    parser.add_argument('--batch-size', type=int, default=25,
-                        help='batch size for training [default: 25]')
+    parser.add_argument("--encoder", default=None,
+                        help="Path to encoder model file")
+    parser.add_argument("--decoder", default=None,
+                        help="Path to decoder model file")
+    parser.add_argument('--batch-size', type=int, default=32,
+                        help='batch size for training [default: 32]')
     parser.add_argument('--selection-size', type=int, default=25,
                         help='selection size for selection function [default: 25]')
     parser.add_argument("--save_model", default="F",
@@ -56,7 +61,9 @@ def main():
                         default=True, help='Use  minibatch training')
 
     options = parser.parse_args()
-    data = getattr(utils, "read_{}".format(options.dataset))()
+
+
+    getattr(utils, "read_{}".format(options.dataset))()
 
     data["vocab"] = sorted(list(set(
         [w for sent in data["train_x"] + data["dev_x"]
@@ -93,7 +100,9 @@ def main():
         "HIDDEN_LAYERS": options.hlayers,
         "WEIGHT_DECAY": options.weight_decay,
         "LOG": not options.no_log,
-        "MINIBATCH": options.minibatch
+        "MINIBATCH": options.minibatch,
+        "ENCODER": options.encoder,
+        "DECODER": options.decoder
     }
 
     for key in params_local:
@@ -107,6 +116,21 @@ def main():
 
     if params["EMBEDDING"] == "static":
         utils.load_word2vec()
+
+    encoder = rnnae.EncoderRNN()
+    decoder = rnnae.DecoderRNN()
+
+    if params["ENCODER"] != None:
+        encoder.load_state_dict(torch.load(params["ENCODER"]))
+
+    if params["DECODER"] != None:
+        decoder.load_state_dict(torch.load(params["DECODER"]))
+
+    if params["CUDA"]:
+        encoder, decoder = encoder.cuda(), decoder.cuda()
+
+    models["ENCODER"] = encoder
+    models["DECODER"] = decoder
 
 
     print("=" * 20 + "INFORMATION" + "=" * 20)

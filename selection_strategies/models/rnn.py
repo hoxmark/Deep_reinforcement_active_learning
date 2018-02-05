@@ -36,7 +36,7 @@ class RNN(nn.Module):
 
         if self.EMBEDDING != "random":
             self.wv_matrix = w2v["w2v"]
-            
+
         self.init_model()
 
     def init_model(self):
@@ -54,9 +54,11 @@ class RNN(nn.Module):
         if len(input.size()) == 1:
             input = input.unsqueeze(0)
         hidden = self.init_hidden(self.hidden_layers, len(input))
+        # print(hidden)
 
         input = input.transpose(0, 1)
         embed = self.embed(input)
+        # print(embed)
         embed = self.dropout(embed)  # add this reduce the acc
         input = embed.view(len(input), embed.size(1), -1)
         gru_out, hidden = self.bigru(input, hidden)

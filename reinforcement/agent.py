@@ -7,8 +7,9 @@ from torch import optim
 import torch
 from torch.autograd import Variable
 import torch.nn.functional as F
+from config import params
 
-
+# TODO put in params
 # Hyper Parameters:
 GAMMA = 0.99  # decay rate of past observations
 OBSERVE = 32  # timesteps to observe before training
@@ -23,21 +24,21 @@ UPDATE_TIME = 100
 EXPLORE = 100000.  # frames over which to anneal epsilon
 
 
+
 class RobotCNNDQN:
-    def __init__(self, params):
+    def __init__(self):
         print("Creating a robot: CNN-DQN")
-        self.params = params
         self.replay_memory = deque()
         self.time_step = 0
         self.action = params["ACTIONS"]
         self.epsilon = INITIAL_EPSILON
-        self.qnetwork = DQN(params)
+        self.qnetwork = DQN()
 
         if params["CUDA"]:
             self.qnetwork = self.qnetwork.cuda()
 
-    def initialise(self, params):
-        self.qnetwork = DQN(params)
+    def initialise(self):
+        self.qnetwork = DQN()
 
     def train_qnetwork(self):
         optimizer = optim.Adam(self.qnetwork.parameters(), 0.001)
@@ -54,7 +55,7 @@ class RobotCNNDQN:
         # doesn't get freed
         detached_batch_state = Variable(torch.FloatTensor(batch_state.detach().cpu().data.numpy()))
 
-        if self.params["CUDA"]:
+        if params["CUDA"]:
             detached_batch_state = detached_batch_state.cuda()
             batch_action = batch_action.cuda()
             batch_reward = batch_reward.cuda()
@@ -63,7 +64,7 @@ class RobotCNNDQN:
         max_next_q_values = self.qnetwork(batch_next_state).detach().max(1)[0]
         expected_q_values = batch_reward + (GAMMA * max_next_q_values)
 
-        if self.params["CUDA"]:
+        if params["CUDA"]:
             expected_q_values = expected_q_values.cuda()
         loss = F.smooth_l1_loss(current_q_values, expected_q_values)
 

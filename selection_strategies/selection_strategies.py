@@ -1,20 +1,18 @@
 import heapq
 import random
 import time
-
+import train
 import numpy as np
-from torch.autograd import Variable
 import torch
 import torch.optim as optim
 import torch.nn as nn
+from torch.autograd import Variable
+from scipy import spatial
 
 import utils
 import train
-from scipy import spatial
-
 from models.cnn_2 import CNN2
-from config import params, data, w2v
-
+from config import params, data, w2v, models
 
 
 def select_all(model, lg, i):
@@ -256,9 +254,27 @@ def getDistance(first, second):
         distance = spatial.distance.cosine(first_w2v, second_w2v)
 
     if params["SIMILARITY_REPRESENTATION"] == "AUTOENCODER":
-        pass
-        #todo insert code here
-        #distance = 0.0
+        encoder = models["ENCODER"]
+
+        if (params["VOCAB_SIZE"] + 1) in first:
+            first_length = first.index(params["VOCAB_SIZE"] + 1)
+        else:
+            first_length = params["MAX_SENT_LEN"]
+
+        if (params["VOCAB_SIZE"] + 1) in second:
+            second_length = second.index(params["VOCAB_SIZE"] + 1)
+        else:
+            second_length = params["MAX_SENT_LEN"]
+
+        first_tensor = Variable(torch.LongTensor(first)).unsqueeze(1)
+        second_tensor = Variable(torch.LongTensor(second)).unsqueeze(1)
+
+        first_tensor, second_tensor = first_tensor.cuda(), second_tensor.cuda()
+        first_out, first_hidden = encoder(first_tensor, [first_length])
+        second_out, second_hidden = encoder(second_tensor, [second_length])
+        first_hidden, second_hidden = first_hidden.squeeze().data.cpu().numpy(), second_hidden.squeeze().data.cpu().numpy()
+
+        distance = spatial.distance.cosine(first_hidden, second_hidden)
     return distance
 
 def select_random(model, lg, iteration):
