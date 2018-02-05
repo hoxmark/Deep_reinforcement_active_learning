@@ -4,12 +4,12 @@ import torch.nn.functional as F
 import numpy as np
 
 from gensim.models.keyedvectors import KeyedVectors
+from config import params, data, w2v
 
 
 class CNNDQN(nn.Module):
-    def __init__(self, data, params):
+    def __init__(self):
         super(CNNDQN, self).__init__()
-        self.params = params
 
         self.BATCH_SIZE = params["BATCH_SIZE"]
 
@@ -24,14 +24,13 @@ class CNNDQN(nn.Module):
         self.EMBEDDING = params["EMBEDDING"]
         self.IN_CHANNEL = 1
 
-        self.data = data
 
         # one for UNK and one for zero padding
         self.NUM_EMBEDDINGS = self.VOCAB_SIZE + 2
         assert (len(self.FILTERS) == len(self.FILTER_NUM))
 
         if self.EMBEDDING != "random":
-            self.wv_matrix = data["w2v"]
+            self.wv_matrix = w2v["w2v"]
 
         self.init_model()
 
@@ -55,7 +54,7 @@ class CNNDQN(nn.Module):
         self.dropout_embed = nn.Dropout(self.DROPOUT_EMBED_PROB)
         self.dropout = nn.Dropout(self.DROPOUT_MODEL_PROB)
 
-        if self.params["CUDA"]:
+        if params["CUDA"]:
             self.cuda()
 
     def forward(self, inp):

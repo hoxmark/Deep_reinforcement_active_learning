@@ -2,4 +2,3 @@
 params = {}
 data = {}
 w2v = {}
-models = {}
