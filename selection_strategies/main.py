@@ -11,6 +11,7 @@ from config import params, data
 def main():
     parser = argparse.ArgumentParser(description="-----[CNN-classifier]-----")
     parser.add_argument("--similarity", default=0.85, type=float, help="similarity threshold")
+    parser.add_argument("--similarity_representation", default="W2V", help="similarity representation. Available methods: CNN, AUTOENCODER, W2V")
     parser.add_argument("--mode", default="train",
                         help="train: train (with test) a model / test: test saved models")
     parser.add_argument("--model", default="cnn",
@@ -65,6 +66,7 @@ def main():
 
     params_local = {
         "SIMILARITY_THRESHOLD": options.similarity,
+        "SIMILARITY_REPRESENTATION": options.similarity_representation,
         "MODEL": options.model,
         "EMBEDDING": options.embedding,
         "DATASET": options.dataset,

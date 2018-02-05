@@ -213,25 +213,14 @@ def clean(features, targets, indices, feature_extractor):
             first = features[j]
             second = features[k]
 
-            # first_w2v = utils.average_feature_vector(first, w2v["w2v_kv"])
-            # second_w2v = utils.average_feature_vector(second, w2v["w2v_kv"])
-            first_cnn = Variable(torch.LongTensor(first))
-            second_cnn = Variable(torch.LongTensor(second))
-
-            if params["CUDA"]:
-                first_cnn, second_cnn = first_cnn.cuda(), second_cnn.cuda()
-            first_cnn = feature_extractor(first_cnn).data.cpu().numpy()
-            second_cnn = feature_extractor(second_cnn).data.cpu().numpy()
-
-            distance = spatial.distance.cosine(first_cnn, second_cnn)
-            # print(distance)
+            distance = getDistance(first, second);
 
             if distance < params["SIMILARITY_THRESHOLD"]:
                 to_delete.append(k)
-                print("Distance: {}".format(distance))
-                print(*[data["vocab"][i] for i in filter(lambda a: a < len(data["vocab"]), first)])
-                print(*[data["vocab"][i] for i in filter(lambda a: a < len(data["vocab"]), second)])
-                print("\n\n")
+                # print("Distance: {}".format(distance))
+                # print(*[data["vocab"][i] for i in filter(lambda a: a < len(data["vocab"]), first)])
+                # print(*[data["vocab"][i] for i in filter(lambda a: a < len(data["vocab"]), second)])
+                # print("\n\n")
 
     to_delete = list(set(to_delete))
 
@@ -244,6 +233,33 @@ def clean(features, targets, indices, feature_extractor):
 
     return len(to_delete)
 
+def getDistance(first, second):
+    distance = 0.0
+
+    if params["SIMILARITY_REPRESENTATION"] == "CNN":
+
+        first_cnn = Variable(torch.LongTensor(first))
+        second_cnn = Variable(torch.LongTensor(second))
+
+        if params["CUDA"]:
+            first_cnn, second_cnn = first_cnn.cuda(), second_cnn.cuda()
+        first_cnn = feature_extractor(first_cnn).data.cpu().numpy()
+        second_cnn = feature_extractor(second_cnn).data.cpu().numpy()
+
+        distance = spatial.distance.cosine(first_cnn, second_cnn)
+
+    if params["SIMILARITY_REPRESENTATION"] == "W2V":
+
+        first_w2v = utils.average_feature_vector(first, w2v["w2v_kv"])
+        second_w2v = utils.average_feature_vector(second, w2v["w2v_kv"])
+
+        distance = spatial.distance.cosine(first_w2v, second_w2v)
+
+    if params["SIMILARITY_REPRESENTATION"] == "AUTOENCODER":
+        pass
+        #todo insert code here
+        #distance = 0.0
+    return distance
 
 def select_random(model, lg, iteration):
     all_sentences = []
