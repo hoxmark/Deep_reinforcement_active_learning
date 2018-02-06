@@ -121,9 +121,11 @@ def main():
     decoder = rnnae.DecoderRNN()
 
     if params["ENCODER"] != None:
+        print("Loading encoder")
         encoder.load_state_dict(torch.load(params["ENCODER"]))
 
     if params["DECODER"] != None:
+        print("Loading decoder")
         decoder.load_state_dict(torch.load(params["DECODER"]))
 
     if params["CUDA"]:
@@ -131,7 +133,6 @@ def main():
 
     models["ENCODER"] = encoder
     models["DECODER"] = decoder
-
 
     print("=" * 20 + "INFORMATION" + "=" * 20)
     for key, value in params.items():
