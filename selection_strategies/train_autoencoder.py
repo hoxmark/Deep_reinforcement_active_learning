@@ -48,7 +48,6 @@ def main():
     data["word_to_idx"] = {w: i for i, w in enumerate(data["vocab"])}
 
     params_local = {
-        "EMBEDDING": options.embedding,
         "DATASET": options.dataset,
         "EPOCH": options.epoch,
         "LEARNING_RATE": options.learning_rate,
@@ -78,11 +77,9 @@ def main():
     if params["CUDA"]:
         torch.cuda.set_device(params["DEVICE"])
 
-    if params["EMBEDDING"] == "static":
-        utils.load_word2vec()
-
     encoder = rnnae.EncoderRNN()
-    decoder = rnnae.DecoderRNN()
+    # decoder = rnnae.DecoderRNN()
+    decoder = rnnae.AttnDecoderRNN()
 
     if params["CUDA"]:
         encoder, decoder = encoder.cuda(), decoder.cuda()

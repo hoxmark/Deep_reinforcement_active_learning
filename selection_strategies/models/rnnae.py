@@ -19,10 +19,15 @@ class EncoderRNN(nn.Module):
         self.gru = nn.GRU(self.hidden_size, self.hidden_size)
 
     def forward(self, input, batch_lengths):
+        # TODO this makes first sentence include hidden states for padding .
+        # find a fix for this 
+        batch_lengths[0] = params["MAX_SENT_LEN"]
         output = self.embedding(input)
+
         output = torch.nn.utils.rnn.pack_padded_sequence(output, batch_lengths)
         hidden = self.initHidden(input.size()[1])
         output, hidden = self.gru(output, hidden)
+        output, output_lengths = nn.utils.rnn.pad_packed_sequence(output)
         return output, hidden
 
     def initHidden(self, batch_size):
@@ -56,7 +61,7 @@ class AttnDecoderRNN(nn.Module):
         self.hidden_size = params["HIDDEN_SIZE"]
         self.output_size = params["VOCAB_SIZE"] + 2
         self.dropout_p = dropout_p
-        self.max_length = max_length
+        self.max_length = params["MAX_SENT_LEN"]
 
         self.embedding = nn.Embedding(self.output_size, self.hidden_size, padding_idx=params["VOCAB_SIZE"] + 1)
         self.attn = nn.Linear(self.hidden_size * 2, self.max_length)
@@ -66,21 +71,20 @@ class AttnDecoderRNN(nn.Module):
         self.out = nn.Linear(self.hidden_size, self.output_size)
 
     def forward(self, input, hidden, encoder_outputs):
-        embedded = self.embedding(input).view(1, 1, -1)
+        embedded = self.embedding(input).unsqueeze(0)
         embedded = self.dropout(embedded)
 
-        attn_weights = F.softmax(
-            self.attn(torch.cat((embedded[0], hidden[0]), 1)), dim=1)
-        attn_applied = torch.bmm(attn_weights.unsqueeze(0),
-                                 encoder_outputs.unsqueeze(0))
+        cat = torch.cat((embedded[0], hidden[0]), 1)
+        temp = self.attn(cat)
+        attn_weights = F.softmax(temp)
+        attn_applied = torch.bmm(attn_weights.unsqueeze(1), encoder_outputs.transpose(0, 1))
 
-        output = torch.cat((embedded[0], attn_applied[0]), 1)
+        output = torch.cat((embedded[0], attn_applied.squeeze(1)), 1)
         output = self.attn_combine(output).unsqueeze(0)
 
-        output = F.relu(output)
         output, hidden = self.gru(output, hidden)
 
-        output = F.log_softmax(self.out(output[0]), dim=1)
+        output = F.log_softmax(self.out(output[0]))
         return output, hidden, attn_weights
 
     def initHidden(self):
@@ -117,8 +121,6 @@ def train(encoder, decoder):
             if params["CUDA"]:
                 feature, target = feature.cuda(), target.cuda()
 
-            # feature = Variable(torch.nn.utils.rnn.pack_padded_sequence(feature, batch_lengths))
-            # target = Variable(torch.nn.utils.rnn.pack_padded_sequence(target, batch_lengths))
 
             encoder_optimizer.zero_grad()
             decoder_optimizer.zero_grad()
@@ -137,7 +139,7 @@ def train(encoder, decoder):
             if params["CUDA"]:
                 all_decoded = all_decoded.cuda()
             for di in range(params["MAX_SENT_LEN"]):
-                decoder_output, decoder_hidden = decoder(decoder_input, decoder_hidden)
+                decoder_output, decoder_hidden, attn_weights = decoder(decoder_input, decoder_hidden, encoder_outputs)
                 loss += criterion(decoder_output, target[di])
                 decoder_input = target[di]  # Teacher forcing
             loss.backward()
