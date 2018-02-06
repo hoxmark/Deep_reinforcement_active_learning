@@ -7,6 +7,8 @@ import torch
 import train
 from config import params, data, models
 from models import rnnae
+from models.cnn_2 import CNN2
+
 
 
 def main():
@@ -119,6 +121,7 @@ def main():
 
     encoder = rnnae.EncoderRNN()
     decoder = rnnae.DecoderRNN()
+    feature_extractor = CNN2()
 
     if params["ENCODER"] != None:
         encoder.load_state_dict(torch.load(params["ENCODER"]))
@@ -129,8 +132,12 @@ def main():
     if params["CUDA"]:
         encoder, decoder = encoder.cuda(), decoder.cuda()
 
+    if params["CUDA"]:
+        feature_extractor.cuda()
+
     models["ENCODER"] = encoder
     models["DECODER"] = decoder
+    models["FEATURE_EXTRACTOR"] = feature_extractor
 
 
     print("=" * 20 + "INFORMATION" + "=" * 20)

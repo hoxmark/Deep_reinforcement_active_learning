@@ -117,11 +117,6 @@ def select_egl(model, lg, iteration):
 
 
 def select_entropy(model, lg, iteration):
-    feature_extractor = CNN2()
-
-    if params["CUDA"]:
-        feature_extractor.cuda()
-
     model.eval()
     sample_scores = []
     completed = 0
@@ -178,7 +173,7 @@ def select_entropy(model, lg, iteration):
 
         # if params["EMBEDDING"] == "static":
         print("len before clean {}".format(len(batch_feature)))
-        n_deleted = clean(batch_feature, batch_target, batch_indices, feature_extractor)
+        n_deleted = clean(batch_feature, batch_target, batch_indices)
         print("len after clean {}".format(len(batch_feature)))
         total_deleted += n_deleted
 
@@ -204,14 +199,15 @@ def select_entropy(model, lg, iteration):
 
     return batch_feature, batch_target
 
-def clean(features, targets, indices, feature_extractor):
+def clean(features, targets, indices):
     to_delete = []
+    cachedFeatures = {}
     for j in range(len(features)):
         for k in range(j + 1, len(features)):
             first = features[j]
             second = features[k]
 
-            distance = getDistance(first, second);
+            distance = getDistance(first, second, j, cachedFeatures);
 
             if distance < params["SIMILARITY_THRESHOLD"]:
                 to_delete.append(k)
@@ -231,16 +227,22 @@ def clean(features, targets, indices, feature_extractor):
 
     return len(to_delete)
 
-def getDistance(first, second):
+def getDistance(first, second, j, savedFirsts):
     distance = 0.0
 
     if params["SIMILARITY_REPRESENTATION"] == "CNN":
-
+        feature_extractor = models["FEATURE_EXTRACTOR"]
         first_cnn = Variable(torch.LongTensor(first))
         second_cnn = Variable(torch.LongTensor(second))
 
         if params["CUDA"]:
             first_cnn, second_cnn = first_cnn.cuda(), second_cnn.cuda()
+
+        # if j in savedFirsts.keys():
+        #     first_cnn = savedFirsts[j]
+        # else:
+        #     first_cnn = feature_extractor(first_cnn).data.cpu().numpy()
+        #     savedFirsts[j] = first_cnn
         first_cnn = feature_extractor(first_cnn).data.cpu().numpy()
         second_cnn = feature_extractor(second_cnn).data.cpu().numpy()
 
