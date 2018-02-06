@@ -18,7 +18,7 @@ def read_TREC():
 
     def read(mode):
         z = []
-        with open("data/TREC/TREC_" + mode + ".txt", "r", encoding="utf-8") as f:
+        with open("../data/TREC/TREC_" + mode + ".txt", "r", encoding="utf-8") as f:
             for line in f:
                 if line[-1] == "\n":
                     line = line[:-1]
@@ -47,14 +47,14 @@ def read_TREC():
 def read_MR():
     x, y = [], []
 
-    with open("data/MR/rt-polarity.pos", "r", encoding="utf-8") as f:
+    with open("../data/MR/rt-polarity.pos", "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("data/MR/rt-polarity.neg", "r", encoding="utf-8") as f:
+    with open("../data/MR/rt-polarity.neg", "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -73,14 +73,14 @@ def read_MR():
 def read_MR7025():
     x, y = [], []
 
-    with open("data/MR/rt-polarity.pos", "r", encoding="utf-8") as f:
+    with open("../data/MR/rt-polarity.pos", "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("data/MR/rt-polarity-small.neg", "r", encoding="utf-8") as f:
+    with open("../data/MR/rt-polarity-small.neg", "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -100,14 +100,14 @@ def read_rotten_imdb():
     data = {}
     x, y = [], []
 
-    with open("data/rotten_imdb/rt-polarity.pos", "r", encoding="ISO-8859-1") as f:
+    with open("../data/rotten_imdb/rt-polarity.pos", "r", encoding="ISO-8859-1") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("data/rotten_imdb/rt-polarity.neg", "r", encoding="ISO-8859-1") as f:
+    with open("../data/rotten_imdb/rt-polarity.neg", "r", encoding="ISO-8859-1") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -128,14 +128,14 @@ def read_UMICH():
     data = {}
     x, y = [], []
 
-    with open("data/UMICH/rt-polarity.pos", "r", encoding="utf-8") as f:
+    with open("../data/UMICH/rt-polarity.pos", "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("data/UMICH/rt-polarity.neg", "r", encoding="utf-8") as f:
+    with open("../data/UMICH/rt-polarity.neg", "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
