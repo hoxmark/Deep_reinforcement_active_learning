@@ -77,3 +77,20 @@ class CNN(nn.Module):
         x = self.fc(x)
 
         return x
+
+    def get_sentence_representation(self, inp):
+        x = self.embed(inp).view(-1, 1, self.WORD_DIM * self.MAX_SENT_LEN)
+        x = self.dropout_embed(x)
+        # x = (25 x 1 x 17700) - mini_batch_size x embedding_for_each_sentence
+
+        conv_results = [
+            F.max_pool1d(F.relu(self.get_conv(i)(x)),
+                         self.MAX_SENT_LEN - self.FILTERS[i] + 1).view(-1, self.FILTER_NUM[i])
+            for i in range(len(self.FILTERS))]
+        # Take a max for each filter - each filter result is 25 x 100 x 57
+
+        # Each conv_result is (25 x 100)  - one max value for each application of each filter type, across each sentence
+        x = torch.cat(conv_results, 1)
+        # x = (25 x 300) - concatenate all the filter results
+        # print(x)
+        return x

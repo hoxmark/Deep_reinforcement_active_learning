@@ -78,7 +78,6 @@ def main():
         torch.cuda.set_device(params["DEVICE"])
 
     encoder = rnnae.EncoderRNN()
-    # decoder = rnnae.DecoderRNN()
     decoder = rnnae.AttnDecoderRNN()
 
     if params["CUDA"]:

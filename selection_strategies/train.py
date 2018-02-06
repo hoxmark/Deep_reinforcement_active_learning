@@ -11,7 +11,7 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 
-from config import params, data
+from config import params, data, models
 from models.cnn import CNN
 from models.rnn import RNN
 from models import rnnae
@@ -42,6 +42,8 @@ def active_train():
 
     if params["CUDA"]:
         model.cuda()
+
+    models["CLASSIFIER"] = model
 
     for j in range(params["N_AVERAGE"]):
         params["LEARNING_RATE"] = init_learning_rate

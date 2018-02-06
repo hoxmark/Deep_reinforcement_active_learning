@@ -247,6 +247,17 @@ def getDistance(first, second, j, savedFirsts):
         second_cnn = feature_extractor(second_cnn).data.cpu().numpy()
 
         distance = spatial.distance.cosine(first_cnn, second_cnn)
+    if params["SIMILARITY_REPRESENTATION"] == "CNN_SELF":
+        first_cnn = Variable(torch.LongTensor(first))
+        second_cnn = Variable(torch.LongTensor(second))
+        if params["CUDA"]:
+            first_cnn, second_cnn = first_cnn.cuda(), second_cnn.cuda()
+
+        model = models["CLASSIFIER"]
+        first_cnn = model.get_sentence_representation(first_cnn).data.cpu().numpy()
+        second_cnn = model.get_sentence_representation(second_cnn).data.cpu().numpy()
+
+        distance = spatial.distance.cosine(first_cnn, second_cnn)
 
     if params["SIMILARITY_REPRESENTATION"] == "W2V":
 
