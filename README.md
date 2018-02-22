@@ -34,7 +34,7 @@ Below are results corresponding to RNN and CNN using out 3 different selection s
 
 1. Clone this github repo to you machine. 
 
-2.  Download [GoogleNews-vectors-negative300.bin] and place it in the root folder.
+2.  Download [GoogleNews-vectors-negative300.bin] and place it in the root folder. 
 
 ```sh
 $ wget -c "https://s3.amazonaws.com/dl4j-distribution/GoogleNews-vectors-negative300.bin.gz"
@@ -56,6 +56,7 @@ $ pip3 install -r /path/to/requirements.txt
 ```
 
 ## Execution
+TODO: you need to set the correct data_path. 
 
 Example: 
 ```sh

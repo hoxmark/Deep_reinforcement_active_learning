@@ -56,6 +56,7 @@ $ pip3 install -r /path/to/requirements.txt
 ```
 
 ## Execution
+TODO: you need to set the correct data_path. 
 
 Example: 
 ```sh

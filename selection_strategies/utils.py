@@ -1,6 +1,8 @@
 from sklearn.utils import shuffle
 
 import pickle
+import time
+
 
 import plotly.graph_objs as go
 import plotly
@@ -13,7 +15,7 @@ import numpy as np
 def read_TREC():
     def read(mode):
         z = []
-        with open("../data/TREC/TREC_" + mode + ".txt", "r", encoding="utf-8") as f:
+        with open("{}/TREC/TREC_".format(params['DATA_PATH']) + mode + ".txt", "r", encoding="utf-8") as f:
             for line in f:
                 if line[-1] == "\n":
                     line = line[:-1]
@@ -45,14 +47,14 @@ def read_MR():
     # data = {}
     x, y = [], []
 
-    with open("../data/MR/rt-polarity.pos", "r", encoding="utf-8") as f:
+    with open("{}/MR/rt-polarity.pos".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("../data/MR/rt-polarity.neg", "r", encoding="utf-8") as f:
+    with open("{}/MR/rt-polarity.neg".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -73,14 +75,14 @@ def read_MR7025():
     # data = {}
     x, y = [], []
 
-    with open("../data/MR/rt-polarity.pos", "r", encoding="utf-8") as f:
+    with open("{}/MR/rt-polarity.pos".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("../data/MR/rt-polarity-small.neg", "r", encoding="utf-8") as f:
+    with open("{}/MR/rt-polarity-small.neg".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -101,14 +103,14 @@ def read_rotten_imdb():
     # data = {}
     x, y = [], []
 
-    with open("../data/rotten_imdb/rt-polarity.pos", "r", encoding="ISO-8859-1") as f:
+    with open("{}/rotten_imdb/rt-polarity.pos".format(params['DATA_PATH']), "r", encoding="ISO-8859-1") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("../data/rotten_imdb/rt-polarity.neg", "r", encoding="ISO-8859-1") as f:
+    with open("{}/rotten_imdb/rt-polarity.neg".format(params['DATA_PATH']), "r", encoding="ISO-8859-1") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -129,14 +131,14 @@ def read_UMICH():
     # data = {}
     x, y = [], []
 
-    with open("../data/UMICH/rt-polarity.pos", "r", encoding="utf-8") as f:
+    with open("{}/UMICH/rt-polarity.pos".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("../data/UMICH/rt-polarity.neg", "r", encoding="utf-8") as f:
+    with open("{}/UMICH/rt-polarity.neg".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -189,8 +191,16 @@ load word2vec pre trained vectors
 """
 def load_word2vec():
     print("loading word2vec...")
+    t0 = time.time()
+    
     word_vectors = KeyedVectors.load_word2vec_format(
-        "../GoogleNews-vectors-negative300.bin", binary=True)
+        "{}/GoogleNews-vectors-negative300.bin".format(params['DATA_PATH']), binary=True)
+    
+    t1 = time.time()
+
+    total = t1-t0
+
+    print("It took {} to load w2v".format(total))
 
     # data["w2v_kv"] = word_vectors
 
