@@ -27,7 +27,7 @@ def main():
                         help='Cuda device to run on')
     parser.add_argument('--no-cuda', action='store_true',
                         default=False, help='disable the gpu')
-    parser.add_argument('--hsize', type=int, default=128,
+    parser.add_argument('--hsize', type=int, default=256,
                         help='Number of nodes in the hidden layer(s)')
     parser.add_argument('--hlayers', type=int, default=1,
                         help='Number of hidden layers')
