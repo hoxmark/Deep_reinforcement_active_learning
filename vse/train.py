@@ -20,11 +20,11 @@ import argparse
 def main():
     # Hyper Parameters
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', default='/w/31/faghri/vsepp_data/',
+    parser.add_argument('--data_path', default='/data/stud/jorgebjorn/data/',
                         help='path to datasets')
-    parser.add_argument('--data_name', default='precomp',
+    parser.add_argument('--data_name', default='f8k_precomp',
                         help='{coco,f8k,f30k,10crop}_precomp|coco|f8k|f30k')
-    parser.add_argument('--vocab_path', default='./vocab/',
+    parser.add_argument('--vocab_path', default='/data/stud/jorgebjorn/data/vocab/',
                         help='Path to saved vocabulary pickle files.')
     parser.add_argument('--margin', default=0.2, type=float,
                         help='Rank loss margin.')
