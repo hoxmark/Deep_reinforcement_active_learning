@@ -39,11 +39,15 @@ def main():
                         help='Number of hidden layers')
     parser.add_argument('--weight_decay', type=float, default=1e-5,
                         help='Value of weight_decay')
+    parser.add_argument('--data_path',  default='/data/stud/jorgebjorn/data',
+                        help='path to w2v binaries')
     parser.add_argument('--no-log', action='store_true',
                         default=False, help='Disable logging')
 
     options = parser.parse_args()
 
+    params["DATA_PATH"] = options.data_path #TODO rewrite? 
+    
     getattr(utils, "read_{}".format(options.dataset))()
     data["vocab"] = sorted(list(set(
         [w for sent in data["train_x"] + data["dev_x"]
@@ -53,6 +57,7 @@ def main():
 
     params_local = {
         "EPOCH": 100,
+        "DATA_PATH": options.data_path,
         "ACTIONS": 2,
         "BUDGET": 100,
         "MODEL": options.model,

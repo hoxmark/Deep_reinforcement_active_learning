@@ -57,6 +57,8 @@ def main():
                         help='Number of hidden layers')
     parser.add_argument('--weight_decay', type=float, default=1e-5,
                         help='Value of weight_decay')
+    parser.add_argument('--data_path',  default='/data/stud/jorgebjorn/data',
+                        help='path to w2v binaries')
     parser.add_argument('--no-log', action='store_true',
                         default=False, help='Disable logging')
     parser.add_argument('--minibatch', action='store_true',
@@ -64,6 +66,7 @@ def main():
 
     options = parser.parse_args()
 
+    params["DATA_PATH"] = options.data_path #TODO rewrite? 
 
     getattr(utils, "read_{}".format(options.dataset))()
 
@@ -76,6 +79,7 @@ def main():
     params_local = {
         "SIMILARITY_THRESHOLD": options.similarity,
         "SIMILARITY_REPRESENTATION": options.similarity_representation,
+        "DATA_PATH": options.data_path,
         "MODEL": options.model,
         "EMBEDDING": options.embedding,
         "DATASET": options.dataset,
