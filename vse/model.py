@@ -292,12 +292,13 @@ class ContrastiveLoss(nn.Module):
         return cost_s.sum() + cost_im.sum()
 
 
-class VSE(object):
+class VSE(nn.Module):
     """
     rkiros/uvs model
     """
 
     def __init__(self, opt):
+        super(VSE, self).__init__()
         # tutorials/09 - Image Captioning
         # Build Models
         self.grad_clip = opt.grad_clip
@@ -340,12 +341,28 @@ class VSE(object):
         """
         self.img_enc.train()
         self.txt_enc.train()
+        # self.train()
 
     def val_start(self):
         """switch to evaluate mode
         """
+        # self.eval()
         self.img_enc.eval()
         self.txt_enc.eval()
+
+    def forward_img(self, images, volatile=True):
+        images = Variable(images, volatile=volatile)
+        if torch.cuda.is_available():
+            images = images.cuda()
+        img_emb = self.img_enc(images)
+        return img_emb
+
+    def forward_cap(self, captions, lengths, volatile=True):
+        captions = Variable(captions, volatile=volatile)
+        if torch.cuda.is_available():
+            captions = captions.cuda()
+        cap_emb = self.txt_enc(captions, lengths)
+        return cap_emb
 
     def forward_emb(self, images, captions, lengths, volatile=False):
         """Compute the image and caption embeddings

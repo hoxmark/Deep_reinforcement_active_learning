@@ -20,11 +20,11 @@ import argparse
 def main():
     # Hyper Parameters
     parser = argparse.ArgumentParser()
-    parser.add_argument('--data_path', default='/w/31/faghri/vsepp_data/',
+    parser.add_argument('--data_path', default='/data/stud/jorgebjorn/data',
                         help='path to datasets')
-    parser.add_argument('--data_name', default='precomp',
+    parser.add_argument('--data_name', default='f8k_precomp',
                         help='{coco,f8k,f30k,10crop}_precomp|coco|f8k|f30k')
-    parser.add_argument('--vocab_path', default='./vocab/',
+    parser.add_argument('--vocab_path', default='/data/stud/jorgebjorn/data/vocab',
                         help='Path to saved vocabulary pickle files.')
     parser.add_argument('--margin', default=0.2, type=float,
                         help='Rank loss margin.')
@@ -96,6 +96,8 @@ def main():
 
     # Construct the model
     model = VSE(opt)
+    if torch.cuda.is_available():
+        model.cuda()
 
     # optionally resume from a checkpoint
     if opt.resume:
@@ -117,40 +119,37 @@ def main():
 
     n_rounds = 60
     selection = select_margin
+
+    # evaluation.encode_data
     for r in range(n_rounds):
-        # best_indices = [0, 35, 19]
         best_indices = selection(model, train_loader)
 
-        # Select batch_first
         for index in best_indices:
             active_loader.dataset.add_single(train_loader.dataset[index][0],
                                             train_loader.dataset[index][1])
 
-    # for train_d in active_loader:
-        # print(train_d)
-        # select
 
         # Train the Model
-        # best_rsum = 0
-        # for epoch in range(opt.num_epochs):
-        #     adjust_learning_rate(opt, model.optimizer, epoch)
-        #
-        #     # train for one epoch
-        #     train(opt, train_loader, model, epoch, val_loader)
-        #
-        #     # evaluate on validation set
-        #     rsum = validate(opt, val_loader, model)
-        #
-        #     # remember best R@ sum and save checkpoint
-        #     is_best = rsum > best_rsum
-        #     best_rsum = max(rsum, best_rsum)
-        #     save_checkpoint({
-        #         'epoch': epoch + 1,
-        #         'model': model.state_dict(),
-        #         'best_rsum': best_rsum,
-        #         'opt': opt,
-        #         'Eiters': model.Eiters,
-        #     }, is_best, prefix=opt.logger_name + '/')
+        best_rsum = 0
+        for epoch in range(opt.num_epochs):
+            adjust_learning_rate(opt, model.optimizer, epoch)
+
+            # train for one epoch
+            train(opt, train_loader, model, epoch, val_loader)
+
+            # evaluate on validation set
+            rsum = validate(opt, val_loader, model)
+
+            # remember best R@ sum and save checkpoint
+            is_best = rsum > best_rsum
+            best_rsum = max(rsum, best_rsum)
+            save_checkpoint({
+                'epoch': epoch + 1,
+                'model': model.state_dict(),
+                'best_rsum': best_rsum,
+                'opt': opt,
+                'Eiters': model.Eiters,
+            }, is_best, prefix=opt.logger_name + '/')
 
 
 def train(opt, train_loader, model, epoch, val_loader):
