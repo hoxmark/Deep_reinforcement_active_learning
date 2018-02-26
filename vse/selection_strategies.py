@@ -22,8 +22,8 @@ def select_margin(model, train_loader):
             image_scores = image_scores.cuda()
 
         for j in range(0, len(cap_embs), 128):
-            batch_range2 = min(128, len(cap_embs) - i)
-            cap_batch = cap_embs[i: i + batch_range2]
+            batch_range2 = min(128, len(cap_embs) - j)
+            cap_batch = cap_embs[j: j + batch_range2]
 
             cap_batch = torch.FloatTensor(cap_batch)
             if torch.cuda.is_available():
