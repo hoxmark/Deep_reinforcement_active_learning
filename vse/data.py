@@ -250,24 +250,11 @@ class ActiveDataset(data.Dataset):
         self.length = len(self.captions)
         self.vocab = vocab
 
-
     def __getitem__(self, index):
-        # handle the image redundancy
-        # img_id = int(index/self.im_div)
-        img_id = index
-        image = torch.Tensor(self.images[img_id])
+        image = torch.Tensor(self.images[index])
         caption = self.captions[index]
-        vocab = self.vocab
-
-        # Convert caption (string) to word ids.
-        tokens = nltk.tokenize.word_tokenize(
-            str(caption).lower().decode('utf-8'))
-        caption = []
-        caption.append(vocab('<start>'))
-        caption.extend([vocab(token) for token in tokens])
-        caption.append(vocab('<end>'))
         target = torch.Tensor(caption)
-        return image, target, index, img_id
+        return image, target, index, index
 
     def __len__(self):
         # return self.length

@@ -1,12 +1,17 @@
 from model import cosine_sim
 from evaluation import encode_data
-
+import random
 import torch
 import heapq
 import scipy
 import copy
 
+def select_random(model, train_loader):
+    return random.sample(range(0, 30000), 128)
+
+
 def select_margin(model, train_loader):
+    select_random(model, train_loader)
     img_embs, cap_embs = encode_data(model, train_loader)
     scores = []
 

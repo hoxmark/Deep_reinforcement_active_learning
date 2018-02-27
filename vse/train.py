@@ -10,7 +10,7 @@ import data
 from vocab import Vocabulary  # NOQA
 from model import VSE
 from evaluation import i2t, t2i, AverageMeter, LogCollector, encode_data
-from selection_strategies import select_margin
+from selection_strategies import select_margin, select_random
 
 import logging
 import tensorboard_logger as tb_logger
@@ -78,9 +78,7 @@ def main():
                         help='Ensure the training is always done in '
                         'train mode (Not recommended).')
     opt = parser.parse_args()
-    # opt.logger_name = 'runs/{}'.format(dateti)
     print(opt)
-
 
 
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
@@ -121,7 +119,6 @@ def main():
     n_rounds = 60
     selection = select_margin
 
-    # evaluation.encode_data
     for r in range(n_rounds):
         best_indices = selection(model, train_loader)
 
@@ -138,7 +135,7 @@ def main():
             train(opt, active_loader, model, epoch, val_loader)
 
             # evaluate on validation set
-        rsum = validate(opt, val_loader, model, r)
+        rsum = validate(opt, val_loader, model, True, r)
 
             # remember best R@ sum and save checkpoint
             # is_best = rsum > best_rsum
@@ -202,11 +199,11 @@ def train(opt, train_loader, model, epoch, val_loader):
         # model.logger.tb_log(tb_logger, step=model.Eiters)
 
         # validate at every val_step
-        # if model.Eiters % opt.val_step == 0:
-            # validate(opt, val_loader, model)
+        if model.Eiters % opt.val_step == 0:
+            validate(opt, val_loader, model)
 
 
-def validate(opt, val_loader, model, n_round=0):
+def validate(opt, val_loader, model, log=False, n_round=0):
     # compute the encoding for all the validation images and captions
     img_embs, cap_embs = encode_data(
         model, val_loader, opt.log_step, logging.info)
@@ -223,18 +220,19 @@ def validate(opt, val_loader, model, n_round=0):
     # sum of recalls to be used for early stopping
     currscore = r1 + r5 + r10 + r1i + r5i + r10i
 
-    # record metrics in tensorboard
-    tb_logger.log_value('r1', r1, step=n_round)
-    tb_logger.log_value('r5', r5, step=n_round)
-    tb_logger.log_value('r10', r10, step=n_round)
-    tb_logger.log_value('medr', medr, step=n_round)
-    tb_logger.log_value('meanr', meanr, step=n_round)
-    tb_logger.log_value('r1i', r1i, step=n_round)
-    tb_logger.log_value('r5i', r5i, step=n_round)
-    tb_logger.log_value('r10i', r10i, step=n_round)
-    tb_logger.log_value('medri', medri, step=n_round)
-    tb_logger.log_value('meanr', meanr, step=n_round)
-    tb_logger.log_value('rsum', currscore, step=n_round)
+    if log:
+        # record metrics in tensorboard
+        tb_logger.log_value('r1', r1, step=n_round)
+        tb_logger.log_value('r5', r5, step=n_round)
+        tb_logger.log_value('r10', r10, step=n_round)
+        tb_logger.log_value('medr', medr, step=n_round)
+        tb_logger.log_value('meanr', meanr, step=n_round)
+        tb_logger.log_value('r1i', r1i, step=n_round)
+        tb_logger.log_value('r5i', r5i, step=n_round)
+        tb_logger.log_value('r10i', r10i, step=n_round)
+        tb_logger.log_value('medri', medri, step=n_round)
+        tb_logger.log_value('meanr', meanr, step=n_round)
+        tb_logger.log_value('rsum', currscore, step=n_round)
 
     return currscore
 
