@@ -82,8 +82,8 @@ def main():
     opt = parser.parse_args()
     # opt.logger_name = 'runs/{}'.format(dateti)
     print(opt)
-
-
+    if torch.cuda.is_available():       
+        torch.cuda.set_device(opt.device)
 
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
     tb_logger.configure(opt.logger_name, flush_secs=5)
@@ -100,7 +100,6 @@ def main():
     # Construct the model
     model = VSE(opt)
     if torch.cuda.is_available():       
-        torch.cuda.set_device(opt.device)
         model.cuda()
 
     # optionally resume from a checkpoint
