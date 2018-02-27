@@ -2,6 +2,7 @@ import pickle
 import os
 import time
 import shutil
+import datetime
 
 import torch
 
@@ -52,7 +53,7 @@ def main():
                         help='Number of steps to print and record the log.')
     parser.add_argument('--val_step', default=500, type=int,
                         help='Number of steps to run validation.')
-    parser.add_argument('--logger_name', default='runs/runX',
+    parser.add_argument('--logger_name', default='runs/{}'.format(datetime.datetime.now().strftime("%d-%m-%y %H:%M")),
                         help='Path to save the model and Tensorboard log.')
     parser.add_argument('--resume', default='', type=str, metavar='PATH',
                         help='path to latest checkpoint (default: none)')
@@ -128,28 +129,28 @@ def main():
             active_loader.dataset.add_single(train_loader.dataset[index][0],
                                             train_loader.dataset[index][1])
 
-
         # Train the Model
         best_rsum = 0
         for epoch in range(opt.num_epochs):
             adjust_learning_rate(opt, model.optimizer, epoch)
 
             # train for one epoch
-            train(opt, train_loader, model, epoch, val_loader)
+            train(opt, active_loader, model, epoch, val_loader)
 
             # evaluate on validation set
-            rsum = validate(opt, val_loader, model)
+        rsum = validate(opt, val_loader, model, r)
 
             # remember best R@ sum and save checkpoint
-            is_best = rsum > best_rsum
-            best_rsum = max(rsum, best_rsum)
-            save_checkpoint({
-                'epoch': epoch + 1,
-                'model': model.state_dict(),
-                'best_rsum': best_rsum,
-                'opt': opt,
-                'Eiters': model.Eiters,
-            }, is_best, prefix=opt.logger_name + '/')
+            # is_best = rsum > best_rsum
+            # best_rsum = max(rsum, best_rsum)
+            # save_checkpoint({
+            #     'epoch': epoch + 1,
+            #     'model': model.state_dict(),
+            #     'best_rsum': best_rsum,
+            #     'opt': opt,
+            #     'Eiters': model.Eiters,
+            # }, is_best, prefix=opt.logger_name + '/')
+        # model.logger.tb_log(tb_logger, step=r)
 
 
 def train(opt, train_loader, model, epoch, val_loader):
@@ -163,7 +164,7 @@ def train(opt, train_loader, model, epoch, val_loader):
 
     end = time.time()
 
-
+    print("Training on {} items ".format(len(train_loader)))
     for i, train_data in enumerate(train_loader):
         if opt.reset_train:
             # Always reset to train mode, this is not the default behavior
@@ -194,18 +195,18 @@ def train(opt, train_loader, model, epoch, val_loader):
                     data_time=data_time, e_log=str(model.logger)))
 
         # Record logs in tensorboard
-        tb_logger.log_value('epoch', epoch, step=model.Eiters)
-        tb_logger.log_value('step', i, step=model.Eiters)
-        tb_logger.log_value('batch_time', batch_time.val, step=model.Eiters)
-        tb_logger.log_value('data_time', data_time.val, step=model.Eiters)
-        model.logger.tb_log(tb_logger, step=model.Eiters)
+        # tb_logger.log_value('epoch', epoch, step=model.Eiters)
+        # tb_logger.log_value('step', i, step=model.Eiters)
+        # tb_logger.log_value('batch_time', batch_time.val, step=model.Eiters)
+        # tb_logger.log_value('data_time', data_time.val, step=model.Eiters)
+        # model.logger.tb_log(tb_logger, step=model.Eiters)
 
         # validate at every val_step
-        if model.Eiters % opt.val_step == 0:
-            validate(opt, val_loader, model)
+        # if model.Eiters % opt.val_step == 0:
+            # validate(opt, val_loader, model)
 
 
-def validate(opt, val_loader, model):
+def validate(opt, val_loader, model, n_round=0):
     # compute the encoding for all the validation images and captions
     img_embs, cap_embs = encode_data(
         model, val_loader, opt.log_step, logging.info)
@@ -223,17 +224,17 @@ def validate(opt, val_loader, model):
     currscore = r1 + r5 + r10 + r1i + r5i + r10i
 
     # record metrics in tensorboard
-    tb_logger.log_value('r1', r1, step=model.Eiters)
-    tb_logger.log_value('r5', r5, step=model.Eiters)
-    tb_logger.log_value('r10', r10, step=model.Eiters)
-    tb_logger.log_value('medr', medr, step=model.Eiters)
-    tb_logger.log_value('meanr', meanr, step=model.Eiters)
-    tb_logger.log_value('r1i', r1i, step=model.Eiters)
-    tb_logger.log_value('r5i', r5i, step=model.Eiters)
-    tb_logger.log_value('r10i', r10i, step=model.Eiters)
-    tb_logger.log_value('medri', medri, step=model.Eiters)
-    tb_logger.log_value('meanr', meanr, step=model.Eiters)
-    tb_logger.log_value('rsum', currscore, step=model.Eiters)
+    tb_logger.log_value('r1', r1, step=n_round)
+    tb_logger.log_value('r5', r5, step=n_round)
+    tb_logger.log_value('r10', r10, step=n_round)
+    tb_logger.log_value('medr', medr, step=n_round)
+    tb_logger.log_value('meanr', meanr, step=n_round)
+    tb_logger.log_value('r1i', r1i, step=n_round)
+    tb_logger.log_value('r5i', r5i, step=n_round)
+    tb_logger.log_value('r10i', r10i, step=n_round)
+    tb_logger.log_value('medri', medri, step=n_round)
+    tb_logger.log_value('meanr', meanr, step=n_round)
+    tb_logger.log_value('rsum', currscore, step=n_round)
 
     return currscore
 
