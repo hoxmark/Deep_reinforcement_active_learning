@@ -62,6 +62,8 @@ def main():
                         help='Dimensionality of the image embedding.')
     parser.add_argument('--finetune', action='store_true',
                         help='Fine-tune the image encoder.')
+    parser.add_argument('--device', default=1,
+                        help='which gpu to use')
     parser.add_argument('--cnn_type', default='vgg19',
                         help="""The CNN used for image encoder
                         (e.g. vgg19, resnet152)""")
@@ -96,7 +98,8 @@ def main():
 
     # Construct the model
     model = VSE(opt)
-    if torch.cuda.is_available():
+    if torch.cuda.is_available():       
+        torch.cuda.set_device(opt.device)
         model.cuda()
 
     # optionally resume from a checkpoint
