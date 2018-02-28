@@ -10,7 +10,7 @@ import data
 from vocab import Vocabulary  # NOQA
 from model import VSE
 from evaluation import i2t, t2i, AverageMeter, LogCollector, encode_data
-from selection_strategies import select_margin, select_random
+from selection_strategies import select_margin, select_random, select_uncertainty
 
 import logging
 import tensorboard_logger as tb_logger
@@ -117,7 +117,9 @@ def main():
 
 
     n_rounds = 60
-    selection = select_margin
+    # selection = select_margin
+    # selection = select_random
+    selection = select_uncertainty
 
     for r in range(n_rounds):
         best_indices = selection(model, train_loader)
