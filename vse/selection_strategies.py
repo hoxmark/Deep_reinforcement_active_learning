@@ -10,86 +10,88 @@ import numpy as np
 def select_random(model, train_loader):
     return random.sample(range(0, 30000), 128)
 
-def select_margin(model, train_loader):
+def select_margin(model, train_loader, primary="image"):
     img_embs, cap_embs = encode_data(model, train_loader)
+    primary_embs, secondary_embs = (img_embs, cap_embs) if primary == "image" else (cap_embs, img_embs)
+
     scores = []
 
-    for i in range(0, len(img_embs), 128):
-        batch_range = min(128, len(img_embs) - i)
-        img_batch = img_embs[i: i + batch_range]
-        img_batch = torch.FloatTensor(img_batch)
+    for i in range(0, len(primary_embs), 128):
+        batch_range = min(128, len(primary_embs) - i)
+        primary_batch = primary_embs[i: i + batch_range]
+        primary_batch = torch.FloatTensor(primary_batch)
 
-        img_cap_distances = None
+        primary_secondary_distances = None
         if torch.cuda.is_available():
-            img_batch = img_batch.cuda()
+            primary_batch = primary_batch.cuda()
 
-        for j in range(0, len(cap_embs), 128):
-            batch_range2 = min(128, len(cap_embs) - j)
-            cap_batch = cap_embs[j: j + batch_range2]
+        for j in range(0, len(secondary_embs), 128):
+            batch_range2 = min(128, len(secondary_embs) - j)
+            secondary_batch = secondary_embs[j: j + batch_range2]
 
-            cap_batch = torch.FloatTensor(cap_batch)
+            secondary_batch = torch.FloatTensor(secondary_batch)
             if torch.cuda.is_available():
-                cap_batch = cap_batch.cuda()
+                secondary_batch = secondary_batch.cuda()
 
-            cosine_dist = img_batch.mm(cap_batch.t())
+            cosine_dist = primary_batch.mm(secondary_batch.t())
 
             if j == 0:
-                img_cap_distances = cosine_dist
+                primary_secondary_distances = cosine_dist
             else:
-                img_cap_distances = torch.cat((img_cap_distances, cosine_dist), 1)
+                primary_secondary_distances = torch.cat((primary_secondary_distances, cosine_dist), 1)
 
-        distances_top2 = torch.abs(torch.topk(img_cap_distances, 2, 1, largest=False)[0])
+        distances_top2 = torch.abs(torch.topk(primary_secondary_distances, 2, 1, largest=False)[0])
         margin = torch.abs(distances_top2[:, 0] - distances_top2[:, 1])
 
         scores.extend(margin.cpu().numpy())
-        print 'Selection: {:2.4}%\r'.format((float(i) / float(len(img_embs))) * 100),
+        print 'Selection: {:2.4}%\r'.format((float(i) / float(len(primary_embs))) * 100),
 
     best_n_indices = [n[0] for n in heapq.nsmallest(128, enumerate(scores), key=lambda x: x[1])]
     return best_n_indices
 
-def select_uncertainty(model, train_loader):
+def select_uncertainty(model, train_loader, primary="image"):
     img_embs, cap_embs = encode_data(model, train_loader)
+    primary_embs, secondary_embs = (img_embs, cap_embs) if primary == "image" else (cap_embs, img_embs)
+
     scores = []
 
-    for i in range(0, len(img_embs), 128):
-        batch_range = min(128, len(img_embs) - i)
-        img_batch = img_embs[i: i + batch_range]
-        img_batch = torch.FloatTensor(img_batch)
+    for i in range(0, len(primary_embs), 128):
+        batch_range = min(128, len(primary_embs) - i)
+        primary_batch = primary_embs[i: i + batch_range]
+        primary_batch = torch.FloatTensor(primary_batch)
 
         image_scores = torch.zeros(batch_range)
 
-        img_cap_distances = None
+        primary_secondary_distances = None
         if torch.cuda.is_available():
-            img_batch = img_batch.cuda()
+            primary_batch = primary_batch.cuda()
             image_scores = image_scores.cuda()
 
-        for j in range(0, len(cap_embs), 128):
-            batch_range2 = min(128, len(cap_embs) - j)
-            cap_batch = cap_embs[j: j + batch_range2]
+        for j in range(0, len(secondary_embs), 128):
+            batch_range2 = min(128, len(secondary_embs) - j)
+            secondary_batch = secondary_embs[j: j + batch_range2]
 
-            cap_batch = torch.FloatTensor(cap_batch)
+            secondary_batch = torch.FloatTensor(secondary_batch)
             if torch.cuda.is_available():
-                cap_batch = cap_batch.cuda()
+                secondary_batch = secondary_batch.cuda()
 
-            cosine_dist = img_batch.mm(cap_batch.t())
-            # print(cosine_dist)
-            # closest_10 = torch.topk(cosine_dist, 10, 1, largest=False)[0]
+            cosine_dist = primary_batch.mm(secondary_batch.t())
 
             if j == 0:
-                img_cap_distances = cosine_dist
+                primary_secondary_distances = cosine_dist
             else:
-                img_cap_distances = torch.cat((img_cap_distances, cosine_dist), 1)
+                primary_secondary_distances = torch.cat((primary_secondary_distances, cosine_dist), 1)
 
-        # print(img_cap_distances)
-        distances_top10_index = torch.abs(torch.topk(img_cap_distances, 10, 1, largest=False)[1])
+        # print(primary_secondary_distances)
+        distances_top10_index = torch.abs(torch.topk(primary_secondary_distances, 10, 1, largest=False)[1])
 
         for row in distances_top10_index.cpu().numpy():
             std = np.array([])
 
             for caption_index in row:
-                std = np.concatenate((std, cap_embs[caption_index]))
+                std = np.concatenate((std, secondary_embs[caption_index]))
             scores.append(np.std(std))
-        print 'Selection: {:2.4}%\r'.format((float(i) / float(len(img_embs))) * 100),
+        print 'Selection: {:2.4}%\r'.format((float(i) / float(len(primary_embs))) * 100),
 
     best_n_indices = [n[0] for n in heapq.nlargest(128, enumerate(scores), key=lambda x: x[1])]
     return best_n_indices
