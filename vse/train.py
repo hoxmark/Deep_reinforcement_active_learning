@@ -53,8 +53,12 @@ def main():
                         help='Number of steps to print and record the log.')
     parser.add_argument('--val_step', default=500, type=int,
                         help='Number of steps to run validation.')
-    parser.add_argument('--logger_name', default='runs/{}'.format(datetime.datetime.now().strftime("%d-%m-%y %H:%M")),
+    parser.add_argument('--logger_name', default='runs/{}'.format(datetime.datetime.now().strftime("%d-%m-%y_%H:%M")),
                         help='Path to save the model and Tensorboard log.')
+    parser.add_argument('--selection', default='uncertainty',
+                        help='Active learning selection algorithm')
+    parser.add_argument('--primary', default='images',
+                        help='Image- or caption-centric active learning')
     parser.add_argument('--resume', default='', type=str, metavar='PATH',
                         help='path to latest checkpoint (default: none)')
     parser.add_argument('--max_violation', action='store_true',
@@ -80,6 +84,7 @@ def main():
                         help='Ensure the training is always done in '
                         'train mode (Not recommended).')
     opt = parser.parse_args()
+    opt.logger_name += "_" + opt.selection + "_" + opt.primary
     print(opt)
     if torch.cuda.is_available():
         torch.cuda.set_device(opt.device)
@@ -120,18 +125,26 @@ def main():
 
 
     n_rounds = 60
-    # selection = select_margin
-    # selection = select_random
-    selection = select_uncertainty
+
+    if opt.selection == "uncertainty":
+        selection = select_uncertainty
+    elif opt.selection == "margin":
+        selection = select_margin
+    elif opt.selection == "random":
+        selection = select_random
+    else:
+        selection = select_uncertainty
 
     for r in range(n_rounds):
-        best_indices = selection(model, train_loader)
+        best_indices = selection(model, train_loader, opt.primary)
 
         for index in best_indices:
             active_loader.dataset.add_single(train_loader.dataset[index][0],
                                             train_loader.dataset[index][1])
 
         # Train the Model
+        print("Training on {} items ".format(len(active_loader)))
+
         best_rsum = 0
         for epoch in range(opt.num_epochs):
             adjust_learning_rate(opt, model.optimizer, epoch)
@@ -166,7 +179,6 @@ def train(opt, train_loader, model, epoch, val_loader):
 
     end = time.time()
 
-    print("Training on {} items ".format(len(train_loader)))
     for i, train_data in enumerate(train_loader):
         if opt.reset_train:
             # Always reset to train mode, this is not the default behavior
