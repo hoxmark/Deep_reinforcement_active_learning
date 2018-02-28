@@ -63,6 +63,8 @@ def main():
                         help='Dimensionality of the image embedding.')
     parser.add_argument('--finetune', action='store_true',
                         help='Fine-tune the image encoder.')
+    parser.add_argument('--device', default=1,
+                        help='which gpu to use')
     parser.add_argument('--cnn_type', default='vgg19',
                         help="""The CNN used for image encoder
                         (e.g. vgg19, resnet152)""")
@@ -79,7 +81,8 @@ def main():
                         'train mode (Not recommended).')
     opt = parser.parse_args()
     print(opt)
-
+    if torch.cuda.is_available():
+        torch.cuda.set_device(opt.device)
 
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
     tb_logger.configure(opt.logger_name, flush_secs=5)
