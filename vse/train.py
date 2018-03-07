@@ -10,7 +10,7 @@ import data
 from vocab import Vocabulary  # NOQA
 from model import VSE
 from evaluation import i2t, t2i, AverageMeter, LogCollector, encode_data
-from selection_strategies import select_margin, select_random, select_uncertainty
+from selection_strategies import select_margin, select_random, select_uncertainty, select_hybrid
 
 import logging
 import tensorboard_logger as tb_logger
@@ -123,7 +123,6 @@ def main():
         else:
             print("=> no checkpoint found at '{}'".format(opt.resume))
 
-
     n_rounds = 60
 
     if opt.selection == "uncertainty":
@@ -132,11 +131,13 @@ def main():
         selection = select_margin
     elif opt.selection == "random":
         selection = select_random
+    elif opt.selection == "hybrid":
+        selection = select_hybrid
     else:
         selection = select_uncertainty
 
-    for r in range(n_rounds):
-        best_indices = selection(model, train_loader, opt.primary)
+    for r in range(n_rounds): 
+        best_indices = selection(r, model, train_loader)
 
         for index in best_indices:
             active_loader.dataset.add_single(train_loader.dataset[index][0],
