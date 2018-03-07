@@ -67,8 +67,8 @@ def main():
                         help='Dimensionality of the image embedding.')
     parser.add_argument('--finetune', action='store_true',
                         help='Fine-tune the image encoder.')
-    parser.add_argument('--device', default=1,
-                        help='which gpu to use')
+    parser.add_argument('--device', default=1, type=int,
+                        help='Which gpu to use')
     parser.add_argument('--cnn_type', default='vgg19',
                         help="""The CNN used for image encoder
                         (e.g. vgg19, resnet152)""")
@@ -123,7 +123,7 @@ def main():
         else:
             print("=> no checkpoint found at '{}'".format(opt.resume))
 
-    n_rounds = 60
+    n_rounds = 100
 
     if opt.selection == "uncertainty":
         selection = select_uncertainty
@@ -136,7 +136,7 @@ def main():
     else:
         selection = select_uncertainty
 
-    for r in range(n_rounds): 
+    for r in range(n_rounds):
         best_indices = selection(r, model, train_loader)
 
         for index in best_indices:
