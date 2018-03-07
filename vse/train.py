@@ -16,6 +16,8 @@ import logging
 import tensorboard_logger as tb_logger
 
 import argparse
+import getpass
+
 
 
 def main():
@@ -53,7 +55,7 @@ def main():
                         help='Number of steps to print and record the log.')
     parser.add_argument('--val_step', default=500, type=int,
                         help='Number of steps to run validation.')
-    parser.add_argument('--logger_name', default='runs/{}'.format(datetime.datetime.now().strftime("%d-%m-%y_%H:%M")),
+    parser.add_argument('--logger_name', default='/data/stud/jorgebjorn/runs/{}/{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M")),
                         help='Path to save the model and Tensorboard log.')
     parser.add_argument('--selection', default='uncertainty',
                         help='Active learning selection algorithm')
@@ -67,7 +69,7 @@ def main():
                         help='Dimensionality of the image embedding.')
     parser.add_argument('--finetune', action='store_true',
                         help='Fine-tune the image encoder.')
-    parser.add_argument('--device', default=1,
+    parser.add_argument('--device', default=0, type=int,
                         help='which gpu to use')
     parser.add_argument('--cnn_type', default='vgg19',
                         help="""The CNN used for image encoder
@@ -89,6 +91,7 @@ def main():
     if torch.cuda.is_available():
         torch.cuda.set_device(opt.device)
 
+    # Setup tensorboard logger
     logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
     tb_logger.configure(opt.logger_name, flush_secs=5)
 
