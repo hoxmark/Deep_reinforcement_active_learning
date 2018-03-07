@@ -106,8 +106,10 @@ def select_uncertainty(r, model, train_loader, primary="image"):
         return best_n_indices
 
 
-def select_hybrid(r, model, train_loader, first):
+def select_hybrid(r, model, train_loader):
     if r == 0:
         return random.sample(range(0, 30000), 1280)
+    elif r%2 == 0: 
+        return select_uncertainty(r, model, train_loader)
     else: 
-        return random.sample(range(0, 30000), 128)
+        return select_margin(r, model, train_loader)
