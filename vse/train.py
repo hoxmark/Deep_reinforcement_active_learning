@@ -126,7 +126,7 @@ def main():
         else:
             print("=> no checkpoint found at '{}'".format(opt.resume))
 
-    n_rounds = 60
+    n_rounds = 100
 
     if opt.selection == "uncertainty":
         selection = select_uncertainty
@@ -139,7 +139,7 @@ def main():
     else:
         selection = select_uncertainty
 
-    for r in range(n_rounds): 
+    for r in range(n_rounds):
         best_indices = selection(r, model, train_loader)
 
         for index in best_indices:
