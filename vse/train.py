@@ -83,6 +83,8 @@ def main():
     parser.add_argument('--reset_train', action='store_true',
                         help='Ensure the training is always done in '
                         'train mode (Not recommended).')
+    parser.add_argument('--no_log', action='store_true',
+                        default=False, help='Disable logging')
     opt = parser.parse_args()
     opt.logger_name += "_" + opt.selection + "_" + opt.primary
     print(opt)
@@ -154,7 +156,7 @@ def main():
             train(opt, active_loader, model, epoch, val_loader)
 
             # evaluate on validation set
-        rsum = validate(opt, val_loader, model, True, r)
+        rsum = validate(opt, val_loader, model, not opt.no_log, r)
 
             # remember best R@ sum and save checkpoint
             # is_best = rsum > best_rsum
