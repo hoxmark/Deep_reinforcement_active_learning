@@ -94,8 +94,9 @@ def main():
         torch.cuda.set_device(opt.device)
 
     # Setup tensorboard logger
-    logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
-    tb_logger.configure(opt.logger_name, flush_secs=5)
+    if not opt.no_log:
+        logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+        tb_logger.configure(opt.logger_name, flush_secs=5)
 
     # Load Vocabulary Wrapper
     vocab = pickle.load(open(os.path.join(
