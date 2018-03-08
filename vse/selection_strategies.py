@@ -10,13 +10,14 @@ import numpy as np
 def select_random(r, model, train_loader):
     if r == 0:
         return random.sample(range(0, 30000), 1280)
-    else: 
+    else:
         return random.sample(range(0, 30000), 128)
 
 def select_margin(r, model, train_loader, primary="image"):
     if r == 0:
         return random.sample(range(0, 30000), 1280)
-    else: 
+    else:
+        model.val_start()
         img_embs, cap_embs = encode_data(model, train_loader)
         primary_embs, secondary_embs = (img_embs, cap_embs) if primary == "image" else (cap_embs, img_embs)
 
@@ -58,7 +59,8 @@ def select_margin(r, model, train_loader, primary="image"):
 def select_uncertainty(r, model, train_loader, primary="image"):
     if r == 0:
         return random.sample(range(0, 30000), 1280)
-    else: 
+    else:
+        model.val_start()
         img_embs, cap_embs = encode_data(model, train_loader)
         primary_embs, secondary_embs = (img_embs, cap_embs) if primary == "image" else (cap_embs, img_embs)
 
@@ -109,7 +111,7 @@ def select_uncertainty(r, model, train_loader, primary="image"):
 def select_hybrid(r, model, train_loader):
     if r == 0:
         return random.sample(range(0, 30000), 1280)
-    elif r%2 == 0: 
+    elif r%2 == 0:
         return select_uncertainty(r, model, train_loader)
-    else: 
+    else:
         return select_margin(r, model, train_loader)
