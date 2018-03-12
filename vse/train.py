@@ -129,7 +129,7 @@ def main():
         else:
             print("=> no checkpoint found at '{}'".format(opt.resume))
 
-    n_rounds = 100
+    n_rounds = 234
 
     if opt.selection == "uncertainty":
         selection = select_uncertainty
@@ -152,6 +152,8 @@ def main():
         for index in best_indices:
             active_loader.dataset.add_single(train_loader.dataset[index][0],
                                             train_loader.dataset[index][1])
+
+        train_loader.dataset.delete_indices(best_indices)
 
         # Train the Model
         print("Training on {} items ".format(len(active_loader)))

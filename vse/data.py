@@ -218,6 +218,11 @@ class PrecompDataset(data.Dataset):
         if data_split == 'dev':
             self.length = 5000
 
+    def delete_indices(self, indices):
+        self.images = np.delete(self.images, indices)
+        self.captions = np.delete(self.captions, indices)
+        self.length = len(self.captions)
+
     def __getitem__(self, index):
         # handle the image redundancy
         img_id = int(index/self.im_div)
