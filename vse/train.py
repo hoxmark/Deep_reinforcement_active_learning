@@ -10,7 +10,7 @@ import data
 from vocab import Vocabulary  # NOQA
 from model import VSE
 from evaluation import i2t, t2i, AverageMeter, LogCollector, encode_data
-from selection_strategies import select_margin, select_random, select_uncertainty, select_hybrid
+from selection_strategies import select_margin, select_random, select_uncertainty, select_hybrid,select_all, select_captionSimilarity
 
 import logging
 import tensorboard_logger as tb_logger
@@ -138,13 +138,17 @@ def main():
     elif opt.selection == "random":
         selection = select_random
     elif opt.selection == "hybrid":
-        selection = select_hybrid
+        selection = select_hybrid    
+    elif opt.selection == "all":
+        selection = select_all
+    elif opt.selection == "capsim":
+        selection = select_captionSimilarity
     else:
         selection = select_uncertainty
 
     for r in range(n_rounds):
         best_indices = selection(r, model, train_loader)
-
+        
         for index in best_indices:
             active_loader.dataset.add_single(train_loader.dataset[index][0],
                                             train_loader.dataset[index][1])
