@@ -12,13 +12,13 @@ import sys
 
 def select_random(r, model, train_loader):
     if r == 0:
-        return random.sample(range(0, 30000), 1280)
+        return random.sample(range(0, len(train_loader.dataset)), 1280)
     else:
-        return random.sample(range(0, 30000), 128)
+        return random.sample(range(0, len(train_loader.dataset)), 128)
 
 def select_margin(r, model, train_loader, primary="image"):
     if r == 0:
-        return random.sample(range(0, 30000), 1280)
+        return random.sample(range(0, len(train_loader.dataset)), 1280)
     else:
         model.val_start()
         img_embs, cap_embs = encode_data(model, train_loader)
@@ -61,8 +61,8 @@ def select_margin(r, model, train_loader, primary="image"):
 
 def select_captionSimilarity(r, model, train_loader, primary="image"):
     if r == 0:
-        return random.sample(range(0, 30000), 1280)
-    else:    
+        return random.sample(range(0, len(train_loader.dataset)), 1280)
+    else:
         model.val_start()
         img_embs, cap_embs = encode_data(model, train_loader)
         primary_embs, secondary_embs = (img_embs, cap_embs) if primary == "image" else (cap_embs, img_embs)
@@ -77,8 +77,8 @@ def select_captionSimilarity(r, model, train_loader, primary="image"):
             # print(primary_batch_sum)
             scores.append(primary_batch_sum.data.cpu().numpy())
 
-        #Best results        
-        best_n_indices = [n[0] for n in heapq.nsmallest(128, enumerate(scores), key=lambda x: x[1])]    
+        #Best results
+        best_n_indices = [n[0] for n in heapq.nsmallest(128, enumerate(scores), key=lambda x: x[1])]
         print(best_n_indices)
         #worst results
         # best_n_indices = [n[0] for n in heapq.nlargest(128, enumerate(scores), key=lambda x: x[1])]
@@ -96,14 +96,14 @@ def get_avg_distance(caption_set):
 
 def select_uncertainty(r, model, train_loader, primary="image"):
     if r == 0:
-        return random.sample(range(0, 30000), 1280)
+        return random.sample(range(0, len(train_loader.dataset)), 1280)
     else:
         model.val_start()
         img_embs, cap_embs = encode_data(model, train_loader)
         primary_embs, secondary_embs = (img_embs, cap_embs) if primary == "image" else (cap_embs, img_embs)
 
         scores = []
-        
+
         for i in range(0, len(primary_embs), 128):
             batch_range = min(128, len(primary_embs) - i)
             primary_batch = primary_embs[i: i + batch_range]
@@ -148,16 +148,16 @@ def select_uncertainty(r, model, train_loader, primary="image"):
 
 def select_hybrid(r, model, train_loader):
     if r == 0:
-        return random.sample(range(0, 30000), 1280)
+        return random.sample(range(0, len(train_loader.dataset)), 1280)
     elif r%2 == 0:
         return select_uncertainty(r, model, train_loader)
     else:
         return select_margin(r, model, train_loader)
 
 def select_all(r, model, train_loader):
-    if r == 0:   
+    if r == 0:
         size = ((len(train_loader)*128)-128)
         # print(size)
-        return range(0, size) 
-    else: 
+        return range(0, size)
+    else:
         sys.exit("Done!")
