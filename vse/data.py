@@ -219,8 +219,8 @@ class PrecompDataset(data.Dataset):
             self.length = 5000
 
     def delete_indices(self, indices):
-        self.images = np.delete(self.images, indices)
-        self.captions = np.delete(self.captions, indices)
+        self.images = np.delete(self.images, indices, axis=0)
+        self.captions = np.delete(self.captions, indices, axis=0)
         self.length = len(self.captions)
 
     def __getitem__(self, index):
@@ -242,6 +242,7 @@ class PrecompDataset(data.Dataset):
 
     def __len__(self):
         return self.length
+        
 
 class ActiveDataset(data.Dataset):
     """
