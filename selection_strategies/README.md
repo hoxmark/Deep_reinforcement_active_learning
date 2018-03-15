@@ -121,6 +121,6 @@ optional arguments:
   --weight_decay WEIGHT_DECAY
                         Value of weight_decay
   --data_path DATA_PATH
-                        path to w2v binaries
+                        path to w2v binaries and datasets
   --no-log              Disable logging
 ```
