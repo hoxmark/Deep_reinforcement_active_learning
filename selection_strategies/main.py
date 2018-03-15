@@ -51,7 +51,7 @@ def main():
                         help="available scoring functions: entropy, random, egl")
     parser.add_argument('--average', type=int, default=1,
                         help='Number of runs to average [default: 1]')
-    parser.add_argument('--hnodes', type=int, default=128,
+    parser.add_argument('--hnodes', type=int, default=256,
                         help='Number of nodes in the hidden layer(s)')
     parser.add_argument('--hlayers', type=int, default=1,
                         help='Number of hidden layers')
@@ -124,7 +124,8 @@ def main():
         utils.load_word2vec()
 
     encoder = rnnae.EncoderRNN()
-    decoder = rnnae.DecoderRNN()
+    # decoder = rnnae.DecoderRNN()
+    decoder = rnnae.AttnDecoderRNN()
     feature_extractor = CNN2()
 
     if params["ENCODER"] != None:

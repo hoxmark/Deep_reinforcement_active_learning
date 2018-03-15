@@ -208,13 +208,14 @@ def clean(features, targets, indices):
             second = features[k]
 
             distance = getDistance(first, second, j, cachedFeatures);
-
-            if distance < params["SIMILARITY_THRESHOLD"]:
-                to_delete.append(k)
-                # print("Distance: {}".format(distance))
-                # print(*[data["vocab"][i] for i in filter(lambda a: a < len(data["vocab"]), first)])
-                # print(*[data["vocab"][i] for i in filter(lambda a: a < len(data["vocab"]), second)])
-                # print("\n\n")
+            print(distance)
+            #
+            # if distance < params["SIMILARITY_THRESHOLD"]:
+            #     to_delete.append(k)
+            #     # print("Distance: {}".format(distance))
+            #     # print(*[data["vocab"][i] for i in filter(lambda a: a < len(data["vocab"]), first)])
+            #     # print(*[data["vocab"][i] for i in filter(lambda a: a < len(data["vocab"]), second)])
+            #     # print("\n\n")
 
     to_delete = list(set(to_delete))
 

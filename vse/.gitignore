@@ -1,0 +1,6 @@
+*.pyc
+*.swp
+*.ipynb_checkpoints
+*.json
+*.pth.tar
+runs/
