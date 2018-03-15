@@ -171,7 +171,6 @@ def select_entropy(model, lg, iteration):
         batch_target.extend(next_targets)
         batch_indices.extend(next_indices)
 
-        # if params["EMBEDDING"] == "static":
         print("len before clean {}".format(len(batch_feature)))
         n_deleted = clean(batch_feature, batch_target, batch_indices)
         print("len after clean {}".format(len(batch_feature)))

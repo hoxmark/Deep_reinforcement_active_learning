@@ -14,7 +14,7 @@ Below are results corresponding to RNN and CNN using out 3 different selection s
 
 | Model        | Selection score    | MR        | TREC  |
 |--------------|:------------------:|:---------:|:-----:|
-| CNN          | Random             | 73.29     |82.05  | 
+| CNN          | Random             | 73.29     |82.05  |
 |              | Entropy            | 74.57     |82.82  |
 |              | EGL                | **76.80** |79.30  |
 | RNN          | Random             | 72.60     |78.07  |
@@ -30,79 +30,74 @@ Below are results corresponding to RNN and CNN using out 3 different selection s
 
 
 
-## Installing and running the project 
+## Installing and running the project
 
-1. Clone this github repo to you machine. 
+1. Clone this github repo to you machine.
 
 2.  Download [GoogleNews-vectors-negative300.bin] and place it in the root folder.
 
-```sh
+```
 $ wget -c "https://s3.amazonaws.com/dl4j-distribution/GoogleNews-vectors-negative300.bin.gz"
 $ gunzip GoogleNews-vectors-negative300.bin.gz
 ```
 
-3.  Install pytorch, we are running python 3.5.2 and cuda so we used the following command: 
+3.  Install pytorch, we are running python 3.5.2 and cuda so we used the following command:
 
-```sh
-$ pip3 install http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl 
+```
+$ pip3 install http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl
 ```
 
-  if you are using a different version, we do not know if it will work as intended, head over to http://pytorch.org to download it. 
+  if you are using a different version, we do not know if it will work as intended, head over to http://pytorch.org to download it.
 
-4. I nstall all the rquired python dependecies using pip3. 
+4. I nstall all the rquired python dependecies using pip3.
 
-```sh
+```
 $ pip3 install -r /path/to/requirements.txt
 ```
 
 ## Execution
 
-Example: 
-```sh
-$ python  main.py  --embedding static --scorefn entropy --model cnn --average 10 
+Example:
+```
+$ python  main.py  --embedding static --scorefn entropy --model cnn --average 10
 ```
 
-The help commpand if you want to run it with different hyperparamters. 
+The help commpand if you want to run it with different hyperparamters.
 
-```sh
-$ python  main.py  --help 
+```
+$ python  main.py  --help
 
-usage: main.py
-  [-h] 
-  [--mode MODE] 
-  [--model MODEL] 
-  [--embedding EMBEDDING]
-  [--dataset DATASET] 
-  [--batch-size BATCH_SIZE]
-  [--selection-size SELECTION_SIZE] 
-  [--save_model SAVE_MODEL]
-  [--early_stopping EARLY_STOPPING] 
-  [--epoch EPOCH]
-  [--learning_rate LEARNING_RATE] 
-  [--dropout_embed DROPOUT_EMBED]
-  [--dropout_model DROPOUT_MODEL] 
-  [--device DEVICE] 
-  [--no-cuda]
-  [--scorefn SCOREFN] 
-  [--average AVERAGE] 
-  [--hnodes HNODES]
-  [--hlayers HLAYERS] 
-  [--weight_decay WEIGHT_DECAY] 
-  [--no-log]
-  [--minibatch]
+usage: main.py [-h] [--similarity SIMILARITY]
+               [--similarity_representation SIMILARITY_REPRESENTATION]
+               [--mode MODE] [--model MODEL] [--embedding EMBEDDING]
+               [--dataset DATASET] [--encoder ENCODER] [--decoder DECODER]
+               [--batch-size BATCH_SIZE] [--selection-size SELECTION_SIZE]
+               [--save_model SAVE_MODEL] [--early_stopping EARLY_STOPPING]
+               [--epoch EPOCH] [--learning_rate LEARNING_RATE]
+               [--dropout_embed DROPOUT_EMBED] [--dropout_model DROPOUT_MODEL]
+               [--device DEVICE] [--no-cuda] [--scorefn SCOREFN]
+               [--average AVERAGE] [--hnodes HNODES] [--hlayers HLAYERS]
+               [--weight_decay WEIGHT_DECAY] [--data_path DATA_PATH]
+               [--no-log]
 
-...
 optional arguments:
   -h, --help            show this help message and exit
+  --similarity SIMILARITY
+                        similarity threshold
+  --similarity_representation SIMILARITY_REPRESENTATION
+                        similarity representation. Available methods: CNN,
+                        AUTOENCODER, W2V
   --mode MODE           train: train (with test) a model / test: test saved
                         models
   --model MODEL         Type of model to use. Default: CNN. Available models:
                         CNN, RNN
   --embedding EMBEDDING
-                        available embedings: random, static
+                        available embedings: random, w2v
   --dataset DATASET     available datasets: MR, TREC
+  --encoder ENCODER     Path to encoder model file
+  --decoder DECODER     Path to decoder model file
   --batch-size BATCH_SIZE
-                        batch size for training [default: 25]
+                        batch size for training [default: 32]
   --selection-size SELECTION_SIZE
                         selection size for selection function [default: 25]
   --save_model SAVE_MODEL
@@ -124,9 +119,7 @@ optional arguments:
   --hlayers HLAYERS     Number of hidden layers
   --weight_decay WEIGHT_DECAY
                         Value of weight_decay
+  --data_path DATA_PATH
+                        path to w2v binaries
   --no-log              Disable logging
-  --minibatch           Use minibatch training, default true
-  ...
-
 ```
-

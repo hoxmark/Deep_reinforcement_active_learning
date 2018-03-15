@@ -234,7 +234,7 @@ def train(model, train_features, train_targets):
 
 
 def init_logger(average):
-    basename = "./logs" if params["EMBEDDING"] == "static" else "./logs_random"
+    basename = "./logs" if params["EMBEDDING"] == "w2v" else "./logs_random"
 
     lg = logger.Logger('{}/{}/{},date={},MODEL={},SCORE_FN={},AVG={},SIM_REP={},SIMILARITY={}'.format(
         basename,

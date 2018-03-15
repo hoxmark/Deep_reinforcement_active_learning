@@ -11,8 +11,8 @@ from models import rnnae
 
 def main():
     parser = argparse.ArgumentParser(description="-----[CNN-classifier]-----")
-    parser.add_argument("--embedding", default="random",
-                        help="available embedings: random, static")
+    parser.add_argument("--embedding", default="w2v",
+                        help="available embedings: random, w2v")
     parser.add_argument("--dataset", default="MR",
                         help="available datasets: MR, TREC")
     parser.add_argument('--batch-size', type=int, default=32,

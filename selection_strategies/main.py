@@ -19,8 +19,8 @@ def main():
                         help="train: train (with test) a model / test: test saved models")
     parser.add_argument("--model", default="cnn",
                         help="Type of model to use. Default: CNN. Available models: CNN, RNN")
-    parser.add_argument("--embedding", default="static",
-                        help="available embedings: random, static")
+    parser.add_argument("--embedding", default="w2v",
+                        help="available embedings: random, w2v")
     parser.add_argument("--dataset", default="MR",
                         help="available datasets: MR, TREC")
     parser.add_argument("--encoder", default=None,
@@ -61,12 +61,10 @@ def main():
                         help='path to w2v binaries')
     parser.add_argument('--no-log', action='store_true',
                         default=False, help='Disable logging')
-    parser.add_argument('--minibatch', action='store_true',
-                        default=True, help='Use  minibatch training')
 
     options = parser.parse_args()
 
-    params["DATA_PATH"] = options.data_path #TODO rewrite? 
+    params["DATA_PATH"] = options.data_path #TODO rewrite?
 
     getattr(utils, "read_{}".format(options.dataset))()
 
@@ -120,7 +118,7 @@ def main():
     if params["CUDA"]:
         torch.cuda.set_device(params["DEVICE"])
 
-    if params["EMBEDDING"] == "static":
+    if params["EMBEDDING"] == "w2v":
         utils.load_word2vec()
 
     encoder = rnnae.EncoderRNN()
