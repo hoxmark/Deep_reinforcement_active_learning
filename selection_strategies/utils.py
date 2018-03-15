@@ -192,17 +192,15 @@ load word2vec pre trained vectors
 def load_word2vec():
     print("loading word2vec...")
     t0 = time.time()
-    
+
     word_vectors = KeyedVectors.load_word2vec_format(
         "{}/GoogleNews-vectors-negative300.bin".format(params['DATA_PATH']), binary=True)
-    
+
     t1 = time.time()
 
     total = t1-t0
 
     print("It took {} to load w2v".format(total))
-
-    # data["w2v_kv"] = word_vectors
 
     wv_matrix = []
     for word in data["vocab"]:
@@ -217,20 +215,13 @@ def load_word2vec():
     wv_matrix.append(np.zeros(300).astype("float32"))
     wv_matrix = np.array(wv_matrix)
     w2v["w2v"] = wv_matrix
-    w2v["w2v_kv"] = word_vectors
-    # return word_vectors, wv_matrix
 
-
-def average_feature_vector(sentence, embedding):
+def average_feature_vector(sentence, word_vectors):
     num_features = 300
     feature_vector = np.zeros((num_features, ), dtype="float32")
 
     for word in sentence:
-        # word_vector = embedding(word)
-        if word in embedding.vocab:
-            word_vector = embedding.word_vec(word)
-        else:
-            word_vector = np.random.uniform(-0.01, 0.01, num_features).astype("float32")
+        word_vector = word_vectors[word]
         feature_vector = np.add(feature_vector, word_vector)
 
     feature_vector = np.divide(feature_vector, len(sentence))

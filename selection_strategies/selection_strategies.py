@@ -58,8 +58,7 @@ def select_egl(model, lg, iteration):
         feature = Variable(torch.LongTensor(batch_x))
         target = Variable(torch.LongTensor(batch_y))
         if params["CUDA"]:
-            feature, target = feature.cuda(
-                params["DEVICE"]), target.cuda(params["DEVICE"])
+            feature, target = feature.cuda(), target.cuda()
 
         for s_index in range(batch_range):
             score = 0
@@ -71,7 +70,7 @@ def select_egl(model, lg, iteration):
                 optimizer.zero_grad()
                 f_target = torch.autograd.Variable(torch.LongTensor([index]))
                 if params["CUDA"]:
-                    f_target = f_target.cuda(params["DEVICE"])
+                    f_target = f_target.cuda()
 
                 loss = criterion(output, f_target)
                 loss.backward(retain_graph=True)
@@ -134,8 +133,7 @@ def select_entropy(model, lg, iteration):
         target = Variable(torch.LongTensor(batch_y))
 
         if params["CUDA"]:
-            feature, target = feature.cuda(
-                params["DEVICE"]), target.cuda(params["DEVICE"])
+            feature, target = feature.cuda(), target.cuda()
 
         output = model(feature)
         # Output is not a probability distribution - make it using softmax
@@ -207,14 +205,14 @@ def clean(features, targets, indices):
             second = features[k]
 
             distance = getDistance(first, second, j, cachedFeatures);
-            print(distance)
-            #
-            # if distance < params["SIMILARITY_THRESHOLD"]:
-            #     to_delete.append(k)
-            #     # print("Distance: {}".format(distance))
-            #     # print(*[data["vocab"][i] for i in filter(lambda a: a < len(data["vocab"]), first)])
-            #     # print(*[data["vocab"][i] for i in filter(lambda a: a < len(data["vocab"]), second)])
-            #     # print("\n\n")
+            # print(distance)
+
+            if distance < params["SIMILARITY_THRESHOLD"]:
+                to_delete.append(k)
+                # print("Distance: {}".format(distance))
+                # print(*[data["vocab"][i] for i in filter(lambda a: a < len(data["vocab"]), first)])
+                # print(*[data["vocab"][i] for i in filter(lambda a: a < len(data["vocab"]), second)])
+                # print("\n\n")
 
     to_delete = list(set(to_delete))
 
@@ -261,8 +259,8 @@ def getDistance(first, second, j, savedFirsts):
 
     if params["SIMILARITY_REPRESENTATION"] == "W2V":
 
-        first_w2v = utils.average_feature_vector(first, w2v["w2v_kv"])
-        second_w2v = utils.average_feature_vector(second, w2v["w2v_kv"])
+        first_w2v = utils.average_feature_vector(first, w2v["w2v"])
+        second_w2v = utils.average_feature_vector(second, w2v["w2v"])
 
         distance = spatial.distance.cosine(first_w2v, second_w2v)
 
@@ -328,7 +326,7 @@ def batchify(features, params):
 
     for feature in features:
         if params["CUDA"]:
-            feature = feature.cuda(params["DEVICE"])
+            feature = feature.cuda()
 
         if(len(feature) < max_len):
             padding = [21426 for x in range(max_len - len(feature))]
@@ -336,7 +334,7 @@ def batchify(features, params):
             padding = torch.LongTensor(padding)
 
             if params["CUDA"]:
-                padding = padding.cuda(params["DEVICE"])
+                padding = padding.cuda()
             feature = torch.cat([feature, padding])
         else:
             feature = feature[0:max_len]
