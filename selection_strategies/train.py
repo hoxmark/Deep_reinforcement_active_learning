@@ -157,34 +157,16 @@ def train(model, train_features, train_targets):
             avg_loss = 0
             corrects = 0
 
-            if params["MINIBATCH"]:
-                for i in range(0, len(train_features), params["BATCH_SIZE"]):
-                    batch_range = min(params["BATCH_SIZE"], len(train_features) - i)
-                    batch_x = train_features[i:i + batch_range]
-                    batch_y = train_targets[i:i + batch_range]
+            for i in range(0, len(train_features), params["BATCH_SIZE"]):
+                batch_range = min(params["BATCH_SIZE"], len(train_features) - i)
+                batch_x = train_features[i:i + batch_range]
+                batch_y = train_targets[i:i + batch_range]
 
-                    feature = Variable(torch.LongTensor(batch_x))
-                    target = Variable(torch.LongTensor(batch_y))
-
-                    if params["CUDA"]:
-                        feature, target = feature.cuda(
-                            params["DEVICE"]), target.cuda(params["DEVICE"])
-
-                    optimizer.zero_grad()
-                    pred = model(feature)
-                    loss = criterion(pred, target)
-                    loss.backward()
-                    optimizer.step()
-                    avg_loss += loss.data[0]
-                    corrects += (torch.max(pred, 1)
-                                 [1].view(target.size()).data == target.data).sum()
-                avg_loss = avg_loss * params["BATCH_SIZE"] / size
-            else:
-                feature = Variable(torch.LongTensor(train_features))
-                target = Variable(torch.LongTensor(train_targets))
+                feature = Variable(torch.LongTensor(batch_x))
+                target = Variable(torch.LongTensor(batch_y))
 
                 if params["CUDA"]:
-                    feature, target = feature.cuda(params["DEVICE"]), target.cuda(params["DEVICE"])
+                    feature, target = feature.cuda(), target.cuda()
 
                 optimizer.zero_grad()
                 pred = model(feature)
@@ -192,7 +174,9 @@ def train(model, train_features, train_targets):
                 loss.backward()
                 optimizer.step()
                 avg_loss += loss.data[0]
-                corrects += (torch.max(pred, 1)[1].view(target.size()).data == target.data).sum()
+                corrects += (torch.max(pred, 1)
+                             [1].view(target.size()).data == target.data).sum()
+            avg_loss = avg_loss * params["BATCH_SIZE"] / size
 
             if params["SCORE_FN"] == "all":
                 accuracy = 100.0 * corrects / size

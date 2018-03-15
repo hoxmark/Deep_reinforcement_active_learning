@@ -29,8 +29,8 @@ def main():
                         help="Path to decoder model file")
     parser.add_argument('--batch-size', type=int, default=32,
                         help='batch size for training [default: 32]')
-    parser.add_argument('--selection-size', type=int, default=25,
-                        help='selection size for selection function [default: 25]')
+    parser.add_argument('--selection-size', type=int, default=32,
+                        help='selection size for selection function [default: 32]')
     parser.add_argument("--save_model", default="F",
                         help="whether saving model or not (T/F)")
     parser.add_argument("--early_stopping", default="F",
@@ -104,7 +104,6 @@ def main():
         "HIDDEN_LAYERS": options.hlayers,
         "WEIGHT_DECAY": options.weight_decay,
         "LOG": not options.no_log,
-        "MINIBATCH": options.minibatch,
         "ENCODER": options.encoder,
         "DECODER": options.decoder
     }
@@ -135,10 +134,7 @@ def main():
         decoder.load_state_dict(torch.load(params["DECODER"]))
 
     if params["CUDA"]:
-        encoder, decoder = encoder.cuda(), decoder.cuda()
-
-    if params["CUDA"]:
-        feature_extractor.cuda()
+        encoder, decoder, feature_extractor = encoder.cuda(), decoder.cuda(), feature_extractor.cuda()
 
     models["ENCODER"] = encoder
     models["DECODER"] = decoder
