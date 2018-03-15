@@ -57,7 +57,7 @@ def main():
                         help='Number of hidden layers')
     parser.add_argument('--weight_decay', type=float, default=1e-5,
                         help='Value of weight_decay')
-    parser.add_argument('--data_path',  default='/data/stud/jorgebjorn/data',
+    parser.add_argument('--data_path',  default='../data/',
                         help='path to w2v binaries')
     parser.add_argument('--no-log', action='store_true',
                         default=False, help='Disable logging')

@@ -34,11 +34,12 @@ Below are results corresponding to RNN and CNN using out 3 different selection s
 
 1. Clone this github repo to you machine.
 
-2.  Download [GoogleNews-vectors-negative300.bin] and place it in the root folder.
+2.  Download [GoogleNews-vectors-negative300.bin] and place it in the data folder.
 
 ```
 $ wget -c "https://s3.amazonaws.com/dl4j-distribution/GoogleNews-vectors-negative300.bin.gz"
 $ gunzip GoogleNews-vectors-negative300.bin.gz
+$ mv GoogleNews-vectors-negative300.bin PROJECT_DIRECTORY/data
 ```
 
 3.  Install pytorch, we are running python 3.5.2 and cuda so we used the following command:
@@ -49,7 +50,7 @@ $ pip3 install http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp35-cp35m
 
   if you are using a different version, we do not know if it will work as intended, head over to http://pytorch.org to download it.
 
-4. I nstall all the rquired python dependecies using pip3.
+4. Install all the rquired python dependecies using pip3.
 
 ```
 $ pip3 install -r /path/to/requirements.txt
