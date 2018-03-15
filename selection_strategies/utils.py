@@ -1,17 +1,21 @@
 from sklearn.utils import shuffle
 
 import pickle
+import time
+
 
 import plotly.graph_objs as go
 import plotly
 from plotly.graph_objs import Scatter, Layout
+from gensim.models.keyedvectors import KeyedVectors
+
+from config import data, params, w2v
+import numpy as np
 
 def read_TREC():
-    data = {}
-
     def read(mode):
         z = []
-        with open("data/TREC/TREC_" + mode + ".txt", "r", encoding="utf-8") as f:
+        with open("{}/TREC/TREC_".format(params['DATA_PATH']) + mode + ".txt", "r", encoding="utf-8") as f:
             for line in f:
                 if line[-1] == "\n":
                     line = line[:-1]
@@ -40,17 +44,17 @@ def read_TREC():
 
 
 def read_MR():
-    data = {}
+    # data = {}
     x, y = [], []
 
-    with open("data/MR/rt-polarity.pos", "r", encoding="utf-8") as f:
+    with open("{}/MR/rt-polarity.pos".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("data/MR/rt-polarity.neg", "r", encoding="utf-8") as f:
+    with open("{}/MR/rt-polarity.neg".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -68,17 +72,17 @@ def read_MR():
     return data
 
 def read_MR7025():
-    data = {}
+    # data = {}
     x, y = [], []
 
-    with open("data/MR/rt-polarity.pos", "r", encoding="utf-8") as f:
+    with open("{}/MR/rt-polarity.pos".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("data/MR/rt-polarity-small.neg", "r", encoding="utf-8") as f:
+    with open("{}/MR/rt-polarity-small.neg".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -96,17 +100,17 @@ def read_MR7025():
     return data
 
 def read_rotten_imdb():
-    data = {}
+    # data = {}
     x, y = [], []
 
-    with open("data/rotten_imdb/rt-polarity.pos", "r", encoding="ISO-8859-1") as f:
+    with open("{}/rotten_imdb/rt-polarity.pos".format(params['DATA_PATH']), "r", encoding="ISO-8859-1") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("data/rotten_imdb/rt-polarity.neg", "r", encoding="ISO-8859-1") as f:
+    with open("{}/rotten_imdb/rt-polarity.neg".format(params['DATA_PATH']), "r", encoding="ISO-8859-1") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -124,17 +128,17 @@ def read_rotten_imdb():
     return data
 
 def read_UMICH():
-    data = {}
+    # data = {}
     x, y = [], []
 
-    with open("data/UMICH/rt-polarity.pos", "r", encoding="utf-8") as f:
+    with open("{}/UMICH/rt-polarity.pos".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("data/UMICH/rt-polarity.neg", "r", encoding="utf-8") as f:
+    with open("{}/UMICH/rt-polarity.neg".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -172,7 +176,7 @@ def load_model(params):
 
 def logAreaGraph(distribution, classes, name):
     data = []
-    for key, value in distribution.items(): 
+    for key, value in distribution.items():
         xValues = range(0,len(value))
         data.append(go.Scatter(
             name=classes[key],
@@ -181,3 +185,53 @@ def logAreaGraph(distribution, classes, name):
             fill='tozeroy'
         ))
     plotly.offline.plot(data, filename=name)
+
+"""
+load word2vec pre trained vectors
+"""
+def load_word2vec():
+    print("loading word2vec...")
+    t0 = time.time()
+    
+    word_vectors = KeyedVectors.load_word2vec_format(
+        "{}/GoogleNews-vectors-negative300.bin".format(params['DATA_PATH']), binary=True)
+    
+    t1 = time.time()
+
+    total = t1-t0
+
+    print("It took {} to load w2v".format(total))
+
+    # data["w2v_kv"] = word_vectors
+
+    wv_matrix = []
+    for word in data["vocab"]:
+        if word in word_vectors.vocab:
+            wv_matrix.append(word_vectors.word_vec(word))
+        else:
+            wv_matrix.append(
+                np.random.uniform(-0.01, 0.01, 300).astype("float32"))
+
+    # one for UNK and one for zero padding
+    wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32"))
+    wv_matrix.append(np.zeros(300).astype("float32"))
+    wv_matrix = np.array(wv_matrix)
+    w2v["w2v"] = wv_matrix
+    w2v["w2v_kv"] = word_vectors
+    # return word_vectors, wv_matrix
+
+
+def average_feature_vector(sentence, embedding):
+    num_features = 300
+    feature_vector = np.zeros((num_features, ), dtype="float32")
+
+    for word in sentence:
+        # word_vector = embedding(word)
+        if word in embedding.vocab:
+            word_vector = embedding.word_vec(word)
+        else:
+            word_vector = np.random.uniform(-0.01, 0.01, num_features).astype("float32")
+        feature_vector = np.add(feature_vector, word_vector)
+
+    feature_vector = np.divide(feature_vector, len(sentence))
+    return feature_vector

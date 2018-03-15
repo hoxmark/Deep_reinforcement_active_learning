@@ -4,6 +4,8 @@ from torch.autograd import Variable
 import torch.nn.functional as F
 import numpy as np
 from gensim.models.keyedvectors import KeyedVectors
+from config import params, data, w2v
+
 
 class RNN(nn.Module):
     def __init__(self, params, data):
@@ -33,7 +35,7 @@ class RNN(nn.Module):
         assert (len(self.FILTERS) == len(self.FILTER_NUM))
 
         if self.EMBEDDING != "random":
-            self.wv_matrix = self.load_word2vec()
+            self.wv_matrix = w2v["w2v"]
 
         self.init_model()
 
@@ -52,9 +54,11 @@ class RNN(nn.Module):
         if len(input.size()) == 1:
             input = input.unsqueeze(0)
         hidden = self.init_hidden(self.hidden_layers, len(input))
+        # print(hidden)
 
         input = input.transpose(0, 1)
         embed = self.embed(input)
+        # print(embed)
         embed = self.dropout(embed)  # add this reduce the acc
         input = embed.view(len(input), embed.size(1), -1)
         gru_out, hidden = self.bigru(input, hidden)

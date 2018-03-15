@@ -1,16 +1,21 @@
 import heapq
 import random
 import time
-
-from torch.autograd import Variable
+import train
+import numpy as np
 import torch
 import torch.optim as optim
 import torch.nn as nn
+from torch.autograd import Variable
+from scipy import spatial
 
+import utils
 import train
+from models.cnn_2 import CNN2
+from config import params, data, w2v, models
 
 
-def select_all(model, data, params, lg, i):
+def select_all(model, lg, i):
     ret_feature = []
     ret_target = []
 
@@ -30,7 +35,7 @@ def select_all(model, data, params, lg, i):
     return ret_feature, ret_target
 
 
-def select_egl(model, data, params, lg, iteration):
+def select_egl(model, lg, iteration):
     model.eval()
     parameters = filter(lambda p: p.requires_grad, model.parameters())
     optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"])
@@ -111,7 +116,7 @@ def select_egl(model, data, params, lg, iteration):
     return batch_feature, batch_target
 
 
-def select_entropy(model, data, params, lg, iteration):
+def select_entropy(model, lg, iteration):
     model.eval()
     sample_scores = []
     completed = 0
@@ -146,37 +151,146 @@ def select_entropy(model, data, params, lg, iteration):
         print("Selection process: {0:.0f}% completed ".format(
             100 * (completed / (len(data["train_x"]) // params["BATCH_SIZE"] + 1))), end="\r")
 
-    best_n_indexes = [n[0] for n in heapq.nlargest(
-        params["SELECTION_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
-
-    best_n_scores = [n[1] for n in heapq.nlargest(
-        params["SELECTION_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
-
+    sorted_scores_indices = np.flip(np.argsort(sample_scores), 0).tolist()
+    batch_indices = []
     batch_feature = []
     batch_target = []
+    total_deleted = 0
 
-    # print("Selected sentences: ")
-    # for index in best_n_indexes:
-    #     print("{} - {:.4f} - {}".format(" ".join(data["train_x"][index]), sample_scores[index], data["train_y"][index]))
+    for i in range(0, len(sorted_scores_indices), params["BATCH_SIZE"]):
+        batch_range = min(params["BATCH_SIZE"], len(sorted_scores_indices) - i)
+        next_indices = sorted_scores_indices[i : i + batch_range]
 
-    for index in sorted(best_n_indexes, reverse=True):
-        batch_feature.append([data["word_to_idx"][w] for w in data["train_x"][index]] +
-                             [params["VOCAB_SIZE"] + 1 for i in range(params["MAX_SENT_LEN"] - len(data["train_x"][index]))])
-        batch_target.append(data["classes"].index(data["train_y"][index]))
+        next_features = [[data["word_to_idx"][w] for w in data["train_x"][index]] +
+                        [params["VOCAB_SIZE"] + 1 for i in range(params["MAX_SENT_LEN"] - len(data["train_x"][index]))] for index in next_indices]
+
+        next_targets = [data["classes"].index(data["train_y"][index]) for index in next_indices]
+
+
+        batch_feature.extend(next_features)
+        batch_target.extend(next_targets)
+        batch_indices.extend(next_indices)
+
+        # if params["EMBEDDING"] == "static":
+        print("len before clean {}".format(len(batch_feature)))
+        n_deleted = clean(batch_feature, batch_target, batch_indices)
+        print("len after clean {}".format(len(batch_feature)))
+        total_deleted += n_deleted
+
+        if len(batch_feature) >= params["BATCH_SIZE"]:
+            break
+    # We only want to add batch_size elements each time
+    batch_feature = batch_feature[0 : params["BATCH_SIZE"]]
+    batch_target = batch_target[0 : params["BATCH_SIZE"]]
+    batch_indices = batch_indices[0 : params["BATCH_SIZE"]]
+
+    for index in sorted(batch_indices, reverse=True):
         del data["train_x"][index]
         del data["train_y"][index]
 
+    best_n_scores = [sample_scores[i] for i in batch_indices]
     avg_all_score = sum(sample_scores) / len(sample_scores)
     avg_best_score = sum(best_n_scores) / len(best_n_scores)
 
     if params["LOG"]:
         lg.scalar_summary("avg-score", avg_all_score, iteration)
         lg.scalar_summary("avg-best-score", avg_best_score, iteration)
+        lg.scalar_summary("n-deleted", total_deleted, iteration)
 
     return batch_feature, batch_target
 
+def clean(features, targets, indices):
+    to_delete = []
+    cachedFeatures = {}
+    for j in range(len(features)):
+        for k in range(j + 1, len(features)):
+            first = features[j]
+            second = features[k]
 
-def select_random(model, data, params, lg, iteration):
+            distance = getDistance(first, second, j, cachedFeatures);
+
+            if distance < params["SIMILARITY_THRESHOLD"]:
+                to_delete.append(k)
+                # print("Distance: {}".format(distance))
+                # print(*[data["vocab"][i] for i in filter(lambda a: a < len(data["vocab"]), first)])
+                # print(*[data["vocab"][i] for i in filter(lambda a: a < len(data["vocab"]), second)])
+                # print("\n\n")
+
+    to_delete = list(set(to_delete))
+
+    print("Deleting {} entries. Feature len is {}".format(len(to_delete), len(features)))
+    print(to_delete)
+    for delete in sorted(to_delete, reverse=True):
+        del features[delete]
+        del targets[delete]
+        del indices[delete]
+
+    return len(to_delete)
+
+def getDistance(first, second, j, savedFirsts):
+    distance = 0.0
+
+    if params["SIMILARITY_REPRESENTATION"] == "CNN":
+        feature_extractor = models["FEATURE_EXTRACTOR"]
+        first_cnn = Variable(torch.LongTensor(first))
+        second_cnn = Variable(torch.LongTensor(second))
+
+        if params["CUDA"]:
+            first_cnn, second_cnn = first_cnn.cuda(), second_cnn.cuda()
+
+        # if j in savedFirsts.keys():
+        #     first_cnn = savedFirsts[j]
+        # else:
+        #     first_cnn = feature_extractor(first_cnn).data.cpu().numpy()
+        #     savedFirsts[j] = first_cnn
+        first_cnn = feature_extractor(first_cnn).data.cpu().numpy()
+        second_cnn = feature_extractor(second_cnn).data.cpu().numpy()
+
+        distance = spatial.distance.cosine(first_cnn, second_cnn)
+    if params["SIMILARITY_REPRESENTATION"] == "CNN_SELF":
+        first_cnn = Variable(torch.LongTensor(first))
+        second_cnn = Variable(torch.LongTensor(second))
+        if params["CUDA"]:
+            first_cnn, second_cnn = first_cnn.cuda(), second_cnn.cuda()
+
+        model = models["CLASSIFIER"]
+        first_cnn = model.get_sentence_representation(first_cnn).data.cpu().numpy()
+        second_cnn = model.get_sentence_representation(second_cnn).data.cpu().numpy()
+
+        distance = spatial.distance.cosine(first_cnn, second_cnn)
+
+    if params["SIMILARITY_REPRESENTATION"] == "W2V":
+
+        first_w2v = utils.average_feature_vector(first, w2v["w2v_kv"])
+        second_w2v = utils.average_feature_vector(second, w2v["w2v_kv"])
+
+        distance = spatial.distance.cosine(first_w2v, second_w2v)
+
+    if params["SIMILARITY_REPRESENTATION"] == "AUTOENCODER":
+        encoder = models["ENCODER"]
+
+        if (params["VOCAB_SIZE"] + 1) in first:
+            first_length = first.index(params["VOCAB_SIZE"] + 1)
+        else:
+            first_length = params["MAX_SENT_LEN"]
+
+        if (params["VOCAB_SIZE"] + 1) in second:
+            second_length = second.index(params["VOCAB_SIZE"] + 1)
+        else:
+            second_length = params["MAX_SENT_LEN"]
+
+        first_tensor = Variable(torch.LongTensor(first)).unsqueeze(1)
+        second_tensor = Variable(torch.LongTensor(second)).unsqueeze(1)
+
+        first_tensor, second_tensor = first_tensor.cuda(), second_tensor.cuda()
+        first_out, first_hidden = encoder(first_tensor, [first_length])
+        second_out, second_hidden = encoder(second_tensor, [second_length])
+        first_hidden, second_hidden = first_hidden.squeeze().data.cpu().numpy(), second_hidden.squeeze().data.cpu().numpy()
+
+        distance = spatial.distance.cosine(first_hidden, second_hidden)
+    return distance
+
+def select_random(model, lg, iteration):
     all_sentences = []
     all_targets = []
 
@@ -193,25 +307,6 @@ def select_random(model, data, params, lg, iteration):
         all_targets.append(target)
         del data["train_x"][index]
         del data["train_y"][index]
-
-    return all_sentences, all_targets
-
-def select_first(model, data, params, lg, iteration):
-    all_sentences = []
-    all_targets = []
-
-    for i in range(params["BATCH_SIZE"]):
-        sentence = [data["word_to_idx"][w]
-                    for w in data["train_x"][i]]
-        padding = [params["VOCAB_SIZE"] +
-                   1 for i in range(params["MAX_SENT_LEN"] - len(sentence))]
-        sentence.extend(padding)
-
-        target = data["classes"].index(data["train_y"][i])
-        all_sentences.append(sentence)
-        all_targets.append(target)
-        del data["train_x"][i]
-        del data["train_y"][i]
 
     return all_sentences, all_targets
 
