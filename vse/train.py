@@ -138,7 +138,7 @@ def main():
     elif opt.selection == "random":
         selection = select_random
     elif opt.selection == "hybrid":
-        selection = select_hybrid    
+        selection = select_hybrid
     elif opt.selection == "all":
         selection = select_all
     elif opt.selection == "capsim":
@@ -148,7 +148,7 @@ def main():
 
     for r in range(n_rounds):
         best_indices = selection(r, model, train_loader)
-        
+
         for index in best_indices:
             active_loader.dataset.add_single(train_loader.dataset[index][0],
                                             train_loader.dataset[index][1])
@@ -157,6 +157,11 @@ def main():
 
         # Train the Model
         print("Training on {} items ".format(len(active_loader)))
+
+        # Reset the model
+        model = VSE(opt)
+        if torch.cuda.is_available():
+            model.cuda()
 
         best_rsum = 0
         for epoch in range(opt.num_epochs):
