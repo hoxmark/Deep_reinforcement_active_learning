@@ -25,10 +25,6 @@ image_size = 4096
 embed_size = 1024
 epoch = 10000
 
-images_eval = autograd.Variable(torch.randn(n, embed_size))
-captions_eval = autograd.Variable(torch.randn(n, embed_size))
-
-
 class LagrangeLoss(nn.Module):
     def __init__(self):
         super(LagrangeLoss, self).__init__()
@@ -77,12 +73,13 @@ def is_bijective(tensor):
 
 def eval():
     model.eval()
-    distances = autograd.Variable(torch.randn(n, n))
+    distances = autograd.Variable(torch.FloatTensor(np.random.random((n, n))))
+
     if torch.cuda.is_available():
         distances = distances.cuda()
     distances_np = distances.data.cpu().numpy()
     rows, hung_solution = linear_sum_assignment(distances_np)
-    cost = distances_np[rows, hung_solution].sum()
+    optimal_cost = distances_np[rows, hung_solution].sum()
 
     feature = model(distances)
 
@@ -99,19 +96,29 @@ def eval():
     cost_pred = distances_np[rows_pred, hung_solution_pred].sum()
 
     print("\n")
-    check_bijection(feature, hung_solution)
+    # print(feature)
+    check_bijection(feature, hung_solution, softmax=True)
 
     greedy_ass = greedy_assignment(distances)
+
     greedy_cost = 0
     for row, index in enumerate(greedy_ass):
-        greedy_cost += distances[row][index].data.cpu().numpy()
-    print(feature)
+        greedy_cost += distances[row][index].data.cpu().numpy()[0]
+
+    approximate_assignment = greedy_assignment(feature, softmax=True)
+    approximate_cost = 0
+    for row, index in enumerate(approximate_assignment):
+        approximate_cost += distances[row][index].data.cpu().numpy()[0]
+
 
     print("\n")
     print(">>>>>>>> EVALUATION {:.4f}  - {:.4f} %".format(loss.data[0], (corrects / n) * 100))
+    print("Greedy cost {:.4f}  - approximate cost {:.4f} - optimal cost {:.4f}".format(greedy_cost, approximate_cost, optimal_cost))
 
 
-def greedy_assignment(cost_matrix):
+def greedy_assignment(cost_matrix, softmax=False):
+    if softmax:
+        cost_matrix = torch.nn.functional.softmax(cost_matrix, dim=1)
     assignments = []
     cost_matrix = cost_matrix.data.cpu().numpy()
     for row in cost_matrix:
@@ -125,8 +132,10 @@ def greedy_assignment(cost_matrix):
     return assignments
 
 
-def check_bijection(assignment, solution):
+def check_bijection(assignment, solution, softmax=False):
     errors = []
+    if softmax:
+        assignment = torch.nn.functional.softmax(assignment)
     assignments = torch.max(assignment, 1)[1].data.cpu().numpy()
     for index, assignment in enumerate(assignments):
         error = False
@@ -157,7 +166,7 @@ def check_bijection(assignment, solution):
 
 model.train()
 for i in range(epoch):
-    distances = autograd.Variable(torch.randn(n, n))
+    distances = autograd.Variable(torch.FloatTensor(np.random.random((n, n))))
     if torch.cuda.is_available():
         distances = distances.cuda()
     distances_np = distances.data.cpu().numpy()
