@@ -18,12 +18,13 @@ class bcolors:
     UNDERLINE = '\033[4m'
 
 
-n = 10
+n = 100
 
 caption_size = 100
 image_size = 4096
 embed_size = 1024
 epoch = 10000
+
 
 class LagrangeLoss(nn.Module):
     def __init__(self):
@@ -62,13 +63,6 @@ if torch.cuda.is_available():
 
 optimizer = torch.optim.Adam(model.parameters(), lr=0.01)  # lr=0.0002
 criterion = LagrangeLoss()
-
-
-def is_bijective(tensor):
-    m = torch.max(tensor, 1)[1]
-    unique = np.unique(m.data.cpu().numpy())
-    # print(len(unique))
-    return len(unique) == n
 
 
 def eval():
@@ -110,13 +104,14 @@ def eval():
     for row, index in enumerate(approximate_assignment):
         approximate_cost += distances[row][index].data.cpu().numpy()[0]
 
-
     print("\n")
     print(">>>>>>>> EVALUATION {:.4f}  - {:.4f} %".format(loss.data[0], (corrects / n) * 100))
-    print("Greedy cost {:.4f}  - approximate cost {:.4f} - optimal cost {:.4f}".format(greedy_cost, approximate_cost, optimal_cost))
+    print("Greedy cost {:.4f}  - approximate cost {:.4f} - optimal cost {:.4f}".format(
+        greedy_cost, approximate_cost, optimal_cost))
 
 
 def greedy_assignment(cost_matrix, softmax=False):
+    num_collisions = 0
     if softmax:
         cost_matrix = torch.nn.functional.softmax(cost_matrix, dim=1)
     assignments = []
@@ -126,9 +121,12 @@ def greedy_assignment(cost_matrix, softmax=False):
         assignment = best_assignments[0]
 
         while assignment in assignments:
+            num_collisions += 1
             best_assignments = np.delete(best_assignments, 0)
             assignment = best_assignments[0]
+
         assignments.append(assignment)
+    print("NUM COLLISIONS: ", num_collisions)
     return assignments
 
 
