@@ -217,7 +217,6 @@ def clean(features, targets, indices):
     to_delete = list(set(to_delete))
 
     print("Deleting {} entries. Feature len is {}".format(len(to_delete), len(features)))
-    print(to_delete)
     for delete in sorted(to_delete, reverse=True):
         del features[delete]
         del targets[delete]
