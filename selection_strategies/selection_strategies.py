@@ -89,28 +89,50 @@ def select_egl(model, lg, iteration):
         print("Selection process: {0:.0f}% completed ".format(
             100 * (completed / (len(data["train_x"]) // params["BATCH_SIZE"] + 1))), end="\r")
 
-    best_n_indexes = [n[0] for n in heapq.nlargest(
-        params["SELECTION_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
-
-    best_n_scores = [n[1] for n in heapq.nlargest(
-        params["SELECTION_SIZE"], enumerate(sample_scores), key=lambda x: x[1])]
-
+    sorted_scores_indices = np.flip(np.argsort(sample_scores), 0).tolist()
+    batch_indices = []
     batch_feature = []
     batch_target = []
+    total_deleted = 0
 
-    for index in sorted(best_n_indexes, reverse=True):
-        batch_feature.append([data["word_to_idx"][w] for w in data["train_x"][index]] +
-                             [params["VOCAB_SIZE"] + 1 for i in range(params["MAX_SENT_LEN"] - len(data["train_x"][index]))])
-        batch_target.append(data["classes"].index(data["train_y"][index]))
+    for i in range(0, len(sorted_scores_indices), params["BATCH_SIZE"]):
+        batch_range = min(params["BATCH_SIZE"], len(sorted_scores_indices) - i)
+        next_indices = sorted_scores_indices[i : i + batch_range]
+
+        next_features = [[data["word_to_idx"][w] for w in data["train_x"][index]] +
+                        [params["VOCAB_SIZE"] + 1 for i in range(params["MAX_SENT_LEN"] - len(data["train_x"][index]))] for index in next_indices]
+
+        next_targets = [data["classes"].index(data["train_y"][index]) for index in next_indices]
+
+
+        batch_feature.extend(next_features)
+        batch_target.extend(next_targets)
+        batch_indices.extend(next_indices)
+
+        print("len before clean {}".format(len(batch_feature)))
+        n_deleted = clean(batch_feature, batch_target, batch_indices)
+        print("len after clean {}".format(len(batch_feature)))
+        total_deleted += n_deleted
+
+        if len(batch_feature) >= params["BATCH_SIZE"]:
+            break
+    # We only want to add batch_size elements each time
+    batch_feature = batch_feature[0 : params["BATCH_SIZE"]]
+    batch_target = batch_target[0 : params["BATCH_SIZE"]]
+    batch_indices = batch_indices[0 : params["BATCH_SIZE"]]
+
+    for index in sorted(batch_indices, reverse=True):
         del data["train_x"][index]
         del data["train_y"][index]
 
+    best_n_scores = [sample_scores[i] for i in batch_indices]
     avg_all_score = sum(sample_scores) / len(sample_scores)
     avg_best_score = sum(best_n_scores) / len(best_n_scores)
 
     if params["LOG"]:
         lg.scalar_summary("avg-score", avg_all_score, iteration)
         lg.scalar_summary("avg-best-score", avg_best_score, iteration)
+        lg.scalar_summary("n-deleted", total_deleted, iteration)
 
     return batch_feature, batch_target
 
