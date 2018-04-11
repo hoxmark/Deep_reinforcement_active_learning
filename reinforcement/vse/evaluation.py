@@ -3,12 +3,12 @@ import os
 import pickle
 
 import numpy
-from data import get_test_loader
+from dataset import get_test_loader
 import time
 import numpy as np
 from vocab import Vocabulary  # NOQA
 import torch
-from model import VSE, order_sim
+from models.vse import VSE, order_sim
 from collections import OrderedDict
 
 

@@ -12,13 +12,13 @@ from logger import Logger
 import numpy as np
 
 from datetime import datetime
-from config import params, data, w2v
+from config import opt, data, w2v
 
 def read_TREC():
 
     def read(mode):
         z = []
-        with open("{}/TREC/TREC_".format(params['DATA_PATH']) + mode + ".txt", "r", encoding="utf-8") as f:
+        with open("{}/TREC/TREC_".format(opt.data_path) + mode + ".txt", "r", encoding="utf-8") as f:
             for line in f:
                 if line[-1] == "\n":
                     line = line[:-1]
@@ -47,14 +47,14 @@ def read_TREC():
 def read_MR():
     x, y = [], []
 
-    with open("{}/MR/rt-polarity.pos".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
+    with open("{}/MR/rt-polarity.pos".format(opt.data_path), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("{}/MR/rt-polarity.neg".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
+    with open("{}/MR/rt-polarity.neg".format(opt.data_path), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -73,14 +73,14 @@ def read_MR():
 def read_MR7025():
     x, y = [], []
 
-    with open("{}/MR/rt-polarity.pos".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
+    with open("{}/MR/rt-polarity.pos".format(opt.data_path), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("{}/MR/rt-polarity-small.neg".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
+    with open("{}/MR/rt-polarity-small.neg".format(opt.data_path), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -100,14 +100,14 @@ def read_rotten_imdb():
     data = {}
     x, y = [], []
 
-    with open("{}/rotten_imdb/rt-polarity.pos".format(params['DATA_PATH']), "r", encoding="ISO-8859-1") as f:
+    with open("{}/rotten_imdb/rt-polarity.pos".format(opt.data_path), "r", encoding="ISO-8859-1") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("{}/rotten_imdb/rt-polarity.neg".format(params['DATA_PATH']), "r", encoding="ISO-8859-1") as f:
+    with open("{}/rotten_imdb/rt-polarity.neg".format(opt.data_path), "r", encoding="ISO-8859-1") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -128,14 +128,14 @@ def read_UMICH():
     data = {}
     x, y = [], []
 
-    with open("{}/UMICH/rt-polarity.pos".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
+    with open("{}/UMICH/rt-polarity.pos".format(opt.data_path), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("{}/UMICH/rt-polarity.neg".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
+    with open("{}/UMICH/rt-polarity.neg".format(opt.data_path), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -153,14 +153,14 @@ def read_UMICH():
     return data
 
 
-def save_model(model, params):
-    path = "saved_models/{}_{}_{}.pkl".format(params['DATASET'], params['MODEL'], params['EPOCH'])
+def save_model(model):
+    path = "saved_models/{}_{}_{}.pkl".format(opt.dataset, opt.model, opt.epoch)
     pickle.dump(model, open(path, "wb"))
     print("A model is saved successfully as {}!".format(path))
 
 
-def load_model(params):
-    path = "saved_models/{}_{}_{}.pkl".format(params['DATASET'], params['MODEL'], params['EPOCH'])
+def load_model():
+    path = "saved_models/{}_{}_{}.pkl".format(opt.dataset, opt.model, opt.epoch)
 
     try:
         model = pickle.load(open(path, "rb"))
@@ -189,7 +189,7 @@ load word2vec pre trained vectors
 def load_word2vec():
     print("loading word2vec...")
     word_vectors = KeyedVectors.load_word2vec_format(
-        "{}/GoogleNews-vectors-negative300.bin".format(params['DATA_PATH']), binary=True)
+        "{}/GoogleNews-vectors-negative300.bin".format(opt.data_path), binary=True)
 
     # data["w2v_kv"] = word_vectors
 

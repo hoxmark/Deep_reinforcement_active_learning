@@ -7,7 +7,7 @@ from torch import optim
 import torch
 from torch.autograd import Variable
 import torch.nn.functional as F
-from config import params
+from config import opt
 
 # TODO put in params
 # Hyper Parameters:
@@ -30,11 +30,11 @@ class RobotCNNDQN:
         print("Creating a robot: CNN-DQN")
         self.replay_memory = deque()
         self.time_step = 0
-        self.action = params["ACTIONS"]
+        self.actions = opt.actions
         self.epsilon = INITIAL_EPSILON
         self.qnetwork = DQN()
 
-        if params["CUDA"]:
+        if opt.cuda:
             self.qnetwork = self.qnetwork.cuda()
 
     def initialise(self):
@@ -55,7 +55,7 @@ class RobotCNNDQN:
         # doesn't get freed
         detached_batch_state = Variable(torch.FloatTensor(batch_state.detach().cpu().data.numpy()))
 
-        if params["CUDA"]:
+        if opt.cuda:
             detached_batch_state = detached_batch_state.cuda()
             batch_action = batch_action.cuda()
             batch_reward = batch_reward.cuda()
@@ -64,7 +64,7 @@ class RobotCNNDQN:
         max_next_q_values = self.qnetwork(batch_next_state).detach().max(1)[0]
         expected_q_values = batch_reward + (GAMMA * max_next_q_values)
 
-        if params["CUDA"]:
+        if opt.cuda:
             expected_q_values = expected_q_values.cuda()
         loss = F.smooth_l1_loss(current_q_values, expected_q_values)
 
@@ -87,7 +87,7 @@ class RobotCNNDQN:
     def get_action(self, observation):
         action = 0
         if random.random() <= self.epsilon:
-            action = random.randrange(self.action)
+            action = random.randrange(self.actions)
         else:
             qvalue = self.qnetwork(observation)
             action = np.argmax(qvalue.data[0])

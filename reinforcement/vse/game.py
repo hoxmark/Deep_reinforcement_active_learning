@@ -1,65 +1,44 @@
 import numpy as np
 import sys
 import random
-from models.cnndqn import CNNDQN
 import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.autograd import Variable
-from config import params, data
+from config import opt, data, loaders
 
 
 class Game:
     def __init__(self):
         print("Initilizing the game:")
-        self.train_x = [[data["word_to_idx"][w] for w in sent] +
-                        [params["VOCAB_SIZE"] + 1] *
-                        (params["MAX_SENT_LEN"] - len(sent))
-                        for sent in data["train_x"]]
+        print("Story: length = ", len(data["images"]))
+        self.order = list(range(0, len(data["images"])))
 
-        self.train_y = [data["classes"].index(c) for c in data["train_y"]]
-
-        self.dev_x = [[data["word_to_idx"][w] for w in sent] +
-                      [params["VOCAB_SIZE"] + 1] *
-                      (params["MAX_SENT_LEN"] - len(sent))
-                      for sent in data["dev_x"]]
-
-        self.dev_y = [data["classes"].index(c) for c in data["dev_y"]]
-
-        self.test_x = [[data["word_to_idx"][w] for w in sent] +
-                       [params["VOCAB_SIZE"] + 1] *
-                       (params["MAX_SENT_LEN"] - len(sent))
-                       for sent in data["test_x"]]
-
-        self.test_y = [data["classes"].index(c) for c in data["test_y"]]
-        self.max_len = params["MAX_SENT_LEN"]
-        self.feature_extractor = CNNDQN()
-        print("Story: length = ", len(self.train_x))
-        self.order = list(range(0, len(self.train_x)))
-
-        self.budget = params["BUDGET"]
+        self.budget = opt.budget
         self.queried_times = 0
-        self.queried_set_x = []
-        self.queried_set_y = []
-        self.current_frame = 0
+        self.current_state = 0
         self.performance = 0
 
-    def get_frame(self, model):
-        sentence = self.train_x[self.order[self.current_frame]]
-        sentence = torch.autograd.Variable(torch.LongTensor(sentence).unsqueeze(0))
-        if params["CUDA"]:
-            sentence = sentence.cuda()
+    def get_state(self, model):
+        image = torch.FloatTensor(data["images"][self.order[self.current_state]]).unsqueeze(0)
+        if opt.cuda:
+            image = image.cuda()
 
-        entropy = self.calculate_entropy(model, sentence)
-        predictions = nn.functional.softmax(model(sentence))
-        predictions = torch.sort(predictions, dim=1, descending=True)
-        margin = predictions[0].data[0][0] - predictions[0].data[0][1]
 
-        observation = torch.autograd.Variable(torch.FloatTensor([margin, entropy]).unsqueeze(0))
-        if params["CUDA"]:
+        captions = data["captions"]
+        captions = torch.FloatTensor(captions)
+        if opt.cuda:
+            captions = captions.cuda()
+
+        image_caption_distances = image.mm(captions.t())
+        image_caption_distances_top10 = torch.abs(torch.topk(image_caption_distances, 10, 1, largest=False)[0])
+
+        # observation = torch.autograd.Variable(torch.FloatTensor().unsqueeze(0))
+        observation = torch.autograd.Variable(image_caption_distances_top10)
+        if opt.cuda:
             observation = observation.cuda()
 
-        self.current_frame += 1
+        self.current_state += 1
         return observation
 
     def feedback(self, action, model):
@@ -74,12 +53,13 @@ class Game:
         else:
             reward = 0.
 
+        # TODO fix this
         if self.queried_times == self.budget:
             # Return terminal
             return None, None, True
 
         print("> Action {:2} - reward {:4} - accuracy {:4}".format(action, reward, self.performance))
-        next_observation = self.get_frame(model)
+        next_observation = self.get_state(model)
         return reward, next_observation, is_terminal
 
     def calculate_entropy(self, model, feature):
@@ -91,49 +71,47 @@ class Game:
         return output.data[0]
 
     def query(self):
-        sentence = self.train_x[self.order[self.current_frame]]
-        label = self.train_y[self.order[self.current_frame]]
+        loaders["active_loader"].dataset.add_single(data["images"][self.current_state], data["captions"][self.current_state])
         self.queried_times += 1
-        self.queried_set_x.append(sentence)
-        self.queried_set_y.append(label)
 
     def get_performance(self, model):
-        # model.init_model()
-        self.train_model(model)
-        performance = model.test(self.test_x, self.test_y)
+        self.train_model(model, loaders["active_loader"])
+        performance = validate(model)
         return performance
 
+    def validate(self, model):
+        # compute the encoding for all the validation images and captions
+        val_loader = loaders["val_loader"]
+        img_embs, cap_embs = encode_data(model, val_loader)
+        # caption retrieval
+        (r1, r5, r10, medr, meanr) = i2t(img_embs, cap_embs, measure=opt.measure)
+        # image retrieval
+        (r1i, r5i, r10i, medri, meanr) = t2i(img_embs, cap_embs, measure=opt.measure)
+        # sum of recalls to be used for early stopping
+        performance = r1 + r5 + r10 + r1i + r5i + r10i
+        return performance
 
-    def train_model(self, model):
-        model.train()
-        print("Training model. Training set contains {} elements".format(len(self.queried_set_x)))
-        parameters = filter(lambda p: p.requires_grad, model.parameters())
-        optimizer = optim.Adadelta(parameters, params["LEARNING_RATE"])
-        criterion = nn.CrossEntropyLoss()
+    def train_model(model, train_loader):
+        model.train_start()
 
-        for e in range(params["EPOCH"]):
-            for i in range(0, len(self.queried_set_x), params["BATCH_SIZE"]):
-                batch_range = min(params["BATCH_SIZE"], len(self.queried_set_x) - i)
-                batch_x = self.queried_set_x[i:i + batch_range]
-                batch_y = self.queried_set_y[i:i + batch_range]
+        for epoch in range(opt.num_epochs):
+            adjust_learning_rate(model.optimizer, epoch)
 
-                feature = Variable(torch.LongTensor(batch_x))
-                target = Variable(torch.LongTensor(batch_y))
+            for i, train_data in enumerate(train_loader):
+                # Always reset to train mode, this is not the default behavior
+                model.train_start()
+                # Update the model
+                model.train_emb(*train_data)
 
-                if params["CUDA"]:
-                    feature, target = feature.cuda(params["DEVICE"]), target.cuda(params["DEVICE"])
-
-                optimizer.zero_grad()
-                pred = model(feature)
-                loss = criterion(pred, target)
-                loss.backward()
-                optimizer.step()
-
-            print("{} of {}".format(e, params["EPOCH"]), end='\r')
+    def adjust_learning_rate(optimizer, epoch):
+        """Sets the learning rate to the initial LR
+           decayed by 10 every 30 epochs"""
+        lr = opt.learning_rate * (0.1 ** (epoch // opt.lr_update))
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = lr
 
     def reboot(self):
         random.shuffle(self.order)
         self.queried_times = 0
-        self.queried_set_x = []
-        self.queried_set_y = []
-        self.current_frame = 0
+        self.current_state = 0
+        # TODO delete data in loaders["active_loader"]
