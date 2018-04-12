@@ -24,7 +24,6 @@ UPDATE_TIME = 100
 EXPLORE = 100000.  # frames over which to anneal epsilon
 
 
-
 class RobotCNNDQN:
     def __init__(self):
         print("Creating a robot: CNN-DQN")

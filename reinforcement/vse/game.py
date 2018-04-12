@@ -73,8 +73,9 @@ class Game:
         return output.data[0]
 
     def query(self):
-        image = loaders["train_loader"].dataset[self.current_state][0]
-        caption = loaders["train_loader"].dataset[self.current_state][1]
+        index = self.order[self.current_state]
+        image = loaders["train_loader"].dataset[index][0]
+        caption = loaders["train_loader"].dataset[index][1]
         loaders["active_loader"].dataset.add_single(image, caption)
 
         self.queried_times += 1
