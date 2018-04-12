@@ -126,10 +126,7 @@ def main():
         logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
         tb_logger.configure(params.logger_name, flush_secs=5)
 
-    # vocab = pickle.load(open(os.path.join(params.vocab_path, '%s_vocab.pkl' % params.data_name), 'rb'))
-    teqqq = "{}{}_vocab.pkl".format(params.vocab_path, params.data_name)
-    print(teqqq)
-    vocab = pickle.load(open(teqqq, 'rb'))
+    vocab = pickle.load(open(os.path.join(params.vocab_path, '%s_vocab.pkl' % params.data_name), 'rb'))
     params.vocab_size = len(vocab)
 
     active_loader, train_loader, val_loader = dataset.get_loaders(

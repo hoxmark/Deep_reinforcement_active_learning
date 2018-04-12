@@ -158,8 +158,8 @@ class EncoderImagePrecomp(nn.Module):
     def forward(self, images):
         """Extract image feature vectors."""
         # assuming that the precomputed features are already l2-normalized
-
         features = self.fc(images)
+
 
         # normalize in the joint embedding space
         if not self.no_imgnorm:

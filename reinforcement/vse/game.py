@@ -5,7 +5,9 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 from torch.autograd import Variable
+
 from config import opt, data, loaders
+from evaluation import encode_data, i2t, t2i
 
 
 class Game:
@@ -71,13 +73,24 @@ class Game:
         return output.data[0]
 
     def query(self):
-        loaders["active_loader"].dataset.add_single(data["images"][self.current_state], data["captions"][self.current_state])
+        image = loaders["train_loader"].dataset[self.current_state][0]
+        caption = loaders["train_loader"].dataset[self.current_state][1]
+        loaders["active_loader"].dataset.add_single(image, caption)
+
         self.queried_times += 1
 
     def get_performance(self, model):
         self.train_model(model, loaders["active_loader"])
-        performance = validate(model)
+        performance = self.validate(model)
+
+        # Model is re-trained - compute the embeddings again
+        self.compute_embeddings(model)
         return performance
+
+    def compute_embeddings(self, model):
+        img_embs, cap_embs = encode_data(model, loaders["train_loader"])
+        data["images"] = img_embs
+        data["captions"] = cap_embs
 
     def validate(self, model):
         # compute the encoding for all the validation images and captions
@@ -91,11 +104,11 @@ class Game:
         performance = r1 + r5 + r10 + r1i + r5i + r10i
         return performance
 
-    def train_model(model, train_loader):
+    def train_model(self, model, train_loader):
         model.train_start()
 
         for epoch in range(opt.num_epochs):
-            adjust_learning_rate(model.optimizer, epoch)
+            self.adjust_learning_rate(model.optimizer, epoch)
 
             for i, train_data in enumerate(train_loader):
                 # Always reset to train mode, this is not the default behavior
@@ -103,10 +116,10 @@ class Game:
                 # Update the model
                 model.train_emb(*train_data)
 
-    def adjust_learning_rate(optimizer, epoch):
+    def adjust_learning_rate(self, optimizer, epoch):
         """Sets the learning rate to the initial LR
            decayed by 10 every 30 epochs"""
-        lr = opt.learning_rate * (0.1 ** (epoch // opt.lr_update))
+        lr = opt.learning_rate_vse * (0.1 ** (epoch // opt.lr_update))
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
 
