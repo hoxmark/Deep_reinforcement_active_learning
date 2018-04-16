@@ -11,5 +11,8 @@ pymongo==3.5.1
 python-dateutil==2.6.1
 pytz==2017.2
 six==1.11.0
+tensorboardX==0.8
+tensorflow==1.4.1
+tensorflow-tensorboard==0.4.0rc3
 tzlocal==1.4
 Werkzeug==0.12.2
