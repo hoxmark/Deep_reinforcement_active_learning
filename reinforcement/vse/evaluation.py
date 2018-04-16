@@ -108,13 +108,13 @@ def encode_data(model, data_loader, log_step=10, logging=print):
         batch_time.update(time.time() - end)
         end = time.time()
 
-        if i % log_step == 0:
-            logging('Test: [{0}/{1}]\t'
-                    '{e_log}\t'
-                    'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                    .format(
-                        i, len(data_loader), batch_time=batch_time,
-                        e_log=str(model.logger)))
+        # if i % log_step == 0:
+        #     logging('Test: [{0}/{1}]\t'
+        #             '{e_log}\t'
+        #             'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+        #             .format(
+        #                 i, len(data_loader), batch_time=batch_time,
+        #                 e_log=str(model.logger)))
         del images, captions
 
     return img_embs, cap_embs

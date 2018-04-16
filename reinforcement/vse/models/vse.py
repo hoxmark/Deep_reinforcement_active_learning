@@ -406,3 +406,4 @@ class VSE(nn.Module):
         if self.grad_clip > 0:
             clip_grad_norm(self.params, self.grad_clip)
         self.optimizer.step()
+        # return loss

@@ -283,6 +283,16 @@ def get_active_loader(vocab, batch_size=100, shuffle=True, num_workers=2):
                                               collate_fn=collate_fn)
     return data_loader
 
+# def get_episode_loader(vocab, batch_size=100, shuffle=True, num_workers=2):
+#     dset = ActiveDataset(vocab)
+#
+#     data_loader = torch.utils.data.DataLoader(dataset=dset,
+#                                               batch_size=batch_size,
+#                                               shuffle=shuffle,
+#                                               pin_memory=True,
+#                                               collate_fn=collate_fn)
+#     return data_loader
+
 
 
 def get_transform(data_name, split_name, opt):

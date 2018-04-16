@@ -52,11 +52,11 @@ def main():
                         help='Path to saved vocabulary pickle files.')
     parser.add_argument('--margin', default=0.2, type=float,
                         help='Rank loss margin.')
-    parser.add_argument('--num_epochs', default=30, type=int,
+    parser.add_argument('--num_epochs', default=5, type=int,
                         help='Number of training epochs.')
     parser.add_argument('--batch_size', default=128, type=int,
                         help='Size of a training mini-batch.')
-    parser.add_argument('--budget', default=5000, type=int,
+    parser.add_argument('--budget', default=200, type=int,
                         help='Our labeling budget')
     parser.add_argument('--word_dim', default=300, type=int,
                         help='Dimensionality of the word embedding.')
@@ -127,6 +127,7 @@ def main():
         tb_logger.configure(params.logger_name, flush_secs=5)
 
     vocab = pickle.load(open(os.path.join(params.vocab_path, '%s_vocab.pkl' % params.data_name), 'rb'))
+    params.vocab = vocab
     params.vocab_size = len(vocab)
 
     active_loader, train_loader, val_loader = dataset.get_loaders(
