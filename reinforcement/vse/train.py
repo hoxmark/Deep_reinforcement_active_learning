@@ -2,16 +2,17 @@ from agent import RobotCNNDQN
 from models.vse import VSE
 from game import Game
 import utils
-from config import data, opt, loaders
+from config import data, opt, loaders, global_logger
 from evaluation import encode_data
 
 def train():
     model = VSE()
 
+    lg = global_logger["lg"]
+
     img_embs, cap_embs = encode_data(model, loaders["train_loader"])
     img_embs_val, cap_embs_val = encode_data(model, loaders["val_loader"])
 
-    lg = utils.init_logger()
     agent = RobotCNNDQN()
 
     game = Game()

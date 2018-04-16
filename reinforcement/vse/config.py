@@ -14,3 +14,4 @@ opt = Dict()
 data = {}
 w2v = {}
 loaders = {}
+global_logger = {}

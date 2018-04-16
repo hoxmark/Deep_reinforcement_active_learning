@@ -14,6 +14,10 @@ import numpy as np
 from datetime import datetime
 from config import opt, data, w2v
 
+def external_logging():
+    #TODO
+    return None
+
 def read_TREC():
 
     def read(mode):

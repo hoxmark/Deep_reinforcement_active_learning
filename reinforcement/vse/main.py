@@ -11,7 +11,7 @@ import tensorboard_logger as tb_logger
 import dataset
 
 from train import train
-from config import opt, data, loaders
+from config import opt, data, loaders, global_logger
 from evaluation import encode_data
 
 def main():
@@ -108,11 +108,10 @@ def main():
     parser.add_argument('--reset_train', action='store_true',
                         help='Ensure the training is always done in '
                         'train mode (Not recommended).')
-    parser.add_argument('--no_log', action='store_true',
-                        default=False, help='Disable logging')
+    parser.add_argument('--log', default="no", help='Choose between: no, external, local')
     parser.add_argument('--no_cuda', action='store_true',
                         default=False, help='Disable cuda')
-
+        
     params = parser.parse_args()
     params.actions = 2
     params.logger_name += "_" + params.selection + "_" + params.primary
@@ -122,9 +121,16 @@ def main():
 
     params.cuda = (not params.no_cuda) and torch.cuda.is_available()
 
-    if not params.no_log:
+    if params.log !="no":
         logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
         tb_logger.configure(params.logger_name, flush_secs=5)
+        
+        if params.log == "external":
+            global_logger["lg"] = utils.external_logging()
+        
+        else: 
+            global_logger["lg"] = utils.init_logger()
+            
 
     vocab = pickle.load(open(os.path.join(params.vocab_path, '%s_vocab.pkl' % params.data_name), 'rb'))
     params.vocab = vocab
@@ -145,7 +151,7 @@ def main():
         opt[arg] = vars(params)[arg]
 
 
-
+    
 #     options = parser.parse_args()
 #
 #     params["DATA_PATH"] = options.data_path #TODO rewrite?
