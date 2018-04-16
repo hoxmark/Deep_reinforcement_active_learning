@@ -111,10 +111,12 @@ def main():
     parser.add_argument('--log', default="no", help='Choose between: no, external, local')
     parser.add_argument('--no_cuda', action='store_true',
                         default=False, help='Disable cuda')
-        
+
     params = parser.parse_args()
     params.actions = 2
     params.logger_name += "_" + params.selection + "_" + params.primary
+    params.external_logger_name = datetime.datetime.now().strftime("%d-%m-%y_%H:%M")
+
 
     if torch.cuda.is_available():
         torch.cuda.set_device(params.device)
@@ -124,13 +126,13 @@ def main():
     if params.log !="no":
         logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
         tb_logger.configure(params.logger_name, flush_secs=5)
-        
+
         if params.log == "external":
             global_logger["lg"] = utils.external_logging()
-        
-        else: 
+
+        else:
             global_logger["lg"] = utils.init_logger()
-            
+
 
     vocab = pickle.load(open(os.path.join(params.vocab_path, '%s_vocab.pkl' % params.data_name), 'rb'))
     params.vocab = vocab
@@ -151,7 +153,7 @@ def main():
         opt[arg] = vars(params)[arg]
 
 
-    
+
 #     options = parser.parse_args()
 #
 #     params["DATA_PATH"] = options.data_path #TODO rewrite?

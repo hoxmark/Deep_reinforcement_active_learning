@@ -1,6 +1,8 @@
 from sklearn.utils import shuffle
 
 import pickle
+import requests
+
 
 import plotly.graph_objs as go
 import plotly
@@ -14,9 +16,15 @@ import numpy as np
 from datetime import datetime
 from config import opt, data, w2v
 
-def external_logging():
-    #TODO
-    return None
+def external_logging(tag, value, step):
+    logdir = opt.external_logger_name
+    content = {
+        'tag': tag
+        'value': value,
+        'step': step,
+    }
+    url = 'http://masteroppgave.duckdns.org:5000/post_log/{}'.format(logdir)
+    res = requests.post(url, json=content)
 
 def read_TREC():
 
