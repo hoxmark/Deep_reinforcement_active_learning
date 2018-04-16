@@ -20,7 +20,7 @@ class ExternalLogger(object):
     def __init__(self, external_logger_name):
         """Create a summary writer logging to log_dir."""
         self.external_logger_name = external_logger_name
-        
+
 
 
     def scalar_summary(self, tag, value, step):
