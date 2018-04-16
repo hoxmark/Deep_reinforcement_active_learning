@@ -13,10 +13,6 @@ from dataset import get_active_loader
 
 
 class Game:
-    # def __init__(self):
-        # self.lg = global_logger["lg"]
-        # self.reboot()
-
     def reboot(self, model):
         # self.order = random.sample(list(range(0, len(data["images_embed_all"]))), opt.budget)
         # self.load_episode_data()
