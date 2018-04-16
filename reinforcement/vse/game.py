@@ -7,14 +7,14 @@ import torch.optim as optim
 import torch.nn as nn
 from torch.autograd import Variable
 
-from config import opt, data, loaders, global_logger
+from config import opt, data, loaders
 from evaluation import encode_data, i2t, t2i
 from dataset import get_active_loader
 
 
 class Game:
-    def __init__(self):
-        self.lg = global_logger["lg"]
+    # def __init__(self):
+        # self.lg = global_logger["lg"]
         # self.reboot()
 
     def reboot(self, model):
@@ -26,7 +26,6 @@ class Game:
         self.queried_times = 0
         self.current_state = 0
         self.performance = 0
-        self.num_of_performances = 0
         # TODO delete data in loaders["active_loader"]
 
     # def load_episode_data(self):
@@ -93,8 +92,7 @@ class Game:
             return None, None, True
 
 
-        self.lg.scalar_summary("performance2", self.performance ,self.num_of_performances )
-        self.num_of_performances += 1
+        # self.lg.scalar_summary("performance2", self.performance ,self.num_of_performances )
         print("> State {:2} Action {:2} - reward {:4} - accuracy {:4}".format(self.current_state, action, reward, self.performance))
         next_observation = self.get_state(model)
         return reward, next_observation, is_terminal

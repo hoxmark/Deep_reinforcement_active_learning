@@ -19,6 +19,7 @@ def train():
 
     for episode in range(opt.episodes):
         terminal = False
+        num_of_states = 0
         game.reboot(model)
         # TODO init model
         # model.init_model()
@@ -33,4 +34,7 @@ def train():
             agent.update(observation, action, reward, observation2, terminal)
             print("\n")
             observation = observation2
+            lg.scalar_summary("performance_in_episode_{}".format(episode), game.performance, num_of_states)
+            num_of_states +=1
+            
         lg.scalar_summary("episode-acc", game.performance, episode)
