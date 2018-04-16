@@ -128,7 +128,7 @@ def main():
         tb_logger.configure(params.logger_name, flush_secs=5)
 
         if params.log == "external":
-            global_logger["lg"] = utils.external_logging()
+            global_logger["lg"] = utils.external_logging(params.external_logger_name)
 
         else:
             global_logger["lg"] = utils.init_logger()
