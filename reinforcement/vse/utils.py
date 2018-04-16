@@ -19,7 +19,7 @@ from config import opt, data, w2v
 def external_logging(tag, value, step):
     logdir = opt.external_logger_name
     content = {
-        'tag': tag
+        'tag': tag,
         'value': value,
         'step': step,
     }
