@@ -10,35 +10,17 @@ import plotly
 from plotly.graph_objs import Scatter, Layout
 from gensim.models.keyedvectors import KeyedVectors
 
-from logger import Logger
+from logger import Logger, ExternalLogger, NoLogger
 import numpy as np
 
 from datetime import datetime
 from config import opt, data, w2v
 
-class ExternalLogger(object):
-    def __init__(self, external_logger_name):
-        """Create a summary writer logging to log_dir."""
-        self.external_logger_name = external_logger_name
-        
 
-
-    def scalar_summary(self, tag, value, step):
-        """Log a list of images."""
-
-        logdir = self.external_logger_name
-        content = {
-            'tag': tag,
-            'value': value,
-            'step': step,
-        }
-        url = 'http://masteroppgave.duckdns.org:5000/post_log/{}'.format(logdir)
-        res = requests.post(url, json=content)
-
-        # Create and write Summary
-        # summary = tf.Summary(value=img_summaries)
-        # self.writer.add_summary(summary, step)
-
+def no_logger():
+    lg = NoLogger()
+    return lg
+    
 def external_logging(external_logger_name):
     lg = ExternalLogger(external_logger_name)
     return lg

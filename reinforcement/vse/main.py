@@ -132,6 +132,8 @@ def main():
 
         else:
             global_logger["lg"] = utils.init_logger()
+    else: 
+        global_logger["lg"] = utils.no_logger()
 
 
     vocab = pickle.load(open(os.path.join(params.vocab_path, '%s_vocab.pkl' % params.data_name), 'rb'))

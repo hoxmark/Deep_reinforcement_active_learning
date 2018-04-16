@@ -71,3 +71,27 @@ class Logger(object):
         summary = tf.Summary(value=[tf.Summary.Value(tag=tag, histo=hist)])
         self.writer.add_summary(summary, step)
         self.writer.flush()
+
+#An external logger so we do not have to write to disk on local server.
+class ExternalLogger(object):
+    def __init__(self, external_logger_name):
+        """Create a summary writer logging to log_dir."""
+        self.external_logger_name = external_logger_name
+        
+    def scalar_summary(self, tag, value, step):
+        """Log a list of images."""
+
+        logdir = self.external_logger_name
+        content = {
+            'tag': tag,
+            'value': value,
+            'step': step,
+        }
+        url = 'http://masteroppgave.duckdns.org:5000/post_log/{}'.format(logdir)
+        res = requests.post(url, json=content)
+
+#A dummy Logger.
+class NoLogger(object):
+            
+    def scalar_summary(self, tag, value, step):
+        pass
