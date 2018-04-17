@@ -26,7 +26,8 @@ def train():
             agent.update(observation, action, reward, observation2, terminal)
             print("\n")
             observation = observation2
-            lg.scalar_summary("performance_in_episode_{}".format(
-                episode), game.performance, game.current_state)
+            if (action == 1):
+                lg.scalar_summary("performance_in_episode_{}".format(episode), game.performance, game.queried_times)
+            lg.scalar_summary("action_choice_in_episode_{}".format(episode), action, game.current_state)
 
         lg.scalar_summary("episode-acc", game.performance, episode)
