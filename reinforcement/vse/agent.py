@@ -90,7 +90,7 @@ class RobotCNNDQN:
         else:
             qvalue = self.qnetwork(observation)
             action = np.argmax(qvalue.data[0])
-        # change episilon
+        # change epsilon
         if self.epsilon > FINAL_EPSILON and self.time_step > OBSERVE:
             self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 

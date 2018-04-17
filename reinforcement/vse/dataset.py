@@ -144,7 +144,8 @@ class PrecompDataset(data.Dataset):
             self.im_div = 1
         # the development set for coco is large and so validation would be slow
         if data_split == 'dev':
-            self.length = 5000
+            # self.length = 5000
+            self.length = 1000
 
     def delete_indices(self, indices):
         self.images = np.delete(self.images, indices, axis=0)
