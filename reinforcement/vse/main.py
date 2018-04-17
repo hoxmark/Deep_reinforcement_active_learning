@@ -56,7 +56,7 @@ def main():
                         help='Number of training epochs.')
     parser.add_argument('--batch_size', default=128, type=int,
                         help='Size of a training mini-batch.')
-    parser.add_argument('--budget', default=10, type=int,
+    parser.add_argument('--budget', default=200, type=int,
                         help='Our labeling budget')
     parser.add_argument('--word_dim', default=300, type=int,
                         help='Dimensionality of the word embedding.')
