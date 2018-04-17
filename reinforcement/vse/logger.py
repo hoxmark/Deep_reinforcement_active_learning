@@ -1,4 +1,5 @@
 # Code referenced from https://gist.github.com/gyglim/1f8dfb1b5c82627ae3efcfbbadb9f514
+import requests
 import tensorflow as tf
 import numpy as np
 import scipy.misc
@@ -77,7 +78,7 @@ class ExternalLogger(object):
     def __init__(self, external_logger_name):
         """Create a summary writer logging to log_dir."""
         self.external_logger_name = external_logger_name
-        
+
     def scalar_summary(self, tag, value, step):
         """Log a list of images."""
 
@@ -92,6 +93,6 @@ class ExternalLogger(object):
 
 #A dummy Logger.
 class NoLogger(object):
-            
+
     def scalar_summary(self, tag, value, step):
         pass
