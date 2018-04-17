@@ -17,15 +17,16 @@ from datetime import datetime
 from config import opt, data, w2v
 
 
-def no_logger():
+def no_logger():                            # no logging at all, for testing purposes. 
     lg = NoLogger()
     return lg
     
-def external_logging(external_logger_name):
+    
+def external_logging(external_logger_name): # sending tensorboard logs to external server
     lg = ExternalLogger(external_logger_name)
     return lg
 
-def init_logger():
+def init_logger():                          # saving tensorboard logs local
     basename = "./logs/reinforcement"
     lg = Logger('{}-{}'.format(
         basename,

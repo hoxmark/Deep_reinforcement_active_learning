@@ -123,16 +123,17 @@ def main():
 
     params.cuda = (not params.no_cuda) and torch.cuda.is_available()
 
-    if params.log !="no":
+    #Logging choice
+    if params.log !="no": 
         logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
         tb_logger.configure(params.logger_name, flush_secs=5)
 
-        if params.log == "external":
+        if params.log == "external":    # sending tensorboard logs to external server
             global_logger["lg"] = utils.external_logging(params.external_logger_name)
 
-        else:
+        else:                           # saving tensorboard logs local
             global_logger["lg"] = utils.init_logger()
-    else: 
+    else:                               # no logging at all, for testing purposes. 
         global_logger["lg"] = utils.no_logger()
 
 
