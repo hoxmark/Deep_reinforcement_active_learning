@@ -1,9 +1,9 @@
 from agent import RobotCNNDQN
 from models.vse import VSE
 from game import Game
-import utils
 from config import data, opt, loaders, global_logger
 from evaluation import encode_data
+
 
 def train():
     lg = global_logger["lg"]
@@ -26,7 +26,7 @@ def train():
             agent.update(observation, action, reward, observation2, terminal)
             print("\n")
             observation = observation2
-            if (action == 1):                
+            if (action == 1):
                 lg.scalar_summary("performance_in_episode_{}".format(episode), game.performance, game.queried_times)
             lg.scalar_summary("action_choice_in_episode_{}".format(episode), action, game.current_state)
 

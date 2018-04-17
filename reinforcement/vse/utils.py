@@ -2,7 +2,7 @@ from sklearn.utils import shuffle
 
 import pickle
 import requests
-
+import time
 
 import plotly.graph_objs as go
 import plotly
@@ -17,14 +17,24 @@ from datetime import datetime
 from config import opt, data, w2v
 
 
-def no_logger():                            # no logging at all, for testing purposes. 
+def timer(func, args):
+    time1 = time.time()
+    ret = func(*args)
+    time2 = time.time()
+    ms = (time2 - time1) * 1000.0
+    print("{}() in {:.2f} ms".format(func.__name__, ms))
+    return ret
+
+
+def no_logger():                            # no logging at all, for testing purposes.
     lg = NoLogger()
     return lg
-    
-    
-def external_logging(external_logger_name): # sending tensorboard logs to external server
+
+
+def external_logging(external_logger_name):  # sending tensorboard logs to external server
     lg = ExternalLogger(external_logger_name)
     return lg
+
 
 def init_logger():                          # saving tensorboard logs local
     basename = "./logs/reinforcement"
@@ -34,6 +44,7 @@ def init_logger():                          # saving tensorboard logs local
     ))
 
     return lg
+
 
 def read_TREC():
 
@@ -145,6 +156,7 @@ def read_rotten_imdb():
 
     return data
 
+
 def read_UMICH():
     data = {}
     x, y = [], []
@@ -192,22 +204,22 @@ def load_model():
         print("No available model such as {}.".format(path))
         exit()
 
+
 def logAreaGraph(distribution, classes, name):
     data = []
     for key, value in distribution.items():
-        xValues = range(0,len(value))
+        xValues = range(0, len(value))
         data.append(go.Scatter(
             name=classes[key],
-            x=list(range(0,len(value))),
+            x=list(range(0, len(value))),
             y=value,
             fill='tozeroy'
         ))
     plotly.offline.plot(data, filename=name)
 
-"""
-load word2vec pre trained vectors
-"""
+
 def load_word2vec():
+    """Load word2vec pre trained vectors"""
     print("loading word2vec...")
     word_vectors = KeyedVectors.load_word2vec_format(
         "{}/GoogleNews-vectors-negative300.bin".format(opt.data_path), binary=True)

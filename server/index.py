@@ -21,6 +21,8 @@ def post_log(logdir):
     summary = tf.Summary(value=[tf.Summary.Value(tag=content["tag"], simple_value=content["value"])])
     writer.add_summary(summary, content["step"])
     print(content)
+    writer.flush()
+    writer.close()
     return json.dumps(content)
 
 

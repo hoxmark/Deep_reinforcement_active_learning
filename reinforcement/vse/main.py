@@ -124,7 +124,7 @@ def main():
     params.cuda = (not params.no_cuda) and torch.cuda.is_available()
 
     #Logging choice
-    if params.log !="no": 
+    if params.log != "no":
         logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
         tb_logger.configure(params.logger_name, flush_secs=5)
 
@@ -133,7 +133,7 @@ def main():
 
         else:                           # saving tensorboard logs local
             global_logger["lg"] = utils.init_logger()
-    else:                               # no logging at all, for testing purposes. 
+    else:                               # no logging at all, for testing purposes.
         global_logger["lg"] = utils.no_logger()
 
 
