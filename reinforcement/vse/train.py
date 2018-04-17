@@ -27,10 +27,15 @@ def train():
             print("\n")
             observation = observation2
             if (action == 1):
-                lg.scalar_summary("performance_in_episode_{}".format(episode), game.performance, game.queried_times)
-            lg.scalar_summary("action_choice_in_episode_{}".format(episode), action, game.current_state)
+                lg.scalar_summary("performance_in_episode/{}".format(episode), game.performance, game.queried_times)
 
-        episode_validation = game.performace_validate(model)
-        lg.scalar_summary("episode-validation", episode_validation, episode)
-        
-        lg.scalar_summary("episode-acc", game.performance, episode)
+        # Logging each episode: 
+        (performance, r1, r5, r10, r1i, r5i, r10i) = timer(game.performance_validate, (model,))
+        lg.scalar_summary("episode-validation/sum", performance, episode)
+        lg.scalar_summary("episode-validation/r1", r1, episode)
+        lg.scalar_summary("episode-validation/r5", r5, episode)
+        lg.scalar_summary("episode-validation/r10", r10, episode)
+        lg.scalar_summary("episode-validation/r1i", r1i, episode)
+        lg.scalar_summary("episode-validation/r5i", r5i, episode)
+        lg.scalar_summary("episode-validation/r10i", r10i, episode)        
+        lg.scalar_summary("episode-loss", game.performance, episode)
