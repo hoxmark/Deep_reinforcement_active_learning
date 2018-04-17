@@ -30,4 +30,7 @@ def train():
                 lg.scalar_summary("performance_in_episode_{}".format(episode), game.performance, game.queried_times)
             lg.scalar_summary("action_choice_in_episode_{}".format(episode), action, game.current_state)
 
+        episode_validation = game.performace_validate(model)
+        lg.scalar_summary("episode-validation", episode_validation, episode)
+        
         lg.scalar_summary("episode-acc", game.performance, episode)
