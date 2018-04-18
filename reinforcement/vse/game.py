@@ -17,6 +17,7 @@ class Game:
     def reboot(self, model):
         """resets the Game Object, to make it ready for the next episode """        
         self.encode_episode_data(model)
+        loaders["active_loader"] = get_active_loader(opt.vocab)
         self.order = random.sample(
             list(range(0, len(data["images_embed_all"]))), len(data["images_embed_all"]))
         self.budget = opt.budget
