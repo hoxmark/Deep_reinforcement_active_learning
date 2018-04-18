@@ -26,5 +26,17 @@ def post_log(logdir):
     return json.dumps(content)
 
 
+
+
+# save chosen parameters
+@app.route('/post_params/<logdir>', methods=['POST'])
+def post_params(logdir):
+    content = request.get_json(silent=True)
+
+    with open('/home/public/logs/{}/parameters.json}'.format(logdir), 'w') as outfile:
+        json.dump(content, outfile, sort_keys=True, indent=4, separators=(',', ': '))
+            
+    return json.dumps(content)
+
 if __name__ == '__main__':
     app.run(host="0.0.0.0", port=5000)
