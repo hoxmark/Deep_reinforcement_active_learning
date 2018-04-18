@@ -4,6 +4,7 @@ from models.vse import VSE
 from game import Game
 from config import data, opt, loaders, global_logger
 from evaluation import encode_data
+from utils import save_model
 
 
 def train():
@@ -30,7 +31,7 @@ def train():
             if (action == 1):
                 lg.scalar_summary("performance_in_episode/{}".format(episode), game.performance, game.queried_times)
 
-        # Logging each episode: 
+        # Logging each episode:
         (performance, r1, r5, r10, r1i, r5i, r10i) = utils.timer(game.performance_validate, (model,))
         lg.scalar_summary("episode-validation/sum", performance, episode)
         lg.scalar_summary("episode-validation/r1", r1, episode)
@@ -38,5 +39,13 @@ def train():
         lg.scalar_summary("episode-validation/r10", r10, episode)
         lg.scalar_summary("episode-validation/r1i", r1i, episode)
         lg.scalar_summary("episode-validation/r5i", r5i, episode)
-        lg.scalar_summary("episode-validation/r10i", r10i, episode)        
+        lg.scalar_summary("episode-validation/r10i", r10i, episode)
         lg.scalar_summary("episode-loss", game.performance, episode)
+
+        # Save the model
+        model_name = 'Episode_{}_performance_{:.2f}'.format(episode, performance)
+        save_model(model_name, agent.qnetwork.cpu())
+
+        # Move it back to the GPU.
+        if opt.cuda:
+            agent.qnetwork.cuda()
