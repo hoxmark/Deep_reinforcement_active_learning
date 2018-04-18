@@ -70,15 +70,9 @@ def init_logger():
 
     #need to remove the vocab object from opt because its not JSON serializable
     with open('{}-{}/parameters.json'.format(basename,nameoffolder), 'w') as outfile:
-<<<<<<< HEAD
-        vocab = opt.vocab 
-        opt.vocab = 'removedFromDump' 
-        json.dump(opt, outfile, sort_keys=True, indent=4, separators=(',', ': '))
-=======
         vocab = opt.vocab
         opt.vocab = 'removedFromDump'
         json.dump(opt, outfile)
->>>>>>> c3f20f88384e5b66c3ee2283c6c47a8c0846fe6b
         opt.vocab = vocab
     return lg
 

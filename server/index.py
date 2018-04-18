@@ -55,7 +55,7 @@ def load_model(name):
 @app.route('/post_params/<logdir>', methods=['POST'])
 def post_params(logdir):
     content = request.get_json(silent=True)
-
+    print(content)
     with open('/home/public/logs/{}/parameters.json}'.format(logdir), 'w') as outfile:
         json.dump(content, outfile, sort_keys=True, indent=4, separators=(',', ': '))
             
