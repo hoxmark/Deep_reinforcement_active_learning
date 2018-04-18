@@ -15,6 +15,7 @@ from dataset import get_active_loader
 
 class Game:
     def reboot(self, model):
+        """resets the Game Object, to make it ready for the next episode """        
         self.encode_episode_data(model)
         self.order = random.sample(
             list(range(0, len(data["images_embed_all"]))), len(data["images_embed_all"]))
@@ -87,8 +88,9 @@ class Game:
             self.encode_episode_data(model)
         return performance
 
-    def performance_validate(self, model):
-        time1 = time.time()
+    def performance_validate(self, model):   
+        """returns the performance messure with recall at 1, 5, 10
+        for both image -> caption and cap -> img, and the sum of them all added together"""     
         # compute the encoding for all the validation images and captions
         val_loader = loaders["val_tot_loader"]
         img_embs, cap_embs = encode_data(model, val_loader)
@@ -98,9 +100,7 @@ class Game:
         (r1i, r5i, r10i, medri, meanr) = t2i(img_embs, cap_embs, measure=opt.measure)
         # sum of recalls to be used for early stopping
         performance = r1 + r5 + r10 + r1i + r5i + r10i
-        time2 = time.time()
         return (performance, r1, r5, r10, r1i, r5i, r10i)
-        # print("performace_validate in {} ms".format((time2 - time1) * 1000.0))
 
     def validate(self, model):
         performance = timer(self.validate_loss, (model,))

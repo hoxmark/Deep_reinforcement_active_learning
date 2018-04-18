@@ -146,10 +146,9 @@ def main():
 
     loaders["active_loader"] = active_loader
     loaders["train_loader"] = train_loader
-    loaders["val_loader"] = val_loader
-    loaders["val_tot_loader"] = val_tot_loader
+    loaders["val_loader"] = val_loader          #limited val dataset 
+    loaders["val_tot_loader"] = val_tot_loader  #Total val dataset for validation each episode
     # TODO Check if this is correct order
-
 
     for arg in vars(params):
         # opt.add(arg, vars(params)[arg])
