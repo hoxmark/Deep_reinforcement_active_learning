@@ -55,7 +55,7 @@ def init_logger():
     with open('{}-{}/parameters.json'.format(basename,nameoffolder), 'w') as outfile:
         vocab = opt.vocab 
         opt.vocab = 'removedFromDump' 
-        json.dump(opt, outfile)
+        json.dump(opt, outfile, sort_keys=True, indent=4, separators=(',', ': '))
         opt.vocab = vocab
     return lg
 
