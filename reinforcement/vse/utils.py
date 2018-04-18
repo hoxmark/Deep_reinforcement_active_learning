@@ -5,6 +5,8 @@ import requests
 import time
 import torch
 import plotly
+import json
+import copy
 
 import numpy as np
 import plotly.graph_objs as go
@@ -60,11 +62,18 @@ def external_logging(external_logger_name):
 def init_logger():
     """function that return an logger-object to saving tensorboard logs locally"""
     basename = "./logs/reinforcement"
+    nameoffolder = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
     lg = Logger('{}-{}'.format(
         basename,
-        datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+        nameoffolder
     ))
 
+    #need to remove the vocab object from opt because its not JSON serializable
+    with open('{}-{}/parameters.json'.format(basename,nameoffolder), 'w') as outfile:
+        vocab = opt.vocab
+        opt.vocab = 'removedFromDump'
+        json.dump(opt, outfile)
+        opt.vocab = vocab
     return lg
 
 

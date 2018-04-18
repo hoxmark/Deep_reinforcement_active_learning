@@ -124,19 +124,7 @@ def main():
 
     params.cuda = (not params.no_cuda) and torch.cuda.is_available()
 
-    #Logging choice
-    if params.log != "no":
-        logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
-        tb_logger.configure(params.logger_name, flush_secs=5)
-
-        if params.log == "external":    # sending tensorboard logs to external server
-            global_logger["lg"] = utils.external_logging(params.external_logger_name)
-
-        else:                           # saving tensorboard logs local
-            global_logger["lg"] = utils.init_logger()
-    else:                               # no logging at all, for testing purposes.
-        global_logger["lg"] = utils.no_logger()
-
+    
 
     vocab = pickle.load(open(os.path.join(params.vocab_path, '%s_vocab.pkl' % params.data_name), 'rb'))
     params.vocab = vocab
@@ -155,6 +143,19 @@ def main():
         # opt.add(arg, vars(params)[arg])
         opt[arg] = vars(params)[arg]
 
+
+    #Logging choice
+    if params.log != "no":
+        logging.basicConfig(format='%(asctime)s %(message)s', level=logging.INFO)
+        tb_logger.configure(params.logger_name, flush_secs=5)
+
+        if params.log == "external":    # sending tensorboard logs to external server
+            global_logger["lg"] = utils.external_logging(params.external_logger_name)
+
+        else:                           # saving tensorboard logs local
+            global_logger["lg"] = utils.init_logger()
+    else:                               # no logging at all, for testing purposes.
+        global_logger["lg"] = utils.no_logger()
 
 
 #     options = parser.parse_args()
