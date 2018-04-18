@@ -56,7 +56,7 @@ def main():
                         help='Number of training epochs.')
     parser.add_argument('--batch_size', default=128, type=int,
                         help='Size of a training mini-batch.')
-    parser.add_argument('--budget', default=200, type=int,
+    parser.add_argument('--budget', default=150, type=int,
                         help='Our labeling budget')
     parser.add_argument('--word_dim', default=300, type=int,
                         help='Dimensionality of the word embedding.')
@@ -70,7 +70,7 @@ def main():
                         help='Number of GRU layers.')
     parser.add_argument('--learning_rate_vse', default=.0002, type=float,
                         help='Initial learning rate.')
-    parser.add_argument('--lr_update', default=15, type=int,
+    parser.add_argument('--lr_update', default=10, type=int,
                         help='Number of epochs to update the learning rate.')
     parser.add_argument('--workers', default=10, type=int,
                         help='Number of data loader workers.')
@@ -116,6 +116,7 @@ def main():
     params.actions = 2
     params.logger_name += "_" + params.selection + "_" + params.primary
     params.external_logger_name = datetime.datetime.now().strftime("%d-%m-%y_%H:%M")
+    params.external_log_url = 'http://logserver.duckdns.org:5000'
 
 
     if torch.cuda.is_available():
@@ -146,7 +147,7 @@ def main():
 
     loaders["active_loader"] = active_loader
     loaders["train_loader"] = train_loader
-    loaders["val_loader"] = val_loader          #limited val dataset 
+    loaders["val_loader"] = val_loader          #limited val dataset
     loaders["val_tot_loader"] = val_tot_loader  #Total val dataset for validation each episode
     # TODO Check if this is correct order
 

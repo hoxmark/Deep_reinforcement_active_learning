@@ -3,17 +3,17 @@ from sklearn.utils import shuffle
 import pickle
 import requests
 import time
-
-import plotly.graph_objs as go
+import torch
 import plotly
 
+import numpy as np
+import plotly.graph_objs as go
+
+from datetime import datetime
 from plotly.graph_objs import Scatter, Layout
 from gensim.models.keyedvectors import KeyedVectors
 
 from logger import Logger, ExternalLogger, NoLogger
-import numpy as np
-
-from datetime import datetime
 from config import opt, data, w2v
 
 
@@ -27,20 +27,37 @@ def timer(func, args):
     return ret
 
 
-def no_logger():     
+def no_logger():
     """function that return an logger-object that will just discard everything sent to it.
-    This if for testing purposes, so we don't fill up the logs with test data"""                       
+    This if for testing purposes, so we don't fill up the logs with test data"""
     lg = NoLogger()
     return lg
 
 
-def external_logging(external_logger_name): 
+def save_model(name, model):
+    print("Saving model")
+    model_dict = model.state_dict()
+    model_pkl = pickle.dumps(model_dict)
+    url = '{}/save_model/{}'.format(opt.external_log_url, name)
+    res = requests.post(url, data=model_pkl)
+
+
+def load_model(name):
+    url = '{}/load_model/{}'.format(opt.external_log_url, name)
+    res = requests.post(url, json=content)
+    result = {}
+    if res.ok:
+        result = res.json()
+    return result
+
+
+def external_logging(external_logger_name):
     """function that return an logger-object to sending tensorboard logs to external server"""
     lg = ExternalLogger(external_logger_name)
     return lg
 
 
-def init_logger():      
+def init_logger():
     """function that return an logger-object to saving tensorboard logs locally"""
     basename = "./logs/reinforcement"
     lg = Logger('{}-{}'.format(
@@ -190,10 +207,10 @@ def read_UMICH():
     return data
 
 
-def save_model(model):
-    path = "saved_models/{}_{}_{}.pkl".format(opt.dataset, opt.model, opt.epoch)
-    pickle.dump(model, open(path, "wb"))
-    print("A model is saved successfully as {}!".format(path))
+# def save_model(model):
+#     path = "saved_models/{}_{}_{}.pkl".format(opt.dataset, opt.model, opt.epoch)
+#     pickle.dump(model, open(path, "wb"))
+#     print("A model is saved successfully as {}!".format(path))
 
 
 def load_model():

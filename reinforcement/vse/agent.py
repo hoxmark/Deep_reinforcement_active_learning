@@ -26,7 +26,6 @@ EXPLORE = 100000.  # frames over which to anneal epsilon
 
 class RobotCNNDQN:
     def __init__(self):
-        print("Creating a robot: CNN-DQN")
         self.replay_memory = deque()
         self.time_step = 0
         self.actions = opt.actions

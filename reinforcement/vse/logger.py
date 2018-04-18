@@ -3,6 +3,9 @@ import requests
 import tensorflow as tf
 import numpy as np
 import scipy.misc
+
+from config import opt
+
 try:
     from StringIO import StringIO  # Python 2.7
 except ImportError:
@@ -88,7 +91,7 @@ class ExternalLogger(object):
             'value': value,
             'step': step,
         }
-        url = 'http://masteroppgave.duckdns.org:5000/post_log/{}'.format(logdir)
+        url = '{}/post_log/{}'.format(opt.external_log_url, logdir)
         res = requests.post(url, json=content)
 
 #A dummy Logger.
