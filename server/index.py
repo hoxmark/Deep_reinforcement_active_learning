@@ -36,7 +36,7 @@ def post_log(name):
     writer.close()
     return json.dumps(content)
 
-# Save model 
+# Save model
 @app.route('/save_model/<name>', methods=['POST'])
 def save_model(name):
     pkl = pickle.loads(request.data)
@@ -44,7 +44,7 @@ def save_model(name):
     pickle.dump(pkl, open(filename, "wb"))
     return "success"
 
-# Load model 
+# Load model
 @app.route('/load_model/<name>', methods=['GET'])
 def load_model(name):
     filename = '{}/{}.pkl'.format(model_dir, name)
@@ -52,13 +52,13 @@ def load_model(name):
     return json.dumps(pkl)
 
 # Save chosen parameters
-@app.route('/post_params/<logdir>', methods=['POST'])
-def post_params(logdir):
+@app.route('/post_params/<name>', methods=['POST'])
+def post_params(name):
     content = request.get_json(silent=True)
     print(content)
-    with open('/home/public/logs/{}/parameters.json}'.format(logdir), 'w') as outfile:
+    with open('{}/{}/parameters.json'.format(log_dir, name), 'w') as outfile: 
         json.dump(content, outfile, sort_keys=True, indent=4, separators=(',', ': '))
-            
+
     return json.dumps(content)
 
 if __name__ == '__main__':
