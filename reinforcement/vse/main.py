@@ -141,13 +141,13 @@ def main():
     params.vocab = vocab
     params.vocab_size = len(vocab)
 
-    active_loader, train_loader, val_loader = dataset.get_loaders(
+    active_loader, train_loader, val_loader, val_tot_loader = dataset.get_loaders(
         params.data_name, vocab, params.crop_size, params.batch_size, params.workers, params)
 
     loaders["active_loader"] = active_loader
     loaders["train_loader"] = train_loader
     loaders["val_loader"] = val_loader
-
+    loaders["val_tot_loader"] = val_tot_loader
     # TODO Check if this is correct order
 
 

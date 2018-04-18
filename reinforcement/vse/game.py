@@ -88,10 +88,10 @@ class Game:
             self.encode_episode_data(model)
         return performance
 
-    def performace_validate(self, model):
+    def performance_validate(self, model):
         time1 = time.time()
         # compute the encoding for all the validation images and captions
-        val_loader = loaders["val_loader"]
+        val_loader = loaders["val_tot_loader"]
         img_embs, cap_embs = encode_data(model, val_loader)
         # caption retrieval
         (r1, r5, r10, medr, meanr) = i2t(img_embs, cap_embs, measure=opt.measure)
@@ -99,9 +99,9 @@ class Game:
         (r1i, r5i, r10i, medri, meanr) = t2i(img_embs, cap_embs, measure=opt.measure)
         # sum of recalls to be used for early stopping
         performance = r1 + r5 + r10 + r1i + r5i + r10i
-        # time2 = time.time()
-        return performance
-        # print("Validate in {} ms".format((time2 - time1) * 1000.0))
+        time2 = time.time()
+        return (performance, r1, r5, r10, r1i, r5i, r10i)
+        # print("performace_validate in {} ms".format((time2 - time1) * 1000.0))
 
     def validate(self, model):
         performance = timer(self.validate_loss, (model,))

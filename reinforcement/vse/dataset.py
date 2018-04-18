@@ -124,7 +124,7 @@ class PrecompDataset(data.Dataset):
     Possible options: f8k, f30k, coco, 10crop
     """
 
-    def __init__(self, data_path, data_split, vocab):
+    def __init__(self, data_path, data_split, vocab, data_length):
         self.vocab = vocab
         loc = data_path + '/'
 
@@ -145,7 +145,8 @@ class PrecompDataset(data.Dataset):
         # the development set for coco is large and so validation would be slow
         if data_split == 'dev':
             # self.length = 5000
-            self.length = 1000
+            # self.length = 1000
+            self.length = data_length
 
     def delete_indices(self, indices):
         self.images = np.delete(self.images, indices, axis=0)
@@ -263,9 +264,9 @@ def get_loader_single(data_name, split, root, json, vocab, transform,
 
 
 def get_precomp_loader(data_path, data_split, vocab, opt, batch_size=100,
-                       shuffle=True, num_workers=2):
+                       shuffle=True, num_workers=2, data_length=1000):
     """Returns torch.utils.data.DataLoader for custom coco dataset."""
-    dset = PrecompDataset(data_path, data_split, vocab)
+    dset = PrecompDataset(data_path, data_split, vocab, data_length)
 
     data_loader = torch.utils.data.DataLoader(dataset=dset,
                                               batch_size=batch_size,
@@ -320,6 +321,8 @@ def get_loaders(data_name, vocab, crop_size, batch_size, workers, opt):
                                           batch_size, True, workers)
         val_loader = get_precomp_loader(dpath, 'dev', vocab, opt,
                                         batch_size, False, workers)
+        val_tot_loader = get_precomp_loader(dpath, 'dev', vocab, opt,
+                                        batch_size, False, workers, data_length=5000)
         active_loader = get_active_loader(vocab)
     else:
         # Build Dataset Loader
@@ -345,7 +348,7 @@ def get_loaders(data_name, vocab, crop_size, batch_size, workers, opt):
 
         active_loader = get_active_loader(vocab)
 
-    return active_loader, train_loader, val_loader
+    return active_loader, train_loader, val_loader, val_tot_loader
 
 
 def get_test_loader(split_name, data_name, vocab, crop_size, batch_size,
