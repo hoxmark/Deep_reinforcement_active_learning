@@ -16,6 +16,7 @@ from dataset import get_active_loader
 class Game:
     def reboot(self, model):
         self.encode_episode_data(model)
+        loaders["active_loader"] = get_active_loader(opt.vocab)
         self.order = random.sample(
             list(range(0, len(data["images_embed_all"]))), len(data["images_embed_all"]))
         self.budget = opt.budget
