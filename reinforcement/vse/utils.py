@@ -18,6 +18,7 @@ from config import opt, data, w2v
 
 
 def timer(func, args):
+    """Timer function to time the duration of a spesific function func """
     time1 = time.time()
     ret = func(*args)
     time2 = time.time()
@@ -26,17 +27,21 @@ def timer(func, args):
     return ret
 
 
-def no_logger():                            # no logging at all, for testing purposes.
+def no_logger():     
+    """function that return an logger-object that will just discard everything sent to it.
+    This if for testing purposes, so we don't fill up the logs with test data"""                       
     lg = NoLogger()
     return lg
 
 
-def external_logging(external_logger_name):  # sending tensorboard logs to external server
+def external_logging(external_logger_name): 
+    """function that return an logger-object to sending tensorboard logs to external server"""
     lg = ExternalLogger(external_logger_name)
     return lg
 
 
-def init_logger():                          # saving tensorboard logs local
+def init_logger():      
+    """function that return an logger-object to saving tensorboard logs locally"""
     basename = "./logs/reinforcement"
     lg = Logger('{}-{}'.format(
         basename,
@@ -47,7 +52,6 @@ def init_logger():                          # saving tensorboard logs local
 
 
 def read_TREC():
-
     def read(mode):
         z = []
         with open("{}/TREC/TREC_".format(opt.data_path) + mode + ".txt", "r", encoding="utf-8") as f:

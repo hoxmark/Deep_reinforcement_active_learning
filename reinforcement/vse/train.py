@@ -15,7 +15,7 @@ def train():
         model = VSE()
         game.reboot(model)
 
-        print('>>>>>>> Episode', episode, 'Of ', opt.episodes)
+        print('##>>>>>>> Episode {} of {} <<<<<<<<<##'.format(episode, opt.episodes))
         terminal = False
         observation = game.get_state(model)
         while not terminal:
