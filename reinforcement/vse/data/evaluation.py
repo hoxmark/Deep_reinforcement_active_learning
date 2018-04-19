@@ -1,15 +1,14 @@
 from __future__ import print_function
 import os
 import pickle
-
-import numpy
-from dataset import get_test_loader
 import time
-import numpy as np
-from vocab import Vocabulary  # NOQA
 import torch
-from models.vse import VSE, order_sim
+import numpy as np
 from collections import OrderedDict
+
+from data.dataset import get_test_loader
+from data.vocab import Vocabulary  # NOQA
+from models.vse import VSE, order_sim
 
 
 class AverageMeter(object):

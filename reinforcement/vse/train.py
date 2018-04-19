@@ -1,10 +1,9 @@
-import utils
-from agents import DQNAgent, PolicyAgent
-from models.vse import VSE
 from game import Game
+from agents import DQNAgent, PolicyAgent
 from config import data, opt, loaders, global_logger
-from evaluation import encode_data
-from utils import save_model
+from models.vse import VSE
+from data.evaluation import encode_data
+from data.utils import save_model, timer
 
 
 def train():
