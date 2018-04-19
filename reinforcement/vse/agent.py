@@ -49,16 +49,11 @@ class RobotCNNDQN:
         batch_action = Variable(torch.LongTensor(list(batch_action)).unsqueeze(1))
         batch_reward = Variable(torch.FloatTensor(list(batch_reward)))
 
-        # Have to detach the batch state, or else we get an error saying the graph
-        # doesn't get freed
-        detached_batch_state = Variable(torch.FloatTensor(batch_state.detach().cpu().data.numpy()))
-
         if opt.cuda:
-            detached_batch_state = detached_batch_state.cuda()
             batch_action = batch_action.cuda()
             batch_reward = batch_reward.cuda()
 
-        current_q_values = self.qnetwork(detached_batch_state).gather(1, batch_action)
+        current_q_values = self.qnetwork(batch_state).gather(1, batch_action)
         max_next_q_values = self.qnetwork(batch_next_state).detach().max(1)[0]
         expected_q_values = batch_reward + (GAMMA * max_next_q_values)
 
@@ -93,4 +88,5 @@ class RobotCNNDQN:
         if self.epsilon > FINAL_EPSILON and self.time_step > OBSERVE:
             self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 
-        return action
+        # return action
+        return 0
