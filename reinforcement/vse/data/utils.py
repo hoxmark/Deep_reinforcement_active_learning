@@ -30,21 +30,22 @@ def timer(func, args):
 
 
 def save_model(name, model):
-    print("Saving model")
+    print("Saving model")    
     model_dict = model.state_dict()
     model_pkl = pickle.dumps(model_dict)
     url = '{}/save_model/{}'.format(opt.external_log_url, name)
     res = requests.post(url, data=model_pkl)
 
-
-def load_model(name):
+def load_external_model(name):
     url = '{}/load_model/{}'.format(opt.external_log_url, name)
-    res = requests.post(url, json=content)
+    res = requests.get(url)
     result = {}
     if res.ok:
-        result = res.json()
+        result = pickle.loads(res.content)
+        print("Model loaded successfully!")
+    else: 
+        print("###Not able to fetch model from server###")
     return result
-
 
 def external_logger():
     """function that return an logger-object to sending tensorboard logs to external server"""
