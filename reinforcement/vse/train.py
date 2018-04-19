@@ -42,7 +42,7 @@ def train():
         agent.finish_episode()
 
         # Logging each episode:
-        (performance, r1, r5, r10, r1i, r5i, r10i) = utils.timer(game.performance_validate, (model,))
+        (performance, r1, r5, r10, r1i, r5i, r10i) = timer(game.performance_validate, (model,))
         lg.scalar_summary("episode-validation/sum", performance, episode)
         lg.scalar_summary("episode-validation/r1", r1, episode)
         lg.scalar_summary("episode-validation/r5", r5, episode)
