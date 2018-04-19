@@ -28,7 +28,7 @@ def main():
                         help='batch size for training [default: 32]')
     parser.add_argument("--save_model", default="F",
                         help="whether saving model or not (T/F)")
-    parser.add_argument("--episodes", default=100, type=int,
+    parser.add_argument("--episodes", default=10000, type=int,
                         help="number of episodes")
     parser.add_argument("--learning_rate_rl", default=0.1,
                         type=float, help="learning rate")
