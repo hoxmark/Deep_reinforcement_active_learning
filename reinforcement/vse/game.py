@@ -8,9 +8,9 @@ import torch.nn as nn
 from torch.autograd import Variable
 
 from config import opt, data, loaders
-from utils import timer
-from evaluation import encode_data, i2t, t2i
-from dataset import get_active_loader
+from data.utils import timer
+from data.evaluation import encode_data, i2t, t2i
+from data.dataset import get_active_loader
 
 
 class Game:

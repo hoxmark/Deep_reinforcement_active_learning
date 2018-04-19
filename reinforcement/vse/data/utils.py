@@ -15,7 +15,7 @@ from datetime import datetime
 from plotly.graph_objs import Scatter, Layout
 from gensim.models.keyedvectors import KeyedVectors
 
-from logger import LocalLogger, ExternalLogger, NoLogger
+from data.logger import LocalLogger, ExternalLogger, NoLogger
 from config import opt, data, w2v
 
 
