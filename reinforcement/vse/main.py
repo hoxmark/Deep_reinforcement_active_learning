@@ -28,7 +28,7 @@ def main():
                         help='batch size for training [default: 32]')
     parser.add_argument("--save_model", default="F",
                         help="whether saving model or not (T/F)")
-    parser.add_argument("--episodes", default=100, type=int,
+    parser.add_argument("--episodes", default=2000, type=int,
                         help="number of episodes")
     parser.add_argument("--learning_rate_rl", default=0.1,
                         type=float, help="learning rate")
@@ -124,7 +124,7 @@ def main():
 
     params.cuda = (not params.no_cuda) and torch.cuda.is_available()
 
-    
+
 
     vocab = pickle.load(open(os.path.join(params.vocab_path, '%s_vocab.pkl' % params.data_name), 'rb'))
     params.vocab = vocab
