@@ -23,7 +23,7 @@ class Game:
         self.budget = opt.budget
         self.queried_times = 0
         self.current_state = 0
-        self.performance = 0
+        self.performance = self.validate(model)
 
     def encode_episode_data(self, model):
         img_embs, cap_embs = timer(encode_data, (model, loaders["train_loader"]))
@@ -68,7 +68,7 @@ class Game:
             # Return terminal
             return None, None, True
 
-        print("> State {:2} Action {:2} - reward {:4} - accuracy {:4}".format(
+        print("> State {:2} Action {:2} - reward {:.4f} - accuracy {:.4f}".format(
             self.current_state, action, reward, self.performance))
         next_observation = timer(self.get_state, (model,))
         return reward, next_observation, is_terminal
