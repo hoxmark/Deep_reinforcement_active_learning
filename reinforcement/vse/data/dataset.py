@@ -264,7 +264,7 @@ def get_loader_single(data_name, split, root, json, vocab, transform,
 
 
 def get_precomp_loader(data_path, data_split, vocab, opt, batch_size=100,
-                       shuffle=True, num_workers=2, data_length=500):
+                       shuffle=True, num_workers=2, data_length=100):
     """Returns torch.utils.data.DataLoader for custom coco dataset."""
     dset = PrecompDataset(data_path, data_split, vocab, data_length)
 
