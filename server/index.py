@@ -49,14 +49,14 @@ def save_model(name):
 def load_model(name):
     filename = '{}/{}.pkl'.format(model_dir, name)
     pkl = pickle.load(open(filename, "rb"))
-    return json.dumps(pkl)
+    return pickle.dumps(pkl)
 
 # Save chosen parameters
 @app.route('/post_params/<name>', methods=['POST'])
 def post_params(name):
     content = request.get_json(silent=True)
     print(content)
-    with open('{}/{}/parameters.json'.format(log_dir, name), 'w') as outfile: 
+    with open('{}/{}/parameters.json'.format(log_dir, name), 'w') as outfile:
         json.dump(content, outfile, sort_keys=True, indent=4, separators=(',', ': '))
 
     return json.dumps(content)

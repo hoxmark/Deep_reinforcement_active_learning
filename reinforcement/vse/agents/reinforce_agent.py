@@ -37,7 +37,6 @@ class PolicyAgent:
             self.policynetwork.cuda()
 
     def get_action(self, state):
-        # state = torch.from_numpy(state).float().unsqueeze(0)
         probs = self.policynetwork(state)
         m = Categorical(probs)
         action = m.sample()
