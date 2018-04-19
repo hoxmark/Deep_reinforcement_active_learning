@@ -15,7 +15,7 @@ from datetime import datetime
 from plotly.graph_objs import Scatter, Layout
 from gensim.models.keyedvectors import KeyedVectors
 
-from data.logger import LocalLogger, ExternalLogger, NoLogger
+from data.logger import LocalLogger, ExternalLogger, NoLogger, VisdomLogger
 from config import opt, data, w2v
 
 
@@ -49,6 +49,10 @@ def load_model(name):
 def external_logger():
     """function that return an logger-object to sending tensorboard logs to external server"""
     lg = ExternalLogger(opt.logger_name)
+    return lg
+
+def visdom_logger():
+    lg = VisdomLogger()
     return lg
 
 

@@ -10,7 +10,7 @@ import tensorboard_logger as tb_logger
 from train import train
 from config import opt, data, loaders, global_logger
 from data.evaluation import encode_data
-from data.utils import external_logger, local_logger, no_logger
+from data.utils import external_logger, visdom_logger, local_logger, no_logger
 from data.vocab import Vocabulary  # NOQA
 from data.dataset import get_loaders
 
@@ -87,7 +87,7 @@ def main():
     parser.add_argument('--reset_train', action='store_true',
                         help='Ensure the training is always done in '
                         'train mode (Not recommended).')
-    parser.add_argument('--log', default="no", help='Choose between: no, external, local')
+    parser.add_argument('--log', default="no", help='Choose between: no, external, local, visdom')
     parser.add_argument('--no_cuda', action='store_true',
                         default=False, help='Disable cuda')
     parser.add_argument('--agent', default='dqn', help='Type of reinforcement agent. (dqn | policy)')
@@ -124,6 +124,9 @@ def main():
     # saving tensorboard logs local
     elif params.log == "local":
         global_logger["lg"] = local_logger()
+
+    elif params.log == 'visdom':
+        global_logger["lg"] = visdom_logger()
 
     # no logging at all, for testing purposes.
     else:

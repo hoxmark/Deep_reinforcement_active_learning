@@ -3,6 +3,7 @@ import requests
 import tensorflow as tf
 import numpy as np
 import scipy.misc
+from visdom import Visdom
 
 from config import opt
 
@@ -99,3 +100,23 @@ class NoLogger(object):
 
     def scalar_summary(self, tag, value, step):
         pass
+
+class VisdomLogger(object):
+    def __init__(self):
+        self.vis = Visdom('http://logserver.duckdns.org', port=5010)
+
+    def scalar_summary(self, tag, value, step):
+        update = None
+        if self.vis.win_exists(tag, opt.logger_name):
+            update = 'append'
+        self.vis.line(
+            Y = np.array([value]),
+            X = np.array([step]),
+            env = opt.logger_name,
+            win = tag,
+            update = update,
+            opts = dict(
+                title = tag
+            )
+        )
+        self.vis.save([opt.logger_name])
