@@ -7,7 +7,7 @@ from torch import optim
 import torch
 from torch.autograd import Variable
 import torch.nn.functional as F
-from config import params
+from config import opt
 
 # TODO put in params
 # Hyper Parameters:
@@ -15,26 +15,24 @@ GAMMA = 0.99  # decay rate of past observations
 OBSERVE = 32  # timesteps to observe before training
 REPLAY_MEMORY_SIZE = 1000  # number of previous transitions to remember
 BATCH_SIZE = 32  # size of minibatch
-FINAL_EPSILON = 0
-INITIAL_EPSILON = 0
+# FINAL_EPSILON = 0
+# INITIAL_EPSILON = 0.1
 # or alternative:
-# FINAL_EPSILON = 0.0001  # final value of epsilon
-# INITIAL_EPSILON = 0.01  # starting value of epsilon
+FINAL_EPSILON = 0.0001  # final value of epsilon
+INITIAL_EPSILON = 0.1  # starting value of epsilon
 UPDATE_TIME = 100
 EXPLORE = 100000.  # frames over which to anneal epsilon
 
 
-
 class RobotCNNDQN:
     def __init__(self):
-        print("Creating a robot: CNN-DQN")
         self.replay_memory = deque()
         self.time_step = 0
-        self.action = params["ACTIONS"]
+        self.actions = opt.actions
         self.epsilon = INITIAL_EPSILON
         self.qnetwork = DQN()
 
-        if params["CUDA"]:
+        if opt.cuda:
             self.qnetwork = self.qnetwork.cuda()
 
     def initialise(self):
@@ -55,7 +53,7 @@ class RobotCNNDQN:
         # doesn't get freed
         detached_batch_state = Variable(torch.FloatTensor(batch_state.detach().cpu().data.numpy()))
 
-        if params["CUDA"]:
+        if opt.cuda:
             detached_batch_state = detached_batch_state.cuda()
             batch_action = batch_action.cuda()
             batch_reward = batch_reward.cuda()
@@ -64,7 +62,7 @@ class RobotCNNDQN:
         max_next_q_values = self.qnetwork(batch_next_state).detach().max(1)[0]
         expected_q_values = batch_reward + (GAMMA * max_next_q_values)
 
-        if params["CUDA"]:
+        if opt.cuda:
             expected_q_values = expected_q_values.cuda()
         loss = F.smooth_l1_loss(current_q_values, expected_q_values)
 
@@ -87,11 +85,11 @@ class RobotCNNDQN:
     def get_action(self, observation):
         action = 0
         if random.random() <= self.epsilon:
-            action = random.randrange(self.action)
+            action = random.randrange(self.actions)
         else:
             qvalue = self.qnetwork(observation)
             action = np.argmax(qvalue.data[0])
-        # change episilon
+        # change epsilon
         if self.epsilon > FINAL_EPSILON and self.time_step > OBSERVE:
             self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 

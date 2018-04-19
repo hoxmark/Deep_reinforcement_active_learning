@@ -1,7 +1,11 @@
 # Code referenced from https://gist.github.com/gyglim/1f8dfb1b5c82627ae3efcfbbadb9f514
+import requests
 import tensorflow as tf
 import numpy as np
 import scipy.misc
+
+from config import opt
+
 try:
     from StringIO import StringIO  # Python 2.7
 except ImportError:
@@ -71,3 +75,27 @@ class Logger(object):
         summary = tf.Summary(value=[tf.Summary.Value(tag=tag, histo=hist)])
         self.writer.add_summary(summary, step)
         self.writer.flush()
+
+#An external logger so we do not have to write to disk on local server.
+class ExternalLogger(object):
+    def __init__(self, external_logger_name):
+        """Create a summary writer logging to log_dir."""
+        self.external_logger_name = external_logger_name
+
+    def scalar_summary(self, tag, value, step):
+        """Log a list of images."""
+
+        logdir = self.external_logger_name
+        content = {
+            'tag': tag,
+            'value': value,
+            'step': step,
+        }
+        url = '{}/post_log/{}'.format(opt.external_log_url, logdir)
+        res = requests.post(url, json=content)
+
+#A dummy Logger.
+class NoLogger(object):
+
+    def scalar_summary(self, tag, value, step):
+        pass

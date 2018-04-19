@@ -3,12 +3,12 @@ import os
 import pickle
 
 import numpy
-from data import get_test_loader
+from dataset import get_test_loader
 import time
 import numpy as np
 from vocab import Vocabulary  # NOQA
 import torch
-from model import VSE, order_sim
+from models.vse import VSE, order_sim
 from collections import OrderedDict
 
 
@@ -108,13 +108,13 @@ def encode_data(model, data_loader, log_step=10, logging=print):
         batch_time.update(time.time() - end)
         end = time.time()
 
-        if i % log_step == 0:
-            logging('Test: [{0}/{1}]\t'
-                    '{e_log}\t'
-                    'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-                    .format(
-                        i, len(data_loader), batch_time=batch_time,
-                        e_log=str(model.logger)))
+        # if i % log_step == 0:
+        #     logging('Test: [{0}/{1}]\t'
+        #             '{e_log}\t'
+        #             'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
+        #             .format(
+        #                 i, len(data_loader), batch_time=batch_time,
+        #                 e_log=str(model.logger)))
         del images, captions
 
     return img_embs, cap_embs
@@ -212,6 +212,8 @@ def i2t(images, captions, npts=None, measure='cosine', return_ranks=False):
         npts = images.shape[0] / 5
     index_list = []
 
+    # TODO check if this is always correct
+    npts = int(npts)
     ranks = numpy.zeros(npts)
     top1 = numpy.zeros(npts)
     for index in range(npts):
@@ -266,6 +268,9 @@ def t2i(images, captions, npts=None, measure='cosine', return_ranks=False):
     """
     if npts is None:
         npts = images.shape[0] / 5
+
+    # TODO check if ok
+    npts = int(npts)
     ims = numpy.array([images[i] for i in range(0, len(images), 5)])
 
     ranks = numpy.zeros(5 * npts)

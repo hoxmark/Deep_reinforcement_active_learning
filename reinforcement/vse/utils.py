@@ -1,24 +1,86 @@
 from sklearn.utils import shuffle
 
 import pickle
-
-import plotly.graph_objs as go
+import requests
+import time
+import torch
 import plotly
+import json
+import copy
 
+import numpy as np
+import plotly.graph_objs as go
+
+from datetime import datetime
 from plotly.graph_objs import Scatter, Layout
 from gensim.models.keyedvectors import KeyedVectors
 
-from logger import Logger
-import numpy as np
+from logger import Logger, ExternalLogger, NoLogger
+from config import opt, data, w2v
 
-from datetime import datetime
-from config import params, data, w2v
+
+def timer(func, args):
+    """Timer function to time the duration of a spesific function func """
+    time1 = time.time()
+    ret = func(*args)
+    time2 = time.time()
+    ms = (time2 - time1) * 1000.0
+    print("{}() in {:.2f} ms".format(func.__name__, ms))
+    return ret
+
+
+def no_logger():
+    """function that return an logger-object that will just discard everything sent to it.
+    This if for testing purposes, so we don't fill up the logs with test data"""
+    lg = NoLogger()
+    return lg
+
+
+def save_model(name, model):
+    print("Saving model")
+    model_dict = model.state_dict()
+    model_pkl = pickle.dumps(model_dict)
+    url = '{}/save_model/{}'.format(opt.external_log_url, name)
+    res = requests.post(url, data=model_pkl)
+
+
+def load_model(name):
+    url = '{}/load_model/{}'.format(opt.external_log_url, name)
+    res = requests.post(url, json=content)
+    result = {}
+    if res.ok:
+        result = res.json()
+    return result
+
+
+def external_logging(external_logger_name):
+    """function that return an logger-object to sending tensorboard logs to external server"""
+    lg = ExternalLogger(external_logger_name)
+    return lg
+
+
+def init_logger():
+    """function that return an logger-object to saving tensorboard logs locally"""
+    basename = "./logs/reinforcement"
+    nameoffolder = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
+    lg = Logger('{}-{}'.format(
+        basename,
+        nameoffolder
+    ))
+
+    #need to remove the vocab object from opt because its not JSON serializable
+    with open('{}-{}/parameters.json'.format(basename,nameoffolder), 'w') as outfile:
+        vocab = opt.vocab
+        opt.vocab = 'removedFromDump'
+        json.dump(opt, outfile)
+        opt.vocab = vocab
+    return lg
+
 
 def read_TREC():
-
     def read(mode):
         z = []
-        with open("{}/TREC/TREC_".format(params['DATA_PATH']) + mode + ".txt", "r", encoding="utf-8") as f:
+        with open("{}/TREC/TREC_".format(opt.data_path) + mode + ".txt", "r", encoding="utf-8") as f:
             for line in f:
                 if line[-1] == "\n":
                     line = line[:-1]
@@ -47,14 +109,14 @@ def read_TREC():
 def read_MR():
     x, y = [], []
 
-    with open("{}/MR/rt-polarity.pos".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
+    with open("{}/MR/rt-polarity.pos".format(opt.data_path), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("{}/MR/rt-polarity.neg".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
+    with open("{}/MR/rt-polarity.neg".format(opt.data_path), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -73,14 +135,14 @@ def read_MR():
 def read_MR7025():
     x, y = [], []
 
-    with open("{}/MR/rt-polarity.pos".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
+    with open("{}/MR/rt-polarity.pos".format(opt.data_path), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("{}/MR/rt-polarity-small.neg".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
+    with open("{}/MR/rt-polarity-small.neg".format(opt.data_path), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -100,14 +162,14 @@ def read_rotten_imdb():
     data = {}
     x, y = [], []
 
-    with open("{}/rotten_imdb/rt-polarity.pos".format(params['DATA_PATH']), "r", encoding="ISO-8859-1") as f:
+    with open("{}/rotten_imdb/rt-polarity.pos".format(opt.data_path), "r", encoding="ISO-8859-1") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("{}/rotten_imdb/rt-polarity.neg".format(params['DATA_PATH']), "r", encoding="ISO-8859-1") as f:
+    with open("{}/rotten_imdb/rt-polarity.neg".format(opt.data_path), "r", encoding="ISO-8859-1") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -123,19 +185,20 @@ def read_rotten_imdb():
     data["test_x"], data["test_y"] = x[test_idx:], y[test_idx:]
 
     return data
+
 
 def read_UMICH():
     data = {}
     x, y = [], []
 
-    with open("{}/UMICH/rt-polarity.pos".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
+    with open("{}/UMICH/rt-polarity.pos".format(opt.data_path), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
             x.append(line.split())
             y.append(1)
 
-    with open("{}/UMICH/rt-polarity.neg".format(params['DATA_PATH']), "r", encoding="utf-8") as f:
+    with open("{}/UMICH/rt-polarity.neg".format(opt.data_path), "r", encoding="utf-8") as f:
         for line in f:
             if line[-1] == "\n":
                 line = line[:-1]
@@ -153,14 +216,14 @@ def read_UMICH():
     return data
 
 
-def save_model(model, params):
-    path = "saved_models/{}_{}_{}.pkl".format(params['DATASET'], params['MODEL'], params['EPOCH'])
-    pickle.dump(model, open(path, "wb"))
-    print("A model is saved successfully as {}!".format(path))
+# def save_model(model):
+#     path = "saved_models/{}_{}_{}.pkl".format(opt.dataset, opt.model, opt.epoch)
+#     pickle.dump(model, open(path, "wb"))
+#     print("A model is saved successfully as {}!".format(path))
 
 
-def load_model(params):
-    path = "saved_models/{}_{}_{}.pkl".format(params['DATASET'], params['MODEL'], params['EPOCH'])
+def load_model():
+    path = "saved_models/{}_{}_{}.pkl".format(opt.dataset, opt.model, opt.epoch)
 
     try:
         model = pickle.load(open(path, "rb"))
@@ -171,25 +234,25 @@ def load_model(params):
         print("No available model such as {}.".format(path))
         exit()
 
+
 def logAreaGraph(distribution, classes, name):
     data = []
     for key, value in distribution.items():
-        xValues = range(0,len(value))
+        xValues = range(0, len(value))
         data.append(go.Scatter(
             name=classes[key],
-            x=list(range(0,len(value))),
+            x=list(range(0, len(value))),
             y=value,
             fill='tozeroy'
         ))
     plotly.offline.plot(data, filename=name)
 
-"""
-load word2vec pre trained vectors
-"""
+
 def load_word2vec():
+    """Load word2vec pre trained vectors"""
     print("loading word2vec...")
     word_vectors = KeyedVectors.load_word2vec_format(
-        "{}/GoogleNews-vectors-negative300.bin".format(params['DATA_PATH']), binary=True)
+        "{}/GoogleNews-vectors-negative300.bin".format(opt.data_path), binary=True)
 
     # data["w2v_kv"] = word_vectors
 
@@ -208,13 +271,3 @@ def load_word2vec():
     w2v["w2v"] = wv_matrix
     w2v["w2v_kv"] = word_vectors
     # return word_vectors, wv_matrix
-
-
-def init_logger():
-    basename = "./logs/reinforcement"
-    lg = Logger('{}-{}'.format(
-        basename,
-        datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    ))
-
-    return lg

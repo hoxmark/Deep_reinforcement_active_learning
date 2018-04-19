@@ -1,26 +1,25 @@
-from agent import RobotCNNDQN
-from models.cnn import CNN
-from game import Game
 import utils
-from config import data, params
+from agent import RobotCNNDQN
+from models.vse import VSE
+from game import Game
+from config import data, opt, loaders, global_logger
+from evaluation import encode_data
+from utils import save_model
+
 
 def train():
-    if params["EMBEDDING"] == "static":
-        utils.load_word2vec()
-
-    lg = utils.init_logger()
+    lg = global_logger["lg"]
     agent = RobotCNNDQN()
-    model = CNN()
     game = Game()
 
-    for episode in range(params["EPISODES"]):
-        terminal = False
-        game.reboot()
-        model.init_model()
-        print('>>>>>>> Current game round ', episode, 'Maximum ', params["EPISODES"])
+    for episode in range(opt.episodes):
+        model = VSE()
+        game.reboot(model)
 
+        print('##>>>>>>> Episode {} of {} <<<<<<<<<##'.format(episode, opt.episodes))
+        terminal = False
+        observation = game.get_state(model)
         while not terminal:
-            observation = game.get_frame(model)
             action = agent.get_action(observation)
             reward, observation2, terminal = game.feedback(action, model)
             if terminal:
@@ -28,4 +27,25 @@ def train():
 
             agent.update(observation, action, reward, observation2, terminal)
             print("\n")
-        lg.scalar_summary("episode-acc", game.performance, episode)
+            observation = observation2
+            if (action == 1):
+                lg.scalar_summary("performance_in_episode/{}".format(episode), game.performance, game.queried_times)
+
+        # Logging each episode:
+        (performance, r1, r5, r10, r1i, r5i, r10i) = utils.timer(game.performance_validate, (model,))
+        lg.scalar_summary("episode-validation/sum", performance, episode)
+        lg.scalar_summary("episode-validation/r1", r1, episode)
+        lg.scalar_summary("episode-validation/r5", r5, episode)
+        lg.scalar_summary("episode-validation/r10", r10, episode)
+        lg.scalar_summary("episode-validation/r1i", r1i, episode)
+        lg.scalar_summary("episode-validation/r5i", r5i, episode)
+        lg.scalar_summary("episode-validation/r10i", r10i, episode)
+        lg.scalar_summary("episode-loss", game.performance, episode)
+
+        # Save the model
+        model_name = 'Episode_{}_performance_{:.2f}'.format(episode, performance)
+        save_model(model_name, agent.qnetwork.cpu())
+
+        # Move it back to the GPU.
+        if opt.cuda:
+            agent.qnetwork.cuda()
