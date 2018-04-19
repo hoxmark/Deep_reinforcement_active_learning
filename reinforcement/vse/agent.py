@@ -88,5 +88,4 @@ class RobotCNNDQN:
         if self.epsilon > FINAL_EPSILON and self.time_step > OBSERVE:
             self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 
-        # return action
-        return 0
+        return action
