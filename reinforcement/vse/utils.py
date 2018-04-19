@@ -61,15 +61,16 @@ def external_logging(external_logger_name):
 
 def init_logger():
     """function that return an logger-object to saving tensorboard logs locally"""
-    basename = "./logs/reinforcement"
+    basename = "{}logs/reinforcement/".format(opt.data_path)
+    print(basename)
     nameoffolder = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    lg = Logger('{}-{}'.format(
+    lg = Logger('{}{}'.format(
         basename,
         nameoffolder
     ))
 
     #need to remove the vocab object from opt because its not JSON serializable
-    with open('{}-{}/parameters.json'.format(basename,nameoffolder), 'w') as outfile:
+    with open('{}{}/parameters.json'.format(basename,nameoffolder), 'w') as outfile:
         vocab = opt.vocab
         opt.vocab = 'removedFromDump'
         json.dump(opt, outfile)
