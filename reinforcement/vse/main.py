@@ -23,6 +23,8 @@ def main():
                         help='batch size for training [default: 32]')
     parser.add_argument("--save_model", default="F",
                         help="whether saving model or not (T/F)")
+    parser.add_argument("--load_model_name", default="",
+                        help="Name of the model to load from external server")
     parser.add_argument("--episodes", default=10000, type=int,
                         help="number of episodes")
     parser.add_argument("--learning_rate_rl", default=0.1,
@@ -95,7 +97,7 @@ def main():
     params = parser.parse_args()
     params.actions = 2
     params.logger_name = '{}_{}'.format(datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), params.agent)
-    params.external_log_url = 'http://logserver.duckdns.org:5000'
+    params.external_log_url = 'http://logserver.duckdns.org:5001'
 
     if torch.cuda.is_available():
         torch.cuda.set_device(params.device)
