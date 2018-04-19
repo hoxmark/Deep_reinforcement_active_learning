@@ -15,7 +15,7 @@ from datetime import datetime
 from plotly.graph_objs import Scatter, Layout
 from gensim.models.keyedvectors import KeyedVectors
 
-from logger import Logger, ExternalLogger, NoLogger
+from logger import LocalLogger, ExternalLogger, NoLogger
 from config import opt, data, w2v
 
 
@@ -27,13 +27,6 @@ def timer(func, args):
     ms = (time2 - time1) * 1000.0
     print("{}() in {:.2f} ms".format(func.__name__, ms))
     return ret
-
-
-def no_logger():
-    """function that return an logger-object that will just discard everything sent to it.
-    This if for testing purposes, so we don't fill up the logs with test data"""
-    lg = NoLogger()
-    return lg
 
 
 def save_model(name, model):
@@ -53,20 +46,18 @@ def load_model(name):
     return result
 
 
-def external_logging(external_logger_name):
+def external_logger():
     """function that return an logger-object to sending tensorboard logs to external server"""
-    lg = ExternalLogger(external_logger_name)
+    lg = ExternalLogger(opt.logger_name)
     return lg
 
 
-def init_logger():
+def local_logger():
     """function that return an logger-object to saving tensorboard logs locally"""
     basename = "{}logs/reinforcement/".format(opt.data_path)
-    print(basename)
-    nameoffolder = datetime.now().strftime('%Y-%m-%d_%H-%M-%S')
-    lg = Logger('{}{}'.format(
+    lg = LocalLogger('{}{}'.format(
         basename,
-        nameoffolder
+        opt.logger_name
     ))
 
     #need to remove the vocab object from opt because its not JSON serializable
@@ -75,6 +66,13 @@ def init_logger():
         opt.vocab = 'removedFromDump'
         json.dump(opt, outfile)
         opt.vocab = vocab
+    return lg
+
+
+def no_logger():
+    """function that return an logger-object that will just discard everything sent to it.
+    This if for testing purposes, so we don't fill up the logs with test data"""
+    lg = NoLogger()
     return lg
 
 

@@ -111,11 +111,11 @@ def main():
     parser.add_argument('--log', default="no", help='Choose between: no, external, local')
     parser.add_argument('--no_cuda', action='store_true',
                         default=False, help='Disable cuda')
+    parser.add_argument('--agent', default='dqn', help='Type of reinforcement agent. (dqn | policy)')
 
     params = parser.parse_args()
     params.actions = 2
-    params.logger_name += "_" + params.selection + "_" + params.primary
-    params.external_logger_name = datetime.datetime.now().strftime("%d-%m-%y_%H:%M")
+    params.logger_name = '{}_{}'.format(datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), params.agent)
     params.external_log_url = 'http://logserver.duckdns.org:5000'
 
 
@@ -150,10 +150,10 @@ def main():
         tb_logger.configure(params.logger_name, flush_secs=5)
 
         if params.log == "external":    # sending tensorboard logs to external server
-            global_logger["lg"] = utils.external_logging(params.external_logger_name)
+            global_logger["lg"] = utils.external_logger()
 
         else:                           # saving tensorboard logs local
-            global_logger["lg"] = utils.init_logger()
+            global_logger["lg"] = utils.local_logger()
     else:                               # no logging at all, for testing purposes.
         global_logger["lg"] = utils.no_logger()
 

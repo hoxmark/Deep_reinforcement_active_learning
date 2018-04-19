@@ -24,22 +24,22 @@ UPDATE_TIME = 100
 EXPLORE = 100000.  # frames over which to anneal epsilon
 
 
-class RobotCNNDQN:
+class DQNAgent:
     def __init__(self):
         self.replay_memory = deque()
         self.time_step = 0
         self.actions = opt.actions
         self.epsilon = INITIAL_EPSILON
-        self.qnetwork = DQN()
+        self.policynetwork = DQN()
 
         if opt.cuda:
-            self.qnetwork = self.qnetwork.cuda()
+            self.policynetwork = self.policynetwork.cuda()
 
     def initialise(self):
-        self.qnetwork = DQN()
+        self.policynetwork = DQN()
 
-    def train_qnetwork(self):
-        optimizer = optim.Adam(self.qnetwork.parameters(), 0.001)
+    def train_policynetwork(self):
+        optimizer = optim.Adam(self.policynetwork.parameters(), 0.001)
         minibatch = random.sample(self.replay_memory, BATCH_SIZE)
 
         batch_state, batch_action, batch_reward, batch_next_state, batch_terminal = zip(*minibatch)
@@ -53,8 +53,8 @@ class RobotCNNDQN:
             batch_action = batch_action.cuda()
             batch_reward = batch_reward.cuda()
 
-        current_q_values = self.qnetwork(batch_state).gather(1, batch_action)
-        max_next_q_values = self.qnetwork(batch_next_state).detach().max(1)[0]
+        current_q_values = self.policynetwork(batch_state).gather(1, batch_action)
+        max_next_q_values = self.policynetwork(batch_next_state).detach().max(1)[0]
         expected_q_values = batch_reward + (GAMMA * max_next_q_values)
 
         if opt.cuda:
@@ -66,26 +66,29 @@ class RobotCNNDQN:
         optimizer.step()
 
 
-    def update(self, observation, action, reward, observation2, terminal):
+    def update(self, current_state, action, reward, next_state, terminal):
         self.replay_memory.append(
-            (observation, action, reward, observation2, terminal))
+            (current_state, action, reward, next_state, terminal))
         if len(self.replay_memory) > REPLAY_MEMORY_SIZE:
             self.replay_memory.popleft()
         global OBSERVE
         if self.time_step > OBSERVE:
-            self.train_qnetwork()
+            self.train_policynetwork()
 
         self.time_step += 1
 
-    def get_action(self, observation):
+    def get_action(self, state):
         action = 0
         if random.random() <= self.epsilon:
             action = random.randrange(self.actions)
         else:
-            qvalue = self.qnetwork(observation)
+            qvalue = self.policynetwork(state)
             action = np.argmax(qvalue.data[0])
         # change epsilon
         if self.epsilon > FINAL_EPSILON and self.time_step > OBSERVE:
             self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 
         return action
+
+    def finish_episode(self):
+        pass

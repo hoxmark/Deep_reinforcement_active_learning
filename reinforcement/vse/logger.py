@@ -12,7 +12,7 @@ except ImportError:
     from io import BytesIO         # Python 3.x
 
 
-class Logger(object):
+class LocalLogger(object):
     def __init__(self, log_dir):
         """Create a summary writer logging to log_dir."""
         self.log_dir = log_dir

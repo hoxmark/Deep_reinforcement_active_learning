@@ -1,5 +1,5 @@
 import utils
-from agent import RobotCNNDQN
+from agents import DQNAgent, PolicyAgent
 from models.vse import VSE
 from game import Game
 from config import data, opt, loaders, global_logger
@@ -9,27 +9,38 @@ from utils import save_model
 
 def train():
     lg = global_logger["lg"]
-    agent = RobotCNNDQN()
+
+
+    if opt.agent == 'policy':
+        agent = PolicyAgent()
+    elif opt.agent == 'dqn':
+        agent = DQNAgent()
+    else:
+        agent = DQNAgent()
+
     game = Game()
 
     for episode in range(opt.episodes):
         model = VSE()
         game.reboot(model)
-
         print('##>>>>>>> Episode {} of {} <<<<<<<<<##'.format(episode, opt.episodes))
         terminal = False
-        observation = game.get_state(model)
+
+
+        state = game.get_state(model)
         while not terminal:
-            action = agent.get_action(observation)
-            reward, observation2, terminal = game.feedback(action, model)
+            action = agent.get_action(state)
+            reward, next_state, terminal = game.feedback(action, model)
             if terminal:
                 break
 
-            agent.update(observation, action, reward, observation2, terminal)
+            agent.update(state, action, reward, next_state, terminal)
             print("\n")
-            observation = observation2
+            state = next_state
             if (action == 1):
                 lg.scalar_summary("performance_in_episode/{}".format(episode), game.performance, game.queried_times)
+
+        agent.finish_episode()
 
         # Logging each episode:
         (performance, r1, r5, r10, r1i, r5i, r10i) = utils.timer(game.performance_validate, (model,))
@@ -44,8 +55,8 @@ def train():
 
         # Save the model
         model_name = 'Episode_{}_performance_{:.2f}'.format(episode, performance)
-        save_model(model_name, agent.qnetwork.cpu())
+        save_model(model_name, agent.policynetwork.cpu())
 
         # Move it back to the GPU.
         if opt.cuda:
-            agent.qnetwork.cuda()
+            agent.policynetwork.cuda()
