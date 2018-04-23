@@ -23,7 +23,6 @@ def train():
     if file_name != "":
         old_model = load_external_model(file_name)
         start_episode = int(file_name.split('/')[1])  
-        print(file_name.split('/'))      
         agent.load_policynetwork(old_model)        
 
     game = Game()
