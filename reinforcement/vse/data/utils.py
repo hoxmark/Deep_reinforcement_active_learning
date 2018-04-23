@@ -52,6 +52,7 @@ def load_external_model(name):
         print("Model loaded successfully!")
     else: 
         print("###Not able to fetch model from server###")
+        exit()
     return result
 
 def external_logger():
