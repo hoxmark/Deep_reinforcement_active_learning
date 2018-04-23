@@ -34,7 +34,17 @@ def save_model(name, model):
     model_dict = model.state_dict()
     model_pkl = pickle.dumps(model_dict)
     url = '{}/save_model/{}'.format(opt.external_log_url, name)
-    res = requests.post(url, data=model_pkl)
+    
+    try: 
+        res = requests.post(url, data=model_pkl, timeout=10)
+        print(res)
+    except ConnectionError as e:    
+        print("Unable to connect to logserver. ")             
+        print(e)
+    except:
+        print("Unable to connect to logserver. ")
+    
+    
 
 def load_external_model(name):
     url = '{}/load_model/{}'.format(opt.external_log_url, name)
