@@ -30,18 +30,17 @@ def timer(func, args):
 
 
 def save_model(name, model):
-    print("Saving model")    
+    print("Saving model")
     model_dict = model.state_dict()
     model_pkl = pickle.dumps(model_dict)
     url = '{}/save_model/{}'.format(opt.external_log_url, name)
-    
-    try: 
+
+    try:
         res = requests.post(url, data=model_pkl, timeout=10)
         print(res)
     except:
         print("Unable to connect to logserver. ")
-    
-    
+
 
 def load_external_model(name):
     url = '{}/load_model/{}'.format(opt.external_log_url, name)
@@ -50,10 +49,11 @@ def load_external_model(name):
     if res.ok:
         result = pickle.loads(res.content)
         print("Model loaded successfully!")
-    else: 
+    else:
         print("###Not able to fetch model from server###")
         exit()
     return result
+
 
 def external_logger():
     """function that return an logger-object to sending tensorboard logs to external server"""
@@ -75,9 +75,8 @@ def local_logger():
 
     #need to remove the vocab object from opt because its not JSON serializable
     with open('{}{}/parameters.json'.format(basename,nameoffolder), 'w') as outfile:
-        vocab = opt.vocab
-        opt.vocab = 'removedFromDump'
-        json.dump(opt, outfile)
+        params = {i: opt[i] for i in opt if i != 'vocab'}
+        json.dump(params, outfile)
         opt.vocab = vocab
     return lg
 

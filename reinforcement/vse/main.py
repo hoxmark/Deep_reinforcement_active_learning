@@ -129,6 +129,7 @@ def main():
 
     elif params.log == 'visdom':
         global_logger["lg"] = visdom_logger()
+        global_logger["lg"].parameters_summary()
 
     # no logging at all, for testing purposes.
     else:

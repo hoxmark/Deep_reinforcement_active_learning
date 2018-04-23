@@ -93,10 +93,10 @@ class ExternalLogger(object):
             'step': step,
         }
         url = '{}/post_log/{}'.format(opt.external_log_url, logdir)
-        try: 
+        try:
             res = requests.post(url, json=content)
         except:
-            print("unable to connect to logserver.") 
+            print("unable to connect to logserver.")
 
 #A dummy Logger.
 class NoLogger(object):
@@ -121,5 +121,22 @@ class VisdomLogger(object):
             opts = dict(
                 title = tag
             )
+        )
+        self.vis.save([opt.logger_name])
+
+    def parameters_summary(self):
+        params = {i: opt[i] for i in opt if i != 'vocab'}
+        txt = "<h3>Parameters</h3>"
+        txt += "<table border=\"1\">"
+        for key, value in sorted(params.items()):
+            txt +=  "<tr>"
+            txt +=      "<td>{}</td>".format(key)
+            txt +=      "<td>{}</td>".format(value)
+            txt +=  "</tr>"
+        txt += "</table>"
+
+        self.vis.text(
+            txt,
+            env = opt.logger_name,
         )
         self.vis.save([opt.logger_name])
