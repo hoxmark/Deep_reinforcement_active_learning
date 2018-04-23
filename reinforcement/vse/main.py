@@ -97,7 +97,7 @@ def main():
     params = parser.parse_args()
     params.actions = 2
     params.logger_name = '{}_{}'.format(datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), params.agent)
-    params.external_log_url = 'http://logserver.duckdns.org:5001'
+    params.external_log_url = 'http://logserver.duckdns.org:5000'
 
     if torch.cuda.is_available():
         torch.cuda.set_device(params.device)

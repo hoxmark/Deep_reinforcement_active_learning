@@ -69,8 +69,11 @@ def train():
         # print("ETter")
         # print(agent.policynetwork)
         # Save the model
-        model_name = 'Episode_{}_performance_{:.2f}'.format(episode, performance)
-        save_model(model_name, agent.policynetwork.cpu())
+        model_path = '{}/{}'.format(opt.agent, str(episode).zfill(4) )
+        model_name = '{:.2f}'.format(performance)
+        path = "{}/{}".format(model_path, model_name)
+        print(path)
+        save_model(path, agent.policynetwork.cpu())
 
         # Move it back to the GPU.
         if opt.cuda:

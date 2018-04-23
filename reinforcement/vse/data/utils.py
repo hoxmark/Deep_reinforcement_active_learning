@@ -38,9 +38,6 @@ def save_model(name, model):
     try: 
         res = requests.post(url, data=model_pkl, timeout=10)
         print(res)
-    except ConnectionError as e:    
-        print("Unable to connect to logserver. ")             
-        print(e)
     except:
         print("Unable to connect to logserver. ")
     

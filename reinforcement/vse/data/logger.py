@@ -93,7 +93,10 @@ class ExternalLogger(object):
             'step': step,
         }
         url = '{}/post_log/{}'.format(opt.external_log_url, logdir)
-        res = requests.post(url, json=content)
+        try: 
+            res = requests.post(url, json=content)
+        except:
+            print("unable to connect to logserver.") 
 
 #A dummy Logger.
 class NoLogger(object):
