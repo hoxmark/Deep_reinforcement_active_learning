@@ -74,7 +74,7 @@ def local_logger():
     ))
 
     #need to remove the vocab object from opt because its not JSON serializable
-    with open('{}{}/parameters.json'.format(basename,nameoffolder), 'w') as outfile:
+    with open('{}{}/parameters.json'.format(basename, opt.logger_name), 'w') as outfile:
         params = {i: opt[i] for i in opt if i != 'vocab'}
         json.dump(params, outfile)
         opt.vocab = vocab
