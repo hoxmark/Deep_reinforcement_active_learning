@@ -1,3 +1,4 @@
+import os
 import pprint
 import atexit
 import json
@@ -37,11 +38,13 @@ def post_log(name):
     return json.dumps(content)
 
 # Save model
-@app.route('/save_model/<name>', methods=['POST'])
-def save_model(name):
+@app.route('/save_model/<agent>/<episode>/<name>', methods=['POST'])
+def save_model(agent, episode, name):
     pkl = pickle.loads(request.data)
-    filename = '{}/{}.pkl'.format(model_dir, name)
-    pickle.dump(pkl, open(filename, "wb"))
+    filename = '{}/{}/{}/{}.pkl'.format(model_dir, agent, episode, name)
+    os.makedirs(os.path.dirname(filename), exist_ok=True)
+    with open(filename, 'wb') as f:
+        pickle.dump(pkl, f)
     return "success"
 
 # Load model
