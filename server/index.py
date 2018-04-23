@@ -49,8 +49,8 @@ def save_model(agent, episode, name):
 
 # Load model
 @app.route('/load_model/<agent>/<episode>/<name>', methods=['GET'])
-def load_model(name):
-    filename = '{}/{}/{}/{}.pkl'.format(model_dir, agent, episode, name)    
+def load_model(agent, episode, name):
+    filename = '{}/{}/{}/{}.pkl'.format(model_dir, agent, episode, name)
     pkl = pickle.load(open(filename, "rb"))
     return pickle.dumps(pkl)
 
