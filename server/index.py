@@ -48,12 +48,14 @@ def save_model(agent, episode, name):
     return "success"
 
 # Load model
-@app.route('/load_model/<name>', methods=['GET'])
+@app.route('/load_model/<agent>/<episode>/<name>', methods=['GET'])
 def load_model(name):
-    filename = '{}/{}.pkl'.format(model_dir, name)
+    filename = '{}/{}/{}/{}.pkl'.format(model_dir, agent, episode, name)    
     pkl = pickle.load(open(filename, "rb"))
     return pickle.dumps(pkl)
 
+
+# Not yet in use
 # Save chosen parameters
 @app.route('/post_params/<name>', methods=['POST'])
 def post_params(name):
