@@ -87,13 +87,14 @@ class VisdomLogger(object):
 
     def scalar_summary(self, tag, value, step):
         update = None
-        if self.vis.win_exists(tag, opt.logger_name):
+        if step != 0:
             update = 'append'
         self.vis.line(
             Y = np.array([value]),
             X = np.array([step]),
             env = opt.logger_name,
             win = tag,
+            name = tag,
             update = update,
             opts = dict(
                 title = tag

@@ -41,7 +41,7 @@ class Game:
 
         image_caption_distances = image.mm(captions.t())
         image_caption_distances_top10 = torch.abs(torch.topk(
-            image_caption_distances, 10, 1, largest=False)[0])
+            image_caption_distances, opt.topk, 1, largest=False)[0])
 
         observation = torch.autograd.Variable(image_caption_distances_top10)
         if opt.cuda:

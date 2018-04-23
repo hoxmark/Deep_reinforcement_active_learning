@@ -94,6 +94,7 @@ def main():
                         default=False, help='Disable cuda')
     parser.add_argument('--agent', default='dqn', help='Type of reinforcement agent. (dqn | policy)')
     parser.add_argument('--selection_radius', default=1, type=int, help='Selection radius')
+    parser.add_argument('--topk', default=300, type=int, help='Topk similarity to use for state')
 
     params = parser.parse_args()
     params.actions = 2

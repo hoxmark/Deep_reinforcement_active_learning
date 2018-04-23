@@ -7,7 +7,7 @@ class DQN(nn.Module):
     def __init__(self):
         super(DQN, self).__init__()
         # nn.Module.__init__(self)
-        self.IN_SIZE = 10
+        self.IN_SIZE = opt.topk
         self.HIDDEN_SIZE = 256
         self.OUT_SIZE = opt.actions
 
