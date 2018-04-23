@@ -31,13 +31,11 @@ class Game:
         data["captions_embed_all"] = cap_embs
 
     def get_state(self, model):
-        image = torch.FloatTensor(data["images_embed_all"]
-                                  [self.order[self.current_state]]).unsqueeze(0)
+        image = torch.FloatTensor(data["images_embed_all"][self.order[self.current_state]]).unsqueeze(0)
+        captions = torch.FloatTensor(data["captions_embed_all"])
         if opt.cuda:
-            image = image.cuda()
+            image, captions = image.cuda(), captions.cuda()
 
-        captions = data["captions_embed_all"]
-        captions = torch.FloatTensor(captions)
         if opt.cuda:
             captions = captions.cuda()
 
@@ -56,7 +54,7 @@ class Game:
         is_terminal = False
 
         if action == 1:
-            self.query()
+            timer(self.query, ())
             new_performance = self.get_performance(model)
             reward = self.performance - new_performance
             self.performance = new_performance
@@ -74,12 +72,22 @@ class Game:
         return reward, next_observation, is_terminal
 
     def query(self):
-        index = self.order[self.current_state]
-        image = loaders["train_loader"].dataset[index][0]
-        caption = loaders["train_loader"].dataset[index][1]
-        loaders["active_loader"].dataset.add_single(image, caption)
+        current = self.order[self.current_state]
+        # Calculate similarity towards other images
+        current_image = torch.FloatTensor(data["images_embed_all"][current]).view(1, -1)
+        all_images = torch.FloatTensor(data["images_embed_all"])
 
-        self.queried_times += 1
+        if opt.cuda:
+            current_image, all_images = current_image.cuda(), all_images.cuda()
+
+        similarities = torch.nn.functional.cosine_similarity(current_image, all_images)
+        similar_indices = similarities.topk(opt.selection_radius)[1]
+
+        for index in similar_indices:
+            image = loaders["train_loader"].dataset[index][0]
+            caption = loaders["train_loader"].dataset[index][1]
+            loaders["active_loader"].dataset.add_single(image, caption)
+            self.queried_times += 1
 
     def get_performance(self, model):
         timer(self.train_model, (model, loaders["active_loader"]))
