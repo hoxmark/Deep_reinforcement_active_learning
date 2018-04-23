@@ -20,10 +20,10 @@ def train():
 
     # load old model
     file_name = opt.load_model_name
-    if file_name != "": 
+    if file_name != "":
         old_model = load_external_model(file_name)
-        start_episode = int(file_name.split('_')[1])        
-        agent.load_policynetwork(old_model)        
+        start_episode = int(file_name.split('_')[1])
+        agent.load_policynetwork(old_model)
 
     game = Game()
 
@@ -32,7 +32,7 @@ def train():
         game.reboot(model)
         print('##>>>>>>> Episode {} of {} <<<<<<<<<##'.format(episode, opt.episodes))
         terminal = False
-        
+
         state = game.get_state(model)
         while not terminal:
             action = agent.get_action(state)
@@ -57,11 +57,11 @@ def train():
         lg.scalar_summary("episode-validation/r1i", r1i, episode)
         lg.scalar_summary("episode-validation/r5i", r5i, episode)
         lg.scalar_summary("episode-validation/r10i", r10i, episode)
-        lg.scalar_summary("episode-loss", game.performance, episode)
+        lg.scalar_summary("episode-validation/loss", game.performance, episode)
 
 
         # print(agent.policynetwork)
-        # if opt.load_model_name != "": 
+        # if opt.load_model_name != "":
         #     old_model = load_external_model("Episode_0_performance_12.24")
         #     print(old_model.cpu())
         #     agent.set_policynetwork(old_model)
