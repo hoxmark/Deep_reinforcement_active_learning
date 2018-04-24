@@ -77,7 +77,6 @@ def local_logger():
     with open('{}{}/parameters.json'.format(basename, opt.logger_name), 'w') as outfile:
         params = {i: opt[i] for i in opt if i != 'vocab'}
         json.dump(params, outfile)
-        opt.vocab = vocab
     return lg
 
 
