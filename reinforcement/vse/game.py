@@ -36,12 +36,9 @@ class Game:
     def get_state(self, model):
         image = torch.FloatTensor(data["images_embed_all"][self.order[self.current_state]]).view(1, -1)
         captions = torch.FloatTensor(data["captions_embed_all"])
-        image = image.expand(captions.size()[0], image.size()[1])
-        if opt.cuda:
-            image, captions = image.cuda(), captions.cuda()
 
         if opt.cuda:
-            captions = captions.cuda()
+            image, captions = image.cuda(), captions.cuda()
 
         image_caption_similarities = image.mm(captions.t())
         image_caption_similarities_topk = torch.abs(torch.topk(image_caption_similarities, opt.topk, 1)[0])
