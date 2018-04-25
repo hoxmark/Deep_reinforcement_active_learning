@@ -7,7 +7,6 @@ import pickle
 import os
 import tensorboard_logger as tb_logger
 
-from train import train
 from config import opt, data, loaders, global_logger
 from data.evaluation import encode_data
 from data.utils import external_logger, visdom_logger, local_logger, no_logger
@@ -19,8 +18,6 @@ def main():
     parser = argparse.ArgumentParser(description="-----[CNN-classifier]-----")
     parser.add_argument("--mode", default="train",
                         help="train: train (with test) a model / test: test saved models")
-    parser.add_argument('--batch-size', type=int, default=32,
-                        help='batch size for training [default: 32]')
     parser.add_argument("--save_model", default="F",
                         help="whether saving model or not (T/F)")
     parser.add_argument("--load_model_name", default="",
@@ -139,6 +136,8 @@ def main():
     else:
         global_logger["lg"] = no_logger()
 
+    # Import here to make opt include all our parameters
+    from train import train
     train()
 
 if __name__ == "__main__":
