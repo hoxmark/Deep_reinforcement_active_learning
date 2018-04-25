@@ -48,6 +48,9 @@ def train():
             if (action == 1):
                 lg.scalar_summary("last_episode_performance", game.performance, game.queried_times - 1)
 
+                # Reset the model every time we add to train set
+                model = VSE()
+
         agent.finish_episode()
 
         # Logging each episode:

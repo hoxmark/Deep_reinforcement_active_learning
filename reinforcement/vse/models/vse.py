@@ -384,15 +384,15 @@ class VSE(nn.Module):
         """Compute the loss given pairs of image and caption embeddings
         """
         loss = self.criterion(img_emb, cap_emb)
-        self.logger.update('Le', loss.data[0], img_emb.size(0))
+        # self.logger.update('Le', loss.data[0], img_emb.size(0))
         return loss
 
     def train_emb(self, images, captions, lengths, ids=None, *args):
         """One training step given images and captions.
         """
         self.Eiters += 1
-        self.logger.update('Eit', self.Eiters)
-        self.logger.update('lr', self.optimizer.param_groups[0]['lr'])
+        # self.logger.update('Eit', self.Eiters)
+        # self.logger.update('lr', self.optimizer.param_groups[0]['lr'])
 
         # compute the embeddings
         img_emb, cap_emb = self.forward_emb(images, captions, lengths)
