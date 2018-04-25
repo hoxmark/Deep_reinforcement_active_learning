@@ -23,7 +23,8 @@ class Game:
         self.budget = opt.budget
         self.queried_times = 0
         self.current_state = 0
-        self.performance = self.validate(model)
+        self.performance = self.validate(model)        
+        self.init_train_k_random(model, opt.init_samples)
 
     def encode_episode_data(self, model):
         img_embs, cap_embs = timer(encode_data, (model, loaders["train_loader"]))
@@ -88,6 +89,22 @@ class Game:
             caption = loaders["train_loader"].dataset[index][1]
             loaders["active_loader"].dataset.add_single(image, caption)
             self.queried_times += 1
+        
+    def init_train_k_random(self, model, num_of_init_samples):               
+        print(len(self.order))
+        for i in range(1, num_of_init_samples):
+            current = self.order[(-1*i)]
+            image = loaders["train_loader"].dataset[current][0]
+            caption = loaders["train_loader"].dataset[current][1]
+            loaders["active_loader"].dataset.add_single(image, caption)
+            
+            # if i % 500 == 0 or i == 1:
+            #     timer(self.init_train_model, (model, loaders["active_loader"]))
+            #     performance = self.validate(model)
+            #     print(performance)
+        # todo: delete used init samples (?)
+        timer(self.init_train_model, (model, loaders["active_loader"]))
+        print("Validation after training on random data: {}".format(self.validate(model)))
 
     def get_performance(self, model):
         timer(self.train_model, (model, loaders["active_loader"]))
@@ -138,3 +155,11 @@ class Game:
         lr = opt.learning_rate_vse * (0.1 ** (epoch // opt.lr_update))
         for param_group in optimizer.param_groups:
             param_group['lr'] = lr
+
+    def init_train_model(self, model, train_loader):
+        model.train_start()
+        for epoch in range(30):
+            self.adjust_learning_rate(model.optimizer, epoch)
+            for i, train_data in enumerate(train_loader):
+                model.train_start()
+                model.train_emb(*train_data)
