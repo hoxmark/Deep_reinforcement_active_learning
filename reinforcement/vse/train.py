@@ -1,5 +1,5 @@
 from game import Game
-from agents import DQNAgent, PolicyAgent
+from agents import DQNAgent, PolicyAgent, ActorCriticAgent
 from config import data, opt, loaders, global_logger
 from models.vse import VSE
 from data.evaluation import encode_data
@@ -13,6 +13,8 @@ def train():
         agent = PolicyAgent()
     elif opt.agent == 'dqn':
         agent = DQNAgent()
+    elif opt.agent == 'actor_critic':
+        agent = ActorCriticAgent()
     else:
         agent = DQNAgent()
 

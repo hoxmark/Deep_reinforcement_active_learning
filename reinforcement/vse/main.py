@@ -92,7 +92,7 @@ def main():
     parser.add_argument('--log', default="no", help='Choose between: no, external, local, visdom')
     parser.add_argument('--no_cuda', action='store_true',
                         default=False, help='Disable cuda')
-    parser.add_argument('--agent', default='dqn', help='Type of reinforcement agent. (dqn | policy)')
+    parser.add_argument('--agent', default='dqn', help='Type of reinforcement agent. (dqn | policy, actor_critic)')
     parser.add_argument('--selection_radius', default=1, type=int, help='Selection radius')
     parser.add_argument('--topk', default=300, type=int, help='Topk similarity to use for state')
 
