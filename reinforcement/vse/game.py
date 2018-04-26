@@ -25,13 +25,19 @@ class Game:
         self.current_state = 0
 
         self.init_train_k_random(model, opt.init_samples)
-        self.encode_episode_data(model)
+
+        if opt.embedding != 'static':
+            self.encode_episode_data(mode, loaders["train_loader"])
         self.performance = self.validate(model)
 
-    def encode_episode_data(self, model):
-        img_embs, cap_embs = timer(encode_data, (model, loaders["train_loader"]))
+    def encode_episode_data(self, model, loader):
+        img_embs, cap_embs = timer(encode_data, (model, loader))
+        image_caption_similarities = img_embs.mm(cap_embs.t())
+
         data["images_embed_all"] = img_embs
         data["captions_embed_all"] = cap_embs
+        data["image_caption_similarities"] = image_caption_similarities
+
 
     def get_state(self, model):
         image = torch.FloatTensor(data["images_embed_all"][self.order[self.current_state]]).view(1, -1)
@@ -73,14 +79,9 @@ class Game:
 
     def query(self):
         current = self.order[self.current_state]
-        # Calculate similarity towards other images
-        current_image = torch.FloatTensor(data["images_embed_all"][current]).view(1, -1)
-        all_images = torch.FloatTensor(data["images_embed_all"])
 
-        if opt.cuda:
-            current_image, all_images = current_image.cuda(), all_images.cuda()
-
-        similarities = torch.nn.functional.cosine_similarity(current_image, all_images)
+        current_sim_vector = data["image_caption_similarities"]
+        current_all_sim = current_sim_vector.mm(data["image_caption_similarities"].t())
         similar_indices = similarities.topk(opt.selection_radius)[1]
 
         for index in similar_indices:
@@ -105,7 +106,8 @@ class Game:
         performance = self.validate(model)
 
         if (self.queried_times % 20 == 0):
-            self.encode_episode_data(model)
+            if opt.embedding != 'static':
+                self.encode_episode_data(mode, loaders["train_loader"])
         return performance
 
     def performance_validate(self, model):

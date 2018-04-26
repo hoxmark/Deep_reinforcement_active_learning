@@ -29,6 +29,11 @@ def train():
 
     game = Game()
 
+    if opt.embedding == 'static':
+        full_model = VSE()
+        game.train_model(full_model, loaders["train_loader"], epochs=30)
+        game.encode_episode_data(full_model, loaders["train_loader"])
+
     for episode in range(start_episode, opt.episodes):
         model = VSE()
         game.reboot(model)
@@ -53,7 +58,10 @@ def train():
 
         agent.finish_episode()
 
-        # Logging each episode:
+        # Reset model
+        # model = VSE()
+        game.train_model(model, loaders["active_loader"], epochs=(30 - opt.num_epochs))
+
         (performance, r1, r5, r10, r1i, r5i, r10i) = timer(game.performance_validate, (model,))
         lg.scalar_summary("episode-validation/sum", performance, episode)
         lg.scalar_summary("episode-validation/r1", r1, episode)
