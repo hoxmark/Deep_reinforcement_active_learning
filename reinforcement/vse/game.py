@@ -8,7 +8,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 
 from config import opt, data, loaders
-from data.utils import timer
+from data.utils import timer, average_vector, get_distance
 from data.evaluation import encode_data, i2t, t2i
 from data.dataset import get_active_loader
 
@@ -29,10 +29,12 @@ class Game:
         self.performance = self.validate(model)
 
     def encode_episode_data(self, model):
-        img_embs, cap_embs = timer(encode_data, (model, loaders["train_loader"]))
+        img_embs, cap_embs = timer(encode_data, (model, loaders["train_loader"]))        
         data["images_embed_all"] = img_embs
         data["captions_embed_all"] = cap_embs
-
+        data["img_embs_avg"] = average_vector(data["images_embed_all"] )
+        data["cap_embs_avg"] = average_vector(data["captions_embed_all"] )
+        
     def get_state(self, model):
         image = torch.FloatTensor(data["images_embed_all"][self.order[self.current_state]]).view(1, -1)
         captions = torch.FloatTensor(data["captions_embed_all"])
@@ -41,9 +43,16 @@ class Game:
             image, captions = image.cuda(), captions.cuda()
 
         image_caption_similarities = image.mm(captions.t())
-        image_caption_similarities_topk = torch.abs(torch.topk(image_caption_similarities, opt.topk, 1)[0])
-
-        observation = torch.autograd.Variable(image_caption_similarities_topk)
+        image_caption_similarities_topk = torch.abs(torch.topk(image_caption_similarities, opt.topk, 1)[0])                
+        img_distance = get_distance(image, data["img_embs_avg"])        
+        image_dist_tensor = torch.FloatTensor([img_distance])
+        
+        if opt.cuda: 
+            image_dist_tensor = image_dist_tensor.cuda()
+  
+        state = torch.cat((image_caption_similarities_topk, image_dist_tensor.view(1,-1)), 1)        
+        observation = torch.autograd.Variable(state)
+        
         if opt.cuda:
             observation = observation.cuda()
         self.current_state += 1

@@ -12,6 +12,7 @@ import numpy as np
 import plotly.graph_objs as go
 
 from datetime import datetime
+from scipy import spatial
 from plotly.graph_objs import Scatter, Layout
 from gensim.models.keyedvectors import KeyedVectors
 
@@ -87,144 +88,6 @@ def no_logger():
     return lg
 
 
-def read_TREC():
-    def read(mode):
-        z = []
-        with open("{}/TREC/TREC_".format(opt.data_path) + mode + ".txt", "r", encoding="utf-8") as f:
-            for line in f:
-                if line[-1] == "\n":
-                    line = line[:-1]
-                feature = " ".join(line.split()[1:])
-                target = line.split()[0].split(":")[0]
-                z.append((feature, target))
-
-        # Remove duplicates
-        z = list(set(z))
-        x = [tup[0].split() for tup in z]
-        y = [tup[1] for tup in z]
-
-        x, y = shuffle(x, y)
-
-        if mode == "train":
-            dev_idx = len(x) // 10
-            data["dev_x"], data["dev_y"] = x[:dev_idx], y[:dev_idx]
-            data["train_x"], data["train_y"] = x[dev_idx:], y[dev_idx:]
-        else:
-            data["test_x"], data["test_y"] = x, y
-
-    read("train")
-    read("test")
-
-
-def read_MR():
-    x, y = [], []
-
-    with open("{}/MR/rt-polarity.pos".format(opt.data_path), "r", encoding="utf-8") as f:
-        for line in f:
-            if line[-1] == "\n":
-                line = line[:-1]
-            x.append(line.split())
-            y.append(1)
-
-    with open("{}/MR/rt-polarity.neg".format(opt.data_path), "r", encoding="utf-8") as f:
-        for line in f:
-            if line[-1] == "\n":
-                line = line[:-1]
-            x.append(line.split())
-            y.append(0)
-
-    x, y = shuffle(x, y)
-    dev_idx = len(x) // 10 * 8
-    test_idx = len(x) // 10 * 9
-
-    data["train_x"], data["train_y"] = x[:dev_idx], y[:dev_idx]
-    data["dev_x"], data["dev_y"] = x[dev_idx:test_idx], y[dev_idx:test_idx]
-    data["test_x"], data["test_y"] = x[test_idx:], y[test_idx:]
-
-
-def read_MR7025():
-    x, y = [], []
-
-    with open("{}/MR/rt-polarity.pos".format(opt.data_path), "r", encoding="utf-8") as f:
-        for line in f:
-            if line[-1] == "\n":
-                line = line[:-1]
-            x.append(line.split())
-            y.append(1)
-
-    with open("{}/MR/rt-polarity-small.neg".format(opt.data_path), "r", encoding="utf-8") as f:
-        for line in f:
-            if line[-1] == "\n":
-                line = line[:-1]
-            x.append(line.split())
-            y.append(0)
-
-    x, y = shuffle(x, y)
-    dev_idx = len(x) // 10 * 8
-    test_idx = len(x) // 10 * 9
-
-    data["train_x"], data["train_y"] = x[:dev_idx], y[:dev_idx]
-    data["dev_x"], data["dev_y"] = x[dev_idx:test_idx], y[dev_idx:test_idx]
-    data["test_x"], data["test_y"] = x[test_idx:], y[test_idx:]
-
-
-def read_rotten_imdb():
-    data = {}
-    x, y = [], []
-
-    with open("{}/rotten_imdb/rt-polarity.pos".format(opt.data_path), "r", encoding="ISO-8859-1") as f:
-        for line in f:
-            if line[-1] == "\n":
-                line = line[:-1]
-            x.append(line.split())
-            y.append(1)
-
-    with open("{}/rotten_imdb/rt-polarity.neg".format(opt.data_path), "r", encoding="ISO-8859-1") as f:
-        for line in f:
-            if line[-1] == "\n":
-                line = line[:-1]
-            x.append(line.split())
-            y.append(0)
-
-    x, y = shuffle(x, y)
-    dev_idx = len(x) // 10 * 8
-    test_idx = len(x) // 10 * 9
-
-    data["train_x"], data["train_y"] = x[:dev_idx], y[:dev_idx]
-    data["dev_x"], data["dev_y"] = x[dev_idx:test_idx], y[dev_idx:test_idx]
-    data["test_x"], data["test_y"] = x[test_idx:], y[test_idx:]
-
-    return data
-
-
-def read_UMICH():
-    data = {}
-    x, y = [], []
-
-    with open("{}/UMICH/rt-polarity.pos".format(opt.data_path), "r", encoding="utf-8") as f:
-        for line in f:
-            if line[-1] == "\n":
-                line = line[:-1]
-            x.append(line.split())
-            y.append(1)
-
-    with open("{}/UMICH/rt-polarity.neg".format(opt.data_path), "r", encoding="utf-8") as f:
-        for line in f:
-            if line[-1] == "\n":
-                line = line[:-1]
-            x.append(line.split())
-            y.append(0)
-
-    x, y = shuffle(x, y)
-    dev_idx = len(x) // 10 * 8
-    test_idx = len(x) // 10 * 9
-
-    data["train_x"], data["train_y"] = x[:dev_idx], y[:dev_idx]
-    data["dev_x"], data["dev_y"] = x[dev_idx:test_idx], y[dev_idx:test_idx]
-    data["test_x"], data["test_y"] = x[test_idx:], y[test_idx:]
-
-    return data
-
 
 # def save_model(model):
 #     path = "saved_models/{}_{}_{}.pkl".format(opt.dataset, opt.model, opt.epoch)
@@ -281,3 +144,17 @@ def load_word2vec():
     w2v["w2v"] = wv_matrix
     w2v["w2v_kv"] = word_vectors
     # return word_vectors, wv_matrix
+
+
+def average_vector(data):
+    tot_vector = np.zeros(len(data[0]), dtype="float64") #TODO: change size to something better than data[0]
+    for i in range(0,len(data)):
+        tot_vector = np.add(tot_vector, torch.FloatTensor(data[i]))
+    avg_vector = np.divide(tot_vector, len(data))
+    
+    return avg_vector
+
+    
+def get_distance(first, second):
+    distance = spatial.distance.cosine(first, second)
+    return distance
