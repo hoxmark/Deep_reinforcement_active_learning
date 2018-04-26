@@ -61,13 +61,13 @@ class ActorCriticAgent:
             rewards.insert(0, R)
         rewards = torch.Tensor(rewards)
         rewards = (rewards - rewards.mean()) / (rewards.std() + np.finfo(np.float32).eps)
-        for (log_prob, value), r in zip(saved_actions, rewards):
-            reward = r - value
+        for (log_prob, state_value), r in zip(saved_actions, rewards):
+            reward = r - state_value
             policy_losses.append(-log_prob * reward)
             r = Variable(torch.Tensor([r]))
             if opt.cuda:
                 r = r.cuda()
-            value_losses.append(F.smooth_l1_loss(value, r))
+            value_losses.append(F.smooth_l1_loss(state_value, r))
         self.optimizer.zero_grad()
         loss = torch.stack(policy_losses).sum() + torch.stack(value_losses).sum()
         loss.backward()
