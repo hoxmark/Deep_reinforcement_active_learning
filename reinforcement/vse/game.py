@@ -27,11 +27,16 @@ class Game:
         self.init_train_k_random(model, opt.init_samples)
 
         if opt.embedding != 'static':
-            self.encode_episode_data(mode, loaders["train_loader"])
+            self.encode_episode_data(model, loaders["train_loader"])
         self.performance = self.validate(model)
 
     def encode_episode_data(self, model, loader):
         img_embs, cap_embs = timer(encode_data, (model, loader))
+        img_embs, cap_embs = torch.FloatTensor(img_embs), torch.FloatTensor(cap_embs)
+
+        if opt.cuda:
+            img_embs, cap_embs = img_embs.cuda(), cap_embs.cuda()
+
         image_caption_similarities = img_embs.mm(cap_embs.t())
 
         data["images_embed_all"] = img_embs
@@ -40,8 +45,8 @@ class Game:
 
 
     def get_state(self, model):
-        image = torch.FloatTensor(data["images_embed_all"][self.order[self.current_state]]).view(1, -1)
-        captions = torch.FloatTensor(data["captions_embed_all"])
+        image = data["images_embed_all"][self.order[self.current_state]].view(1, -1)
+        captions = data["captions_embed_all"]
 
         if opt.cuda:
             image, captions = image.cuda(), captions.cuda()
@@ -79,12 +84,11 @@ class Game:
 
     def query(self):
         current = self.order[self.current_state]
-
-        current_sim_vector = data["image_caption_similarities"]
+        current_sim_vector = data["image_caption_similarities"][current].view(1, -1)
         current_all_sim = current_sim_vector.mm(data["image_caption_similarities"].t())
-        similar_indices = similarities.topk(opt.selection_radius)[1]
+        similar_indices = current_all_sim.topk(opt.selection_radius)[1]
 
-        for index in similar_indices:
+        for index in similar_indices[0]:
             image = loaders["train_loader"].dataset[index][0]
             caption = loaders["train_loader"].dataset[index][1]
             loaders["active_loader"].dataset.add_single(image, caption)
@@ -107,7 +111,7 @@ class Game:
 
         if (self.queried_times % 20 == 0):
             if opt.embedding != 'static':
-                self.encode_episode_data(mode, loaders["train_loader"])
+                self.encode_episode_data(model, loaders["train_loader"])
         return performance
 
     def performance_validate(self, model):
