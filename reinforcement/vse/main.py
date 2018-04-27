@@ -86,8 +86,7 @@ def main():
     parser.add_argument('--no_imgnorm', action='store_true',
                         help='Do not normalize the image embeddings.')
     parser.add_argument('--reset_train', action='store_true',
-                        help='Ensure the training is always done in '
-                        'train mode (Not recommended).')
+                        help='Ensure the training is always done in train mode (Not recommended).')
     parser.add_argument('--log', default="no", help='Choose between: no, external, local, visdom')
     parser.add_argument('--no_cuda', action='store_true',
                         default=False, help='Disable cuda')
@@ -95,6 +94,8 @@ def main():
     parser.add_argument('--selection_radius', default=1, type=int, help='Selection radius')
     parser.add_argument('--topk', default=300, type=int, help='Topk similarity to use for state')
     parser.add_argument('--embedding', default='static', help='whether to pre-train a model and use its static embeddings or not. (static | train)')
+    parser.add_argument('--image_distance', action='store_true',
+                        help='Include image distance in the state ')
 
     params = parser.parse_args()
     params.actions = 2
@@ -117,6 +118,8 @@ def main():
     loaders["val_loader"] = val_loader          #limited val dataset
     loaders["val_tot_loader"] = val_tot_loader  #Total val dataset for validation each episode
     # TODO Check if this is correct order
+
+    params.state_size = params.topk + 1 if params.image_distance else params.topk
 
     for arg in vars(params):
         opt[arg] = vars(params)[arg]

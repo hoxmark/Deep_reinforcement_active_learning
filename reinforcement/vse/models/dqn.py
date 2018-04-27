@@ -7,7 +7,7 @@ class DQN(nn.Module):
     def __init__(self):
         super(DQN, self).__init__()
         # nn.Module.__init__(self)
-        self.IN_SIZE = opt.topk+1 #TODO make this dynamic, img_dist is only 1 currently
+        self.IN_SIZE = opt.state_size
         self.HIDDEN_SIZE = 256
         self.OUT_SIZE = opt.actions
 

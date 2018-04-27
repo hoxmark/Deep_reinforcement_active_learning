@@ -14,7 +14,7 @@ from config import opt
 class Policy(nn.Module):
     def __init__(self):
         super(Policy, self).__init__()
-        self.affine1 = nn.Linear(opt.topk + 1, 256)
+        self.affine1 = nn.Linear(opt.state_size, 256)
         self.affine2 = nn.Linear(256, 2)
 
         self.saved_log_probs = []
