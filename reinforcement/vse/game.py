@@ -83,7 +83,7 @@ class Game:
             reward = 0.
 
         # TODO fix this
-        if self.queried_times == self.budget:
+        if self.queried_times >= self.budget:
             # Return terminal
             return None, None, True
 

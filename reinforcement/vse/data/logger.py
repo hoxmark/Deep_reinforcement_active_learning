@@ -87,7 +87,10 @@ class VisdomLogger(object):
 
     def scalar_summary(self, tag, value, step):
         update = None
-        if (step - opt.selection_radius) != 0:
+
+        if (tag == 'last_episode_performance') and (step - opt.selection_radius > 0):
+            update = 'append'
+        elif (tag != 'last_episode_performance') and (step > 0):
             update = 'append'
         self.vis.line(
             Y = np.array([value]),
