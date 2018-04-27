@@ -36,7 +36,7 @@ def main():
                         help='Rank loss margin.')
     parser.add_argument('--num_epochs', default=5, type=int,
                         help='Number of training epochs.')
-    parser.add_argument('--init_samples', default=2000, type=int,
+    parser.add_argument('--init_samples', default=0, type=int,
                         help='number of random inital training data')
     parser.add_argument('--batch_size', default=128, type=int,
                         help='Size of a training mini-batch.')

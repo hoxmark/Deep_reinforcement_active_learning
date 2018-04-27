@@ -3,7 +3,7 @@ from agents import DQNAgent, PolicyAgent, ActorCriticAgent
 from config import data, opt, loaders, global_logger
 from models.vse import VSE
 from data.evaluation import encode_data
-from data.utils import save_model, timer, load_external_model
+from data.utils import save_model, timer, load_external_model, average_vector
 
 
 def train():
@@ -28,6 +28,10 @@ def train():
         agent.load_policynetwork(old_model)
 
     game = Game()
+
+    #TODO: If static embedding leave it here, if dynamic -> move it
+    # data["img_embs_avg"] = average_vector(data["images_embed_all"] )
+    # data["cap_embs_avg"] = average_vector(data["captions_embed_all"] )
 
     if opt.embedding == 'static':
         full_model = VSE()

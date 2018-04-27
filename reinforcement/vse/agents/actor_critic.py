@@ -17,7 +17,7 @@ GAMMA = 0.99
 class Policy(nn.Module):
     def __init__(self):
         super(Policy, self).__init__()
-        self.affine1 = nn.Linear(opt.topk, 256)
+        self.affine1 = nn.Linear(opt.topk + 1, 256)
         self.action_head = nn.Linear(256, 2)
         self.value_head = nn.Linear(256, 1)
 
