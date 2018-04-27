@@ -1,5 +1,5 @@
 from game import Game
-from agents import DQNAgent, PolicyAgent, ActorCriticAgent
+from agents import DQNAgent, DQNTargetAgent, PolicyAgent, ActorCriticAgent
 from config import data, opt, loaders, global_logger
 from models.vse import VSE
 from data.evaluation import encode_data
@@ -13,6 +13,8 @@ def train():
         agent = PolicyAgent()
     elif opt.agent == 'dqn':
         agent = DQNAgent()
+    elif opt.agent == 'dqn_target':
+        agent = DQNTargetAgent()
     elif opt.agent == 'actor_critic':
         agent = ActorCriticAgent()
     else:
@@ -60,7 +62,7 @@ def train():
                 # Reset the model every time we add to train set
                 model = VSE()
 
-        agent.finish_episode()
+        agent.finish_episode(episode)
 
         # Reset model
         # model = VSE()
