@@ -50,7 +50,7 @@ class ActorCriticAgent:
         self.policynetwork.rewards.append(reward)
 
 
-    def finish_episode(self):
+    def finish_episode(self, episode):
         R = 0
         saved_actions = self.policynetwork.saved_actions
         policy_losses = []

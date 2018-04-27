@@ -24,16 +24,18 @@ UPDATE_TIME = 100
 EXPLORE = 100000.  # frames over which to anneal epsilon
 
 
-class DQNAgent:
+class DQNTargetAgent:
     def __init__(self):
         self.replay_memory = deque()
         self.time_step = 0
         self.actions = opt.actions
         self.epsilon = INITIAL_EPSILON
         self.policynetwork = DQN()
+        self.targetnetwork = DQN()
 
         if opt.cuda:
             self.policynetwork = self.policynetwork.cuda()
+            self.targetnetwork = self.targetnetwork.cuda()
 
     def initialise(self):
         self.policynetwork = DQN()
@@ -59,7 +61,7 @@ class DQNAgent:
             batch_next_state = batch_next_state.cuda()
 
         current_q_values = self.policynetwork(batch_state).gather(1, batch_action)
-        max_next_q_values = self.policynetwork(batch_next_state).max(1)[0]
+        max_next_q_values = self.targetnetwork(batch_next_state).max(1)[0]
         expected_q_values = batch_reward + (GAMMA * max_next_q_values)
         # Undo volatility introduced above
         expected_q_values = Variable(expected_q_values.data)
@@ -98,4 +100,6 @@ class DQNAgent:
         return action
 
     def finish_episode(self, episode):
-        pass
+        # Update target network every 10 epoch
+        if episode % 10 == 0:
+            self.targetnetwork.load_state_dict(self.policynetwork.state_dict())

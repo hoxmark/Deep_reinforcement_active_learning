@@ -46,7 +46,7 @@ class PolicyAgent:
     def update(self, state, action, reward, next_state, terminal):
         self.policynetwork.rewards.append(reward)
 
-    def finish_episode(self):
+    def finish_episode(self, episode):
         # TODO time this
         R = 0
         policy_loss = []
