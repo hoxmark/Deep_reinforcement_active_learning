@@ -55,7 +55,7 @@ def train():
             print("\n")
             state = next_state
             if (action == 1):
-                lg.scalar_summary("last_episode_performance", game.performance, game.queried_times - 1)
+                lg.scalar_summary("last_episode_performance", game.performance, game.queried_times)
 
                 # Reset the model every time we add to train set
                 model = VSE()
