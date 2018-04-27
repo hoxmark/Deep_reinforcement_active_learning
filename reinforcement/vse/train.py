@@ -1,9 +1,10 @@
+import os
 from game import Game
 from agents import DQNAgent, PolicyAgent, ActorCriticAgent
 from config import data, opt, loaders, global_logger
 from models.vse import VSE
 from data.evaluation import encode_data
-from data.utils import save_model, timer, load_external_model, average_vector
+from data.utils import save_model, timer, load_external_model, average_vector, save_VSE_model,get_full_VSE_model
 
 
 def train():
@@ -26,17 +27,27 @@ def train():
         old_model = load_external_model(file_name)
         start_episode = int(file_name.split('/')[1])
         agent.load_policynetwork(old_model)
-
+ 
     game = Game()
 
     #TODO: If static embedding leave it here, if dynamic -> move it
     # data["img_embs_avg"] = average_vector(data["images_embed_all"] )
     # data["cap_embs_avg"] = average_vector(data["captions_embed_all"] )
 
-    if opt.embedding == 'static':
-        full_model = VSE()
-        game.train_model(full_model, loaders["train_loader"], epochs=30)
-        game.encode_episode_data(full_model, loaders["train_loader"])
+    if opt.embedding == 'static' :
+        path_to_full_model ="{}/fullModel.pth.tar".format(opt.data_path)
+        full_model = VSE()     
+           
+        if os.path.isfile(path_to_full_model):
+            get_full_VSE_model(full_model,path_to_full_model)               
+            game.encode_episode_data(full_model, loaders["train_loader"])
+            
+        else:            
+            print("No old model found, training a new one")
+            print("Please wait... ")
+            game.train_model(full_model, loaders["train_loader"], epochs=30)
+            game.encode_episode_data(full_model, loaders["train_loader"])
+            save_VSE_model(full_model.state_dict(), path=opt.data_path)
 
     for episode in range(start_episode, opt.episodes):
         model = VSE()
@@ -75,7 +86,20 @@ def train():
         lg.scalar_summary("episode-validation/r5i", r5i, episode)
         lg.scalar_summary("episode-validation/r10i", r10i, episode)
         lg.scalar_summary("episode-validation/loss", game.performance, episode)
-
+        
+        # print("first:")
+        # print(model.state_dict())
+        # save_VSE_model(model.state_dict(), path=opt.data_path)
+        
+        # new_m = VSE()
+        # path_to_full_model ="{}/fullModel.pth.tar".format(opt.data_path)
+        
+        # get_full_VSE_model(new_m,path_to_full_model) 
+        
+        # print("last:")
+        # print(new_m.state_dict())
+                   
+        # quit()
 
         # print(agent.policynetwork)
         # if opt.load_model_name != "":

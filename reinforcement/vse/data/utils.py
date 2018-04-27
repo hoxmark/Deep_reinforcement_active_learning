@@ -7,6 +7,8 @@ import torch
 import plotly
 import json
 import copy
+import shutil
+import os
 
 import numpy as np
 import plotly.graph_objs as go
@@ -158,3 +160,14 @@ def average_vector(data):
 def get_distance(first, second):
     distance = spatial.distance.cosine(first, second)
     return distance
+
+def save_VSE_model(state, filename='fullModel.pth.tar', path=''):
+    save_to_path = "{}{}".format(path, filename)
+    torch.save(state, save_to_path)
+
+def get_full_VSE_model(full_model, path_to_full_model):    
+    if os.path.isfile(path_to_full_model):
+        full_model.load_state_dict(torch.load(path_to_full_model))   
+        return full_model     
+    else:
+        print("=> no checkpoint found at '{}'".format(opt.data_path))
