@@ -93,6 +93,7 @@ def main():
     parser.add_argument('--agent', default='dqn', help='Type of reinforcement agent. (dqn | policy, actor_critic)')
     parser.add_argument('--selection_radius', default=1, type=int, help='Selection radius')
     parser.add_argument('--topk', default=300, type=int, help='Topk similarity to use for state')
+    parser.add_argument('--topk_image', default=100, type=int, help='Topk similarity images to use for state')
     parser.add_argument('--embedding', default='static', help='whether to pre-train a model and use its static embeddings or not. (static | train)')
     parser.add_argument('--image_distance', action='store_true',
                         help='Include image distance in the state ')
@@ -119,7 +120,8 @@ def main():
     loaders["val_tot_loader"] = val_tot_loader  #Total val dataset for validation each episode
     # TODO Check if this is correct order
 
-    params.state_size = params.topk + 1 if params.image_distance else params.topk
+
+    params.state_size = params.topk + params.topk_image + 1 if params.image_distance else params.topk + params.topk_image
 
     for arg in vars(params):
         opt[arg] = vars(params)[arg]
