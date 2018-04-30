@@ -34,22 +34,22 @@ class Game:
         img_embs, cap_embs = timer(encode_data, (model, loader))
         images, captions = torch.FloatTensor(img_embs), torch.FloatTensor(cap_embs)
 
-        image_caption_similarities = pairwise_distances(images, captions)
-        image_caption_similarities_topk = torch.topk(image_caption_similarities, opt.topk, 1, largest=False)[0]
+        image_caption_distances = pairwise_distances(images, captions)
+        image_caption_distances_topk = torch.topk(image_caption_distances, opt.topk, 1, largest=False)[0]
 
         if opt.cuda:
-            image_caption_similarities_topk = image_caption_similarities_topk.cuda()
+            image_caption_distances_topk = image_caption_distances_topk.cuda()
 
 
         data["images_embed_all"] = img_embs
         data["captions_embed_all"] = cap_embs
-        data["image_caption_similarities_topk"] = image_caption_similarities_topk
+        data["image_caption_distances_topk"] = image_caption_distances_topk
         data["img_embs_avg"] = average_vector(data["images_embed_all"])
         data["cap_embs_avg"] = average_vector(data["captions_embed_all"])
 
     def get_state(self, model):
         current_idx = self.order[self.current_state]
-        image_topk = data["image_caption_similarities_topk"][current_idx].view(1, -1)
+        image_topk = data["image_caption_distances_topk"][current_idx].view(1, -1)
         state = image_topk
 
         if opt.image_distance:
@@ -91,10 +91,10 @@ class Game:
 
     def query(self):
         current = self.order[self.current_state]
-        current_sim_vector = data["image_caption_similarities_topk"][current].view(1, -1)
-        all_sim_vectors = data["image_caption_similarities_topk"]
-        current_all_sim = pairwise_distances(current_sim_vector, all_sim_vectors)
-        similar_indices = torch.topk(current_all_sim, opt.selection_radius, 1, largest=False)[1]
+        current_dist_vector = data["image_caption_distances_topk"][current].view(1, -1)
+        all_dist_vectors = data["image_caption_distances_topk"]
+        current_all_dist = pairwise_distances(current_dist_vector, all_dist_vectors)
+        similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
 
         for index in similar_indices[0]:
             image = loaders["train_loader"].dataset[index][0]
