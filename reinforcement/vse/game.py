@@ -66,12 +66,12 @@ class Game:
             state = torch.cat((state, image_image_dist_topk), 1)
 
 
-        # TODO doesnt work cause of imdiv redundancy
         # Distance from average image vector
-        # if opt.image_distance:
-        #     img_distance = get_distance(current_image, data["img_embs_avg"])
-        #     image_dist_tensor = torch.FloatTensor([img_distance]).view(1, -1)
-        #     state = torch.cat((state, image_dist_tensor), 1)
+        if opt.image_distance:
+            current_image = data["images_embed_all"][current_idx].view(1 ,-1)
+            img_distance = get_distance(current_image, data["img_embs_avg"].view(1, -1))
+            image_dist_tensor = torch.FloatTensor([img_distance]).view(1, -1)
+            state = torch.cat((state, image_dist_tensor), 1)
 
         observation = torch.autograd.Variable(state)
         if opt.cuda:
