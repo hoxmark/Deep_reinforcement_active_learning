@@ -113,12 +113,13 @@ def train():
         # print("ETter")
         # print(agent.policynetwork)
         # Save the model
-        model_path = '{}/{}'.format(opt.agent, str(episode).zfill(4) )
-        model_name = '{:.2f}'.format(performance)
-        path = "{}/{}".format(model_path, model_name)
-        print(path)
-        save_model(path, agent.policynetwork.cpu())
+        if opt.agent != 'random':
+            model_path = '{}/{}'.format(opt.agent, str(episode).zfill(4) )
+            model_name = '{:.2f}'.format(performance)
+            path = "{}/{}".format(model_path, model_name)
+            print(path)
+            save_model(path, agent.policynetwork.cpu())
 
-        # Move it back to the GPU.
-        if opt.cuda:
-            agent.policynetwork.cuda()
+            # Move it back to the GPU.
+            if opt.cuda:
+                agent.policynetwork.cuda()

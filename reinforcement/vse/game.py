@@ -8,7 +8,7 @@ import torch.nn as nn
 from torch.autograd import Variable
 
 from config import opt, data, loaders
-from data.utils import timer, average_vector, get_distance
+from data.utils import timer, average_vector, get_distance, pairwise_distances
 from data.evaluation import encode_data, i2t, t2i
 from data.dataset import get_active_loader
 
@@ -34,8 +34,8 @@ class Game:
         img_embs, cap_embs = timer(encode_data, (model, loader))
         images, captions = torch.FloatTensor(img_embs), torch.FloatTensor(cap_embs)
 
-        image_caption_similarities = images.mm(captions.t())
-        image_caption_similarities_topk = torch.topk(image_caption_similarities, opt.topk, 1)[0]
+        image_caption_similarities = pairwise_distances(images, captions)
+        image_caption_similarities_topk = torch.topk(image_caption_similarities, opt.topk, 1, largest=False)[0]
 
         if opt.cuda:
             image_caption_similarities_topk = image_caption_similarities_topk.cuda()
@@ -53,7 +53,7 @@ class Game:
         state = image_topk
 
         if opt.image_distance:
-            image = torch.FloatTensor(data["images_embed_all"][self.order[self.current_state]]).view(1, -1)
+            image = torch.FloatTensor(data["images_embed_all"][current_idx]).view(1, -1)
             img_distance = get_distance(image, data["img_embs_avg"])
             image_dist_tensor = torch.FloatTensor([img_distance])
 
@@ -92,8 +92,9 @@ class Game:
     def query(self):
         current = self.order[self.current_state]
         current_sim_vector = data["image_caption_similarities_topk"][current].view(1, -1)
-        current_all_sim = current_sim_vector.mm(data["image_caption_similarities_topk"].t())
-        similar_indices = current_all_sim.topk(opt.selection_radius)[1]
+        all_sim_vectors = data["image_caption_similarities_topk"]
+        current_all_sim = pairwise_distances(current_sim_vector, all_sim_vectors)
+        similar_indices = torch.topk(current_all_sim, opt.selection_radius, 1, largest=False)[1]
 
         for index in similar_indices[0]:
             image = loaders["train_loader"].dataset[index][0]
