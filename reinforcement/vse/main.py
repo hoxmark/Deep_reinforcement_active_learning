@@ -93,7 +93,7 @@ def main():
     parser.add_argument('--agent', default='dqn', help='Type of reinforcement agent. (dqn | policy, actor_critic)')
     parser.add_argument('--selection_radius', default=1, type=int, help='Selection radius')
     parser.add_argument('--topk', default=300, type=int, help='Topk similarity to use for state')
-    parser.add_argument('--topk_image', default=100, type=int, help='Topk similarity images to use for state')
+    parser.add_argument('--topk_image', default=0, type=int, help='Topk similarity images to use for state')
     parser.add_argument('--embedding', default='static', help='whether to pre-train a model and use its static embeddings or not. (static | train)')
     parser.add_argument('--image_distance', action='store_true',
                         help='Include image distance in the state ')
