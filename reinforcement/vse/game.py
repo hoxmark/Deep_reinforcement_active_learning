@@ -163,7 +163,7 @@ class Game:
             img_emb, cap_emb = model.forward_emb(images, captions, lengths, volatile=True)
             loss = model.forward_loss(img_emb, cap_emb)
             total_loss += loss.data[0]
-        return total_loss / loaders["val_loader"].dataset.length
+        return total_loss
 
     def train_model(self, model, train_loader, epochs=opt.num_epochs):
         model.train_start()
