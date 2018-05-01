@@ -62,8 +62,6 @@ def main():
                         help='Number of steps to print and record the log.')
     parser.add_argument('--val_step', default=500, type=int,
                         help='Number of steps to run validation.')
-    parser.add_argument('--logger_name', default='/data/stud/jorgebjorn/runs/{}/{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M")),
-                        help='Path to save the model and Tensorboard log.')
     parser.add_argument('--resume', default='', type=str, metavar='PATH',
                         help='path to latest checkpoint (default: none)')
     parser.add_argument('--max_violation', action='store_true',
@@ -100,7 +98,8 @@ def main():
 
     params = parser.parse_args()
     params.actions = 2
-    params.logger_name = '{}_{}'.format(datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), params.agent)
+    params.logger_name = '{}_{}_{}_topk_{}_topkimage_{}_imagesim_{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), params.agent, params.topk, params.topk_image, params.image_distance)
+    print(params.logger_name)
     params.external_log_url = 'http://logserver.duckdns.org:5000'
 
     if torch.cuda.is_available():
