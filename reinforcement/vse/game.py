@@ -109,7 +109,7 @@ class Game:
         similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
 
         for index in similar_indices[0]:
-            image = loaders["train_loader"].dataset[index][0]
+            image = loaders["train_loader"].dataset[5 * index][0]
             # There are 5 captions for every image
             for cap in range(5):
                 caption = loaders["train_loader"].dataset[5 * index + cap][1]
