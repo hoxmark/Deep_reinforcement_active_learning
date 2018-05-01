@@ -112,7 +112,7 @@ class Game:
             image = loaders["train_loader"].dataset[index][0]
             # There are 5 captions for every image
             for cap in range(5):
-                caption = loaders["train_loader"].dataset[index + cap][1]
+                caption = loaders["train_loader"].dataset[5 * index + cap][1]
                 loaders["active_loader"].dataset.add_single(image, caption)
             # Only count images as an actual request.
             # Reuslt is that we have 5 times as many training points as requests.
