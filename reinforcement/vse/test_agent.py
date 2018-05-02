@@ -6,12 +6,13 @@ from torch.autograd import Variable
 from config import opt
 
 def main():
-    env = gym.make('CartPole-v0')
-    env = env.unwrapped
-
     parser = argparse.ArgumentParser(description="-----[Agent tester]-----")
     parser.add_argument('--agent', default='dqn_target', help='Type of reinforcement agent. (dqn | policy, actor_critic)')
+    parser.add_argument('--env', default='CartPole-v0', help='Type of reinforcement env.')
     params = parser.parse_args()
+    
+    env = gym.make(params.env)
+    env = env.unwrapped
 
     opt.actions = env.action_space.n
     opt.state_size = env.observation_space.shape[0]
@@ -42,10 +43,11 @@ def main():
             # take action
             s_, r, done, info = env.step(a)
             # modify the reward
-            x, x_dot, theta, theta_dot = s_
-            r1 = (env.x_threshold - abs(x)) / env.x_threshold - 0.8
-            r2 = (env.theta_threshold_radians - abs(theta)) / env.theta_threshold_radians - 0.5
-            r = r1 + r2
+            if params.env == 'CartPole-V0':
+                x, x_dot, theta, theta_dot = s_
+                r1 = (env.x_threshold - abs(x)) / env.x_threshold - 0.8
+                r2 = (env.theta_threshold_radians - abs(theta)) / env.theta_threshold_radians - 0.5
+                r = r1 + r2
 
             s_ = Variable(torch.FloatTensor(s_)).view(1, -1)
             agent.update(s, a, r, s_, done)

@@ -13,7 +13,7 @@ from config import opt
 # Hyper Parameters:
 GAMMA = 0.99  # decay rate of past observations
 OBSERVE = 32  # timesteps to observe before training
-REPLAY_MEMORY_SIZE = 1000  # number of previous transitions to remember
+REPLAY_MEMORY_SIZE = 2000  # number of previous transitions to remember
 BATCH_SIZE = 32  # size of minibatch
 # FINAL_EPSILON = 0
 # INITIAL_EPSILON = 0.1

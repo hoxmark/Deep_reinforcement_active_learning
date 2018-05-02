@@ -17,9 +17,9 @@ GAMMA = 0.99
 class Policy(nn.Module):
     def __init__(self):
         super(Policy, self).__init__()
-        self.affine1 = nn.Linear(opt.state_size, 256)
-        self.action_head = nn.Linear(256, 2)
-        self.value_head = nn.Linear(256, 1)
+        self.affine1 = nn.Linear(opt.state_size, opt.hidden_size)
+        self.action_head = nn.Linear(opt.hidden_size, 2)
+        self.value_head = nn.Linear(opt.hidden_size, 1)
 
         self.saved_actions = []
         self.rewards = []

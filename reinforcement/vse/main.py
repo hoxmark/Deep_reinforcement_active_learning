@@ -24,6 +24,8 @@ def main():
                         help="Name of the model to load from external server")
     parser.add_argument("--episodes", default=10000, type=int,
                         help="number of episodes")
+    parser.add_argument("--hidden_size", default=512, type=int,
+                        help="Size of hidden layer in deep RL")
     parser.add_argument("--learning_rate_rl", default=0.1,
                         type=float, help="learning rate")
     parser.add_argument('--data_path', default='/data/stud/jorgebjorn/data/',
@@ -93,8 +95,7 @@ def main():
     parser.add_argument('--topk', default=300, type=int, help='Topk similarity to use for state')
     parser.add_argument('--topk_image', default=0, type=int, help='Topk similarity images to use for state')
     parser.add_argument('--embedding', default='static', help='whether to pre-train a model and use its static embeddings or not. (static | train)')
-    parser.add_argument('--image_distance', action='store_true',
-                        help='Include image distance in the state ')
+    parser.add_argument('--image_distance', action='store_true', help='Include image distance in the state ')
 
     params = parser.parse_args()
     params.actions = 2

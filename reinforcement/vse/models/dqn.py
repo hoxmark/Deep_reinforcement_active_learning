@@ -8,7 +8,7 @@ class DQN(nn.Module):
         super(DQN, self).__init__()
         # nn.Module.__init__(self)
         self.IN_SIZE = opt.state_size
-        self.HIDDEN_SIZE = 256
+        self.HIDDEN_SIZE = opt.hidden_size
         self.OUT_SIZE = opt.actions
 
         self.fc = nn.Linear(self.IN_SIZE, self.HIDDEN_SIZE)
