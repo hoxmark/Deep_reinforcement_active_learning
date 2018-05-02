@@ -42,6 +42,8 @@ class DQNAgent:
         self.policynetwork.load_state_dict(old_modal)
 
     def train_policynetwork(self):
+        if len(self.replay_memory) < BATCH_SIZE:
+            return
         optimizer = optim.Adam(self.policynetwork.parameters(), 0.001)
         minibatch = random.sample(self.replay_memory, BATCH_SIZE)
 
