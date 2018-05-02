@@ -34,10 +34,6 @@ def train():
 
     game = Game()
 
-    #TODO: If static embedding leave it here, if dynamic -> move it
-    # data["img_embs_avg"] = average_vector(data["images_embed_all"] )
-    # data["cap_embs_avg"] = average_vector(data["captions_embed_all"] )
-
     if opt.embedding == 'static' :
         path_to_full_model ="{}/fullModel.pth.tar".format(opt.data_path)
         full_model = VSE()
