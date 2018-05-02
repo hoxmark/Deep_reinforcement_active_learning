@@ -13,7 +13,7 @@ from config import opt
 # Hyper Parameters:
 GAMMA = 0.99  # decay rate of past observations
 OBSERVE = 32  # timesteps to observe before training
-REPLAY_MEMORY_SIZE = 1000  # number of previous transitions to remember
+REPLAY_MEMORY_SIZE = 2000  # number of previous transitions to remember
 BATCH_SIZE = 32  # size of minibatch
 # FINAL_EPSILON = 0
 # INITIAL_EPSILON = 0.1
@@ -32,6 +32,8 @@ class DQNTargetAgent:
         self.epsilon = INITIAL_EPSILON
         self.policynetwork = DQN()
         self.targetnetwork = DQN()
+        self.optimizer = optim.Adam(self.policynetwork.parameters(), 0.01)
+
 
         if opt.cuda:
             self.policynetwork = self.policynetwork.cuda()
@@ -44,7 +46,6 @@ class DQNTargetAgent:
         self.policynetwork.load_state_dict(old_modal)
 
     def train_policynetwork(self):
-        optimizer = optim.Adam(self.policynetwork.parameters(), 0.001)
         minibatch = random.sample(self.replay_memory, BATCH_SIZE)
 
         batch_state, batch_action, batch_reward, batch_next_state, batch_terminal = zip(*minibatch)
@@ -68,11 +69,11 @@ class DQNTargetAgent:
 
         if opt.cuda:
             expected_q_values = expected_q_values.cuda()
-        loss = F.smooth_l1_loss(current_q_values, expected_q_values)
+        loss = F.mse_loss(current_q_values, expected_q_values)
 
-        optimizer.zero_grad()
+        self.optimizer.zero_grad()
         loss.backward()
-        optimizer.step()
+        self.optimizer.step()
 
 
     def update(self, current_state, action, reward, next_state, terminal):
