@@ -92,7 +92,7 @@ class Game:
             reward = 0.
 
         # TODO fix this
-        if self.queried_times >= self.budget:
+        if self.queried_times >= self.budget or self.current_state >= len(self.order):
             # Return terminal
             return None, None, True
 

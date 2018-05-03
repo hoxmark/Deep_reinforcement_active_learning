@@ -31,6 +31,7 @@ class DQNAgent:
         self.actions = opt.actions
         self.epsilon = INITIAL_EPSILON
         self.policynetwork = DQN()
+        self.optimizer = optim.Adam(self.policynetwork.parameters(), 0.01)
 
         if opt.cuda:
             self.policynetwork = self.policynetwork.cuda()
@@ -44,7 +45,6 @@ class DQNAgent:
     def train_policynetwork(self):
         if len(self.replay_memory) < BATCH_SIZE:
             return
-        optimizer = optim.Adam(self.policynetwork.parameters(), 0.001)
         minibatch = random.sample(self.replay_memory, BATCH_SIZE)
 
         batch_state, batch_action, batch_reward, batch_next_state, batch_terminal = zip(*minibatch)
@@ -68,11 +68,11 @@ class DQNAgent:
 
         if opt.cuda:
             expected_q_values = expected_q_values.cuda()
-        loss = F.smooth_l1_loss(current_q_values, expected_q_values)
+        loss = F.mse_loss(current_q_values, expected_q_values)
 
-        optimizer.zero_grad()
+        self.optimizer.zero_grad()
         loss.backward()
-        optimizer.step()
+        self.optimizer.step()
 
 
     def update(self, current_state, action, reward, next_state, terminal):
