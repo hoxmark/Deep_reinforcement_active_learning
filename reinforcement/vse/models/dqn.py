@@ -12,13 +12,13 @@ class DQN(nn.Module):
 
         self.fc1 = nn.Linear(self.IN_SIZE, self.HIDDEN_SIZE)
         self.fc2 = nn.Linear(self.HIDDEN_SIZE, self.OUT_SIZE)
-        self.relu = nn.ReLU()
+        self.activation = nn.Tanh() if opt.reward_clip else nn.ReLU()
 
         self.fc1.weight.data.normal_(0, 0.1)   # initialization
         self.fc1.weight.data.normal_(0, 0.1)   # initialization
 
 
     def forward(self, inp):
-        x = F.relu(self.fc1(inp))
+        x = self.activation(self.fc1(inp))
         x = self.fc2(x)
         return x

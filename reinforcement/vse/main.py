@@ -96,6 +96,7 @@ def main():
     parser.add_argument('--topk_image', default=0, type=int, help='Topk similarity images to use for state')
     parser.add_argument('--embedding', default='static', help='whether to pre-train a model and use its static embeddings or not. (static | train)')
     parser.add_argument('--image_distance', action='store_true', help='Include image distance in the state ')
+    parser.add_argument('--reward_clip', action='store_true', help='Clip rewards using tanh')
 
     params = parser.parse_args()
     params.actions = 2
