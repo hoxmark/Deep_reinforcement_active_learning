@@ -24,7 +24,7 @@ def main():
                         help="Name of the model to load from external server")
     parser.add_argument("--episodes", default=10000, type=int,
                         help="number of episodes")
-    parser.add_argument("--hidden_size", default=512, type=int,
+    parser.add_argument("--hidden_size", default=64, type=int,
                         help="Size of hidden layer in deep RL")
     parser.add_argument("--learning_rate_rl", default=0.1,
                         type=float, help="learning rate")
@@ -41,6 +41,8 @@ def main():
     parser.add_argument('--init_samples', default=0, type=int,
                         help='number of random inital training data')
     parser.add_argument('--batch_size', default=128, type=int,
+                        help='Size of a training mini-batch.')
+    parser.add_argument('--batch_size_rl', default=64, type=int,
                         help='Size of a training mini-batch.')
     parser.add_argument('--budget', default=150, type=int,
                         help='Our labeling budget')

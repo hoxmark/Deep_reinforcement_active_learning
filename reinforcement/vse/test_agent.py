@@ -17,6 +17,7 @@ def main():
     opt.actions = env.action_space.n
     opt.state_size = env.observation_space.shape[0]
     opt.hidden_size = 50
+    opt.batch_size_rl = 64
     opt.cuda = False
     opt.reward_clip = True
 
@@ -36,31 +37,28 @@ def main():
 
     print('\nCollecting experience...')
     for i_episode in range(4000):
-        s = env.reset()
-        s = Variable(torch.FloatTensor(s)).view(1, -1)
-        ep_r = 0
-        while True:
+        state = env.reset()
+        state = Variable(torch.FloatTensor(state)).view(1, -1)
+        score = 0
+        done = False
+        while not done:
             env.render()
-            a = int(agent.get_action(s))
-            # take action
-            s_, r, done, info = env.step(a)
-            # modify the reward
-            if params.env == 'CartPole-v0':
-                x, x_dot, theta, theta_dot = s_
-                r1 = (env.x_threshold - abs(x)) / env.x_threshold - 0.8
-                r2 = (env.theta_threshold_radians - abs(theta)) / env.theta_threshold_radians - 0.5
-                r = r1 + r2
-            s_ = Variable(torch.FloatTensor(s_)).view(1, -1)
-            agent.update(s, a, r, s_, done)
+            action = agent.get_action(state)
+            next_state, reward, done, info = env.step(action)
+            next_state = Variable(torch.FloatTensor(next_state)).view(1, -1)
 
-            ep_r += r
+            # if an action make the episode end, then gives penalty of -100
+            reward = reward if not done or score == 499 else -10
+            agent.update(state, action, reward, next_state, done)
+
+            score += reward
+            state = next_state
 
             if done:
-                print('Ep: ', i_episode,
-                      '| Ep_r: ', round(ep_r, 2))
                 agent.finish_episode(i_episode)
+                print('Ep: ', i_episode,
+                      '| Ep_r: ', round(score, 2))
                 break
-            s = s_
 
 if __name__ == "__main__":
     main()
