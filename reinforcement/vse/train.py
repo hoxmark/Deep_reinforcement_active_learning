@@ -58,6 +58,10 @@ def train():
         while not terminal:
             action = agent.get_action(state)
             reward, next_state, terminal = game.feedback(action, model)
+            if terminal:
+                agent.finish_episode(episode)
+                break
+                
             agent.update(state, action, reward, next_state, terminal)
             print("\n")
             state = next_state
@@ -65,10 +69,6 @@ def train():
                 lg.scalar_summary("last_episode_performance", game.performance, game.queried_times)
                 # Reset the model every time we add to train set
                 model = VSE()
-
-            if terminal:
-                agent.finish_episode(episode)
-                break
 
         # Reset model
         model = VSE()

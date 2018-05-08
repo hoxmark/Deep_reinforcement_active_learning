@@ -56,15 +56,15 @@ class DQNTargetAgent():
         self.memory = Memory(self.memory_size)
 
         # create main model and target model
-        self.model = DQN()
-        self.model.apply(self.weights_init)
-        self.target_model = DQN()
+        self.policynetwork = DQN()
+        self.policynetwork.apply(self.weights_init)
+        self.targetnetwork = DQN()
 
         if opt.cuda:
-            self.model, self.target_model = self.model.cuda(), self.target_model.cuda()
+            self.policynetwork, self.targetnetwork = self.policynetwork.cuda(), self.targetnetwork.cuda()
 
 
-        self.optimizer = optim.Adam(self.model.parameters(),
+        self.optimizer = optim.Adam(self.policynetwork.parameters(),
                                     lr=self.learning_rate)
 
         # initialize target model
@@ -78,22 +78,22 @@ class DQNTargetAgent():
 
     # after some time interval update the target model to be same with model
     def update_target_model(self):
-        self.target_model.load_state_dict(self.model.state_dict())
+        self.targetnetwork.load_state_dict(self.policynetwork.state_dict())
 
     # get action from model using epsilon-greedy policy
     def get_action(self, state):
         if np.random.rand() <= self.epsilon:
             return random.randrange(self.action_size)
         else:
-            q_value = self.model(state)
+            q_value = self.policynetwork(state)
             _, action = torch.max(q_value, 1)
             return int(action)
 
     # save sample (error,<s,a,r,s'>) to the replay memory
     def update(self, state, action, reward, next_state, done):
-        target = self.model(state).data
+        target = self.policynetwork(state).data
         old_val = target[0][action]
-        target_val = self.target_model(next_state).data
+        target_val = self.targetnetwork(next_state).data
         if done:
             target[0][action] = reward
         else:
@@ -128,8 +128,8 @@ class DQNTargetAgent():
             batch_reward = batch_reward.cuda()
             batch_next_state = batch_next_state.cuda()
 
-        current_q_values = self.model(batch_state).gather(1, batch_action)
-        max_next_q_values = self.target_model(batch_next_state).max(1)[0]
+        current_q_values = self.policynetwork(batch_state).gather(1, batch_action)
+        max_next_q_values = self.targetnetwork(batch_next_state).max(1)[0]
         expected_q_values = batch_reward + (self.discount_factor * max_next_q_values)
         # Undo volatility introduced above
         expected_q_values = Variable(expected_q_values.data).unsqueeze(1)
