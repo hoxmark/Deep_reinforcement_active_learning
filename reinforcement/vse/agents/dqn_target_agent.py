@@ -65,11 +65,11 @@ class DQNTargetAgent:
         max_next_q_values = self.targetnetwork(batch_next_state).max(1)[0]
         expected_q_values = batch_reward + (GAMMA * max_next_q_values)
         # Undo volatility introduced above
-        expected_q_values = Variable(expected_q_values.data)
+        expected_q_values = Variable(expected_q_values.data).unsqueeze(1)
 
         if opt.cuda:
             expected_q_values = expected_q_values.cuda()
-        loss = F.mse_loss(current_q_values, expected_q_values)
+        loss = F.smooth_l1_loss(current_q_values, expected_q_values)
 
         self.optimizer.zero_grad()
         loss.backward()
