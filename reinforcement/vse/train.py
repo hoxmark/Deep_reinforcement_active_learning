@@ -84,28 +84,15 @@ def train():
         lg.scalar_summary("episode-validation/r10i", r10i, episode)
         lg.scalar_summary("episode-validation/loss", game.performance, episode)
 
-        # print("first:")
-        # print(model.state_dict())
         # save_VSE_model(model.state_dict(), path=opt.data_path)
-
         # new_m = VSE()
         # path_to_full_model ="{}/fullModel.pth.tar".format(opt.data_path)
-
         # get_full_VSE_model(new_m,path_to_full_model)
 
-        # print("last:")
-        # print(new_m.state_dict())
-
-        # quit()
-
-        # print(agent.policynetwork)
         # if opt.load_model_name != "":
         #     old_model = load_external_model("Episode_0_performance_12.24")
-        #     print(old_model.cpu())
         #     agent.set_policynetwork(old_model)
 
-        # print("ETter")
-        # print(agent.policynetwork)
         # Save the model
         if opt.agent != 'random':
             model_path = '{}/{}'.format(opt.agent, str(episode).zfill(4) )
