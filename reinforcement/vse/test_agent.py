@@ -18,6 +18,7 @@ def main():
     opt.state_size = env.observation_space.shape[0]
     opt.hidden_size = 50
     opt.cuda = False
+    opt.reward_clip = True
 
     from agents import DQNAgent, DQNTargetAgent, PolicyAgent, ActorCriticAgent, RandomAgent
     if params.agent == 'policy':

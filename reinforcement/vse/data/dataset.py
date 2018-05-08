@@ -7,6 +7,7 @@ from PIL import Image
 # from pycocotools.coco import COCO
 import numpy as np
 import json as jsonmod
+import sklearn
 
 
 def get_paths(path, name='coco', use_restval=False):
@@ -173,6 +174,9 @@ class PrecompDataset(data.Dataset):
     def __len__(self):
         return self.length
 
+    def shuffle(self):
+        pass
+
 
 class ActiveDataset(data.Dataset):
     """
@@ -205,6 +209,9 @@ class ActiveDataset(data.Dataset):
         self.images.extend(images)
         self.captions.extend(captions)
         # self.length = len(self.captions)
+
+    def shuffle(self):
+        self.images, self.captions = sklearn.utils.shuffle(self.images, self.captions)
 
 
 def collate_fn(data):
@@ -320,7 +327,7 @@ def get_loaders(data_name, vocab, crop_size, batch_size, workers, opt):
         train_loader = get_precomp_loader(dpath, 'train', vocab, opt,
                                           batch_size, True, workers)
         val_loader = get_precomp_loader(dpath, 'dev', vocab, opt,
-                                        batch_size, False, workers)
+                                        batch_size, False, workers, data_length=opt.val_size)
         val_tot_loader = get_precomp_loader(dpath, 'dev', vocab, opt,
                                         batch_size, False, workers, data_length=5000)
         active_loader = get_active_loader(vocab)

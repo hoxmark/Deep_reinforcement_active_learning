@@ -97,6 +97,8 @@ def main():
     parser.add_argument('--embedding', default='static', help='whether to pre-train a model and use its static embeddings or not. (static | train)')
     parser.add_argument('--image_distance', action='store_true', help='Include image distance in the state ')
     parser.add_argument('--reward_clip', action='store_true', help='Clip rewards using tanh')
+    parser.add_argument('--val_size', default=500, type=int, help='Number of validation set size to use for reward')
+    parser.add_argument('--train_shuffle', action='store_true', help='Shuffle active train set every time')
 
     params = parser.parse_args()
     params.actions = 2

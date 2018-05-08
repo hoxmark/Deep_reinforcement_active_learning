@@ -170,6 +170,9 @@ class Game:
         return total_loss
 
     def train_model(self, model, train_loader, epochs=opt.num_epochs):
+        if opt.train_shuffle:
+            train_loader.dataset.shuffle()
+        
         model.train_start()
         if len(train_loader) > 0:
             for epoch in range(epochs):
