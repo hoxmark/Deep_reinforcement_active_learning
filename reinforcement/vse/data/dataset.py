@@ -1,5 +1,4 @@
 import torch
-import torch.utils.data as data
 import torchvision.transforms as transforms
 import os
 import nltk
@@ -9,6 +8,7 @@ import numpy as np
 import json as jsonmod
 import sklearn
 
+from config import data
 
 def get_paths(path, name='coco', use_restval=False):
     """
@@ -75,7 +75,7 @@ def get_paths(path, name='coco', use_restval=False):
 
     return roots, ids
 
-class FlickrDataset(data.Dataset):
+class FlickrDataset(torch.utils.data.Dataset):
     """
     Dataset loader for Flickr30k and Flickr8k full datasets.
     """
@@ -119,7 +119,7 @@ class FlickrDataset(data.Dataset):
         return len(self.ids)
 
 
-class PrecompDataset(data.Dataset):
+class PrecompDataset(torch.utils.data.Dataset):
     """
     Load precomputed captions and image features
     Possible options: f8k, f30k, coco, 10crop
@@ -178,23 +178,76 @@ class PrecompDataset(data.Dataset):
         pass
 
 
-class ActiveDataset(data.Dataset):
+class MRDataset(torch.utils.data.Dataset):
+    def __init__(self, data_path, data_split):
+        x, y = [], []
+        with open("{}/MR/rt-polarity.pos".format(data_path), "r", encoding="utf-8") as f:
+            for line in f:
+                if line[-1] == "\n":
+                    line = line[:-1]
+                x.append(line.split())
+                y.append(1)
+
+        with open("{}/MR/rt-polarity.neg".format(data_path), "r", encoding="utf-8") as f:
+            for line in f:
+                if line[-1] == "\n":
+                    line = line[:-1]
+                x.append(line.split())
+                y.append(0)
+
+        # x, y = shuffle(x, y)
+        dev_idx = len(x) // 10 * 8
+        test_idx = len(x) // 10 * 9
+
+        words = sorted(list(set([w for sent in x for w in sent])))
+        # print(len(words))
+        self.vocab = {w: i for i, w in enumerate(words)}
+        data.vocab = {w: i for i, w in enumerate(words)}
+
+        if data_split == 'train':
+            self.sentences = x[:dev_idx]
+            self.targets = y[:dev_idx]
+        elif data_split == 'dev':
+            self.sentences = x[dev_idx:test_idx]
+            self.targets = y[dev_idx:test_idx]
+        elif data_split == 'test':
+            self.sentences = x[test_idx:]
+            self.targets = y[test_idx:]
+
+        self.length = len(self.sentences)
+
+
+    def __getitem__(self, index):
+        sentence = self.sentences[index]
+        target = self.targets[index]
+        tokens = [self.vocab[word] for word in sentence]
+        padding = (59 - len(sentence)) * [len(self.vocab)]
+        tokens_padded = tokens + padding
+        return tokens_padded, target
+
+
+    def __len__(self):
+        return self.length
+
+    def shuffle(self):
+        pass
+
+
+class ActiveDataset(torch.utils.data.Dataset):
     """
     Initially empty dataset to contain the train
     data used for active learning.
     """
 
-    def __init__(self, vocab):
+    def __init__(self):
         self.captions = []
         self.images = []
         self.length = len(self.captions)
-        self.vocab = vocab
 
     def __getitem__(self, index):
-        image = torch.Tensor(self.images[index])
+        image = self.images[index]
         caption = self.captions[index]
-        target = torch.Tensor(caption)
-        return image, target, index, index
+        return image, caption
 
     def __len__(self):
         # return self.length
@@ -212,6 +265,13 @@ class ActiveDataset(data.Dataset):
 
     def shuffle(self):
         self.images, self.captions = sklearn.utils.shuffle(self.images, self.captions)
+
+def collate_fn_mr(data):
+    sentences, targets = zip(*data)
+    sentences, targets = list(sentences), list(targets)
+    sentences = torch.stack(torch.LongTensor(sentences))
+    targets = torch.LongTensor(targets)
+    return sentences, targets
 
 
 def collate_fn(data):
@@ -270,6 +330,18 @@ def get_loader_single(data_name, split, root, json, vocab, transform,
     return data_loader
 
 
+def get_mr_loader(data_path, data_split, vocab, opt, batch_size=100,
+                       shuffle=True, num_workers=2, data_length=100):
+    """Returns torch.utils.data.DataLoader for custom coco dataset."""
+    dset = MRDataset(data_path, data_split)
+
+    data_loader = torch.utils.data.DataLoader(dataset=dset,
+                                              batch_size=batch_size,
+                                              shuffle=shuffle,
+                                              pin_memory=True,
+                                              collate_fn=collate_fn_mr)
+    return data_loader
+
 def get_precomp_loader(data_path, data_split, vocab, opt, batch_size=100,
                        shuffle=True, num_workers=2, data_length=100):
     """Returns torch.utils.data.DataLoader for custom coco dataset."""
@@ -282,14 +354,14 @@ def get_precomp_loader(data_path, data_split, vocab, opt, batch_size=100,
                                               collate_fn=collate_fn)
     return data_loader
 
-def get_active_loader(vocab, batch_size=100, shuffle=True, num_workers=2):
-    dset = ActiveDataset(vocab)
+def get_active_loader(batch_size=100, shuffle=True, num_workers=2):
+    dset = ActiveDataset()
 
     data_loader = torch.utils.data.DataLoader(dataset=dset,
                                               batch_size=batch_size,
                                               shuffle=shuffle,
                                               pin_memory=True,
-                                              collate_fn=collate_fn)
+                                              collate_fn=collate_fn_mr)
     return data_loader
 
 # def get_episode_loader(vocab, batch_size=100, shuffle=True, num_workers=2):
@@ -322,38 +394,46 @@ def get_transform(data_name, split_name, opt):
 
 
 def get_loaders(data_name, vocab, crop_size, batch_size, workers, opt):
-    dpath = os.path.join(opt.data_path, data_name)
-    if opt.data_name.endswith('_precomp'):
-        train_loader = get_precomp_loader(dpath, 'train', vocab, opt,
-                                          batch_size, True, workers)
-        val_loader = get_precomp_loader(dpath, 'dev', vocab, opt,
-                                        batch_size, False, workers, data_length=opt.val_size)
-        val_tot_loader = get_precomp_loader(dpath, 'dev', vocab, opt,
-                                        batch_size, False, workers, data_length=5000)
-        active_loader = get_active_loader(vocab)
+    active_loader = get_active_loader()
+    if opt.dataset == 'vse':
+        dpath = os.path.join(opt.data_path, data_name)
+        if opt.data_name.endswith('_precomp'):
+            train_loader = get_precomp_loader(dpath, 'train', vocab, opt,
+                                              batch_size, True, workers)
+            val_loader = get_precomp_loader(dpath, 'dev', vocab, opt,
+                                            batch_size, False, workers, data_length=opt.val_size)
+            val_tot_loader = get_precomp_loader(dpath, 'dev', vocab, opt,
+                                            batch_size, False, workers, data_length=5000)
+        else:
+            # Build Dataset Loader
+            roots, ids = get_paths(dpath, data_name, opt.use_restval)
+
+            transform = get_transform(data_name, 'train', opt)
+            train_loader = get_loader_single(opt.data_name, 'train',
+                                             roots['train']['img'],
+                                             roots['train']['cap'],
+                                             vocab, transform, ids=ids['train'],
+                                             batch_size=batch_size, shuffle=True,
+                                             num_workers=workers,
+                                             collate_fn=collate_fn)
+
+            transform = get_transform(data_name, 'val', opt)
+            val_loader = get_loader_single(opt.data_name, 'val',
+                                           roots['val']['img'],
+                                           roots['val']['cap'],
+                                           vocab, transform, ids=ids['val'],
+                                           batch_size=batch_size, shuffle=False,
+                                           num_workers=workers,
+                                           collate_fn=collate_fn)
+
     else:
-        # Build Dataset Loader
-        roots, ids = get_paths(dpath, data_name, opt.use_restval)
+        train_loader = get_mr_loader(opt.data_path, 'train', vocab, opt,
+                                          batch_size, True, workers)
+        val_loader = get_mr_loader(opt.data_path, 'dev', vocab, opt,
+                                        batch_size, False, workers)
+        val_tot_loader = get_mr_loader(opt.data_path, 'dev', vocab, opt,
+                                        batch_size, False, workers)
 
-        transform = get_transform(data_name, 'train', opt)
-        train_loader = get_loader_single(opt.data_name, 'train',
-                                         roots['train']['img'],
-                                         roots['train']['cap'],
-                                         vocab, transform, ids=ids['train'],
-                                         batch_size=batch_size, shuffle=True,
-                                         num_workers=workers,
-                                         collate_fn=collate_fn)
-
-        transform = get_transform(data_name, 'val', opt)
-        val_loader = get_loader_single(opt.data_name, 'val',
-                                       roots['val']['img'],
-                                       roots['val']['cap'],
-                                       vocab, transform, ids=ids['val'],
-                                       batch_size=batch_size, shuffle=False,
-                                       num_workers=workers,
-                                       collate_fn=collate_fn)
-
-        active_loader = get_active_loader(vocab)
 
     return active_loader, train_loader, val_loader, val_tot_loader
 

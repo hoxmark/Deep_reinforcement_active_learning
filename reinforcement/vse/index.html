@@ -1,0 +1,1122 @@
+<!DOCTYPE html>
+<html lang="no" class="desktop">
+    <head>
+        <meta charset="utf-8">
+        <meta id="serverTime" data-offset="2" data-time="2018-05-10 15:35:04">
+        <meta http-equiv="X-UA-Compatible" content="IE=Edge"><script type="text/javascript">window.NREUM||(NREUM={}),__nr_require=function(e,t,n){function r(n){if(!t[n]){var o=t[n]={exports:{}};e[n][0].call(o.exports,function(t){var o=e[n][1][t];return r(o||t)},o,o.exports)}return t[n].exports}if("function"==typeof __nr_require)return __nr_require;for(var o=0;o<n.length;o++)r(n[o]);return r}({1:[function(e,t,n){function r(){}function o(e,t,n){return function(){return i(e,[f.now()].concat(u(arguments)),t?null:this,n),t?void 0:this}}var i=e("handle"),a=e(2),u=e(3),c=e("ee").get("tracer"),f=e("loader"),s=NREUM;"undefined"==typeof window.newrelic&&(newrelic=s);var p=["setPageViewName","setCustomAttribute","setErrorHandler","finished","addToTrace","inlineHit","addRelease"],d="api-",l=d+"ixn-";a(p,function(e,t){s[t]=o(d+t,!0,"api")}),s.addPageAction=o(d+"addPageAction",!0),s.setCurrentRouteName=o(d+"routeName",!0),t.exports=newrelic,s.interaction=function(){return(new r).get()};var m=r.prototype={createTracer:function(e,t){var n={},r=this,o="function"==typeof t;return i(l+"tracer",[f.now(),e,n],r),function(){if(c.emit((o?"":"no-")+"fn-start",[f.now(),r,o],n),o)try{return t.apply(this,arguments)}catch(e){throw c.emit("fn-err",[arguments,this,e],n),e}finally{c.emit("fn-end",[f.now()],n)}}}};a("setName,setAttribute,save,ignore,onEnd,getContext,end,get".split(","),function(e,t){m[t]=o(l+t)}),newrelic.noticeError=function(e){"string"==typeof e&&(e=new Error(e)),i("err",[e,f.now()])}},{}],2:[function(e,t,n){function r(e,t){var n=[],r="",i=0;for(r in e)o.call(e,r)&&(n[i]=t(r,e[r]),i+=1);return n}var o=Object.prototype.hasOwnProperty;t.exports=r},{}],3:[function(e,t,n){function r(e,t,n){t||(t=0),"undefined"==typeof n&&(n=e?e.length:0);for(var r=-1,o=n-t||0,i=Array(o<0?0:o);++r<o;)i[r]=e[t+r];return i}t.exports=r},{}],4:[function(e,t,n){t.exports={exists:"undefined"!=typeof window.performance&&window.performance.timing&&"undefined"!=typeof window.performance.timing.navigationStart}},{}],ee:[function(e,t,n){function r(){}function o(e){function t(e){return e&&e instanceof r?e:e?c(e,u,i):i()}function n(n,r,o,i){if(!d.aborted||i){e&&e(n,r,o);for(var a=t(o),u=m(n),c=u.length,f=0;f<c;f++)u[f].apply(a,r);var p=s[y[n]];return p&&p.push([b,n,r,a]),a}}function l(e,t){v[e]=m(e).concat(t)}function m(e){return v[e]||[]}function w(e){return p[e]=p[e]||o(n)}function g(e,t){f(e,function(e,n){t=t||"feature",y[n]=t,t in s||(s[t]=[])})}var v={},y={},b={on:l,emit:n,get:w,listeners:m,context:t,buffer:g,abort:a,aborted:!1};return b}function i(){return new r}function a(){(s.api||s.feature)&&(d.aborted=!0,s=d.backlog={})}var u="nr@context",c=e("gos"),f=e(2),s={},p={},d=t.exports=o();d.backlog=s},{}],gos:[function(e,t,n){function r(e,t,n){if(o.call(e,t))return e[t];var r=n();if(Object.defineProperty&&Object.keys)try{return Object.defineProperty(e,t,{value:r,writable:!0,enumerable:!1}),r}catch(i){}return e[t]=r,r}var o=Object.prototype.hasOwnProperty;t.exports=r},{}],handle:[function(e,t,n){function r(e,t,n,r){o.buffer([e],r),o.emit(e,t,n)}var o=e("ee").get("handle");t.exports=r,r.ee=o},{}],id:[function(e,t,n){function r(e){var t=typeof e;return!e||"object"!==t&&"function"!==t?-1:e===window?0:a(e,i,function(){return o++})}var o=1,i="nr@id",a=e("gos");t.exports=r},{}],loader:[function(e,t,n){function r(){if(!x++){var e=h.info=NREUM.info,t=d.getElementsByTagName("script")[0];if(setTimeout(s.abort,3e4),!(e&&e.licenseKey&&e.applicationID&&t))return s.abort();f(y,function(t,n){e[t]||(e[t]=n)}),c("mark",["onload",a()+h.offset],null,"api");var n=d.createElement("script");n.src="https://"+e.agent,t.parentNode.insertBefore(n,t)}}function o(){"complete"===d.readyState&&i()}function i(){c("mark",["domContent",a()+h.offset],null,"api")}function a(){return E.exists&&performance.now?Math.round(performance.now()):(u=Math.max((new Date).getTime(),u))-h.offset}var u=(new Date).getTime(),c=e("handle"),f=e(2),s=e("ee"),p=window,d=p.document,l="addEventListener",m="attachEvent",w=p.XMLHttpRequest,g=w&&w.prototype;NREUM.o={ST:setTimeout,SI:p.setImmediate,CT:clearTimeout,XHR:w,REQ:p.Request,EV:p.Event,PR:p.Promise,MO:p.MutationObserver};var v=""+location,y={beacon:"bam.nr-data.net",errorBeacon:"bam.nr-data.net",agent:"js-agent.newrelic.com/nr-1071.min.js"},b=w&&g&&g[l]&&!/CriOS/.test(navigator.userAgent),h=t.exports={offset:u,now:a,origin:v,features:{},xhrWrappable:b};e(1),d[l]?(d[l]("DOMContentLoaded",i,!1),p[l]("load",r,!1)):(d[m]("onreadystatechange",o),p[m]("onload",r)),c("mark",["firstbyte",u],null,"api");var x=0,E=e(4)},{}]},{},["loader"]);</script>        <base href="/">
+        <title>Forsiden - VG</title>        <link rel="preload" href="https://vgc.no/font/AustinNewsDeck-Bold-Web.woff2" as="font" crossorigin type="font/woff2">
+        <link rel="dns-prefetch" href="//acdn.adnxs.com">
+        <link rel="preconnect" href="//acdn.adnxs.com" crossorigin>
+        <link rel="dns-prefetch" href="//ib.adnxs.com">
+        <link rel="preconnect" href="//ib.adnxs.com" crossorigin>
+        <link rel="dns-prefetch" href="//cdn.adnxs.com">
+        <link rel="preconnect" href="//cdn.adnxs.com" crossorigin>
+        <link rel="dns-prefetch" href="//pixel.glimr.io">
+        <link rel="preconnect" href="//pixel.glimr.io" crossorigin>
+        <link rel="dns-prefetch" href="//api.vg.no">
+        <link rel="preconnect" href="//api.vg.no" crossorigin>
+        <link rel="dns-prefetch" href="//cdn.vgc.no">
+        <link rel="preconnect" href="//cdn.vgc.no" crossorigin>
+        <link rel="dns-prefetch" href="//vgc.no">
+        <link rel="preconnect" href="//vgc.no" crossorigin>
+        <link rel="dns-prefetch" href="//imbo.vgc.no">
+        <link rel="preconnect" href="//imbo.vgc.no" crossorigin>
+        <link rel="dns-prefetch" href="//collector.schibsted.io">
+        <link rel="preconnect" href="//collector.schibsted.io" crossorigin>
+        <link rel="dns-prefetch" href="//session.payment.schibsted.no">
+        <link rel="preconnect" href="//session.payment.schibsted.no" crossorigin>
+                        <link href="https://vgc.no/vgnett-prod/css/desktop.css?aef54b61b03344448a8b280c7615933e" media="all" rel="stylesheet" type="text/css">
+        <!--[if lte IE 8]> <link href="https://vgc.no/vgnett-prod/css/ie8.css?f7c9f7e918db30abe87d546f3c3307e7" media="all" rel="stylesheet" type="text/css"><![endif]-->                <style>
+            body {
+                -webkit-font-smoothing: antialiased;
+                font-smoothing: antialiased;
+                -webkit-font-feature-settings: "liga", "kern";
+                font-feature-settings: "liga", "kern";
+            }
+            @font-face {
+                src:
+                    url(https://vgc.no/font/AustinNewsDeck-Bold-Web.eot#?iefix) format('embedded-opentype'),
+                    url(https://vgc.no/font/AustinNewsDeck-Bold-Web.woff2) format('woff2'),
+                    url(https://vgc.no/font/AustinNewsDeck-Bold-Web.woff) format('woff');
+                font-family: 'Austin Deck';
+                font-display: fallback;
+            }
+        </style>
+
+        <script>
+if (!window.Promise) {
+    document.write('<script src="//cdn.vgc.no/libs/promise-polyfill/Promise.min.js"><\/script>');
+}
+
+if (!window.EventSource) {
+    document.write('<script src="//cdn.vgc.no/js/libs/polyfills/eventsource.min.js"><\/script>');
+}
+
+if (!window.requestAnimationFrame) {
+    window.requestAnimationFrame =
+        window.webkitRequestAnimationFrame ||
+        window.mozRequestAnimationFrame ||
+        window.msRequestAnimationFrame ||
+        (function () {
+            var startTime = (new Date()).getTime(),
+                lastTime = startTime;
+            return function (callback) {
+                var currentTime = (new Date()).getTime(),
+                    delay = Math.max(0, 16 - (currentTime - lastTime));
+
+                lastTime = currentTime;
+
+                return window.setTimeout(function () {
+                    lastTime = (new Date()).getTime();
+
+                    callback(lastTime - startTime);
+                }, delay);
+            };
+        })();
+}
+</script>
+                <!--[if lte IE 8]>
+        <script>
+        if (typeof Array.prototype.forEach !== 'function') {
+            Array.prototype.forEach = function(callback){
+                for (var i = 0; i < this.length; i++){
+                    callback.apply(this, [this[i], i, this]);
+                }
+            };
+        }
+        </script>
+        <script src="//cdn.vgc.no/js/libs/html5-shiv/html5shiv-3.7.0.min.js"></script>
+        <script src="//cdn.vgc.no/js/libs/respond/respond.min.js"></script>
+        <style>
+            #main-nav-bar .button-container { display: none; }
+            .bg-size {behavior:url(/css/backgroundsize.min.htc); }
+            .section-forsiden .main-navbar-content { background: url(//cdn.vgc.no/img/ie8-front-header-bg.gif) repeat-x; }
+            .main-navbar-content { background: url(//cdn.vgc.no/img/ie8-fallback-bg.gif) repeat-x; }
+            .section-sport .main-navbar-content { background: url(//cdn.vgc.no/img/ie8-sporten-header-bg.gif?1) repeat-x; }
+            .section-sport.desktop .section-nav-top-stripe .main h2 a { font-size: 0; }
+            .section-sport #article-bottom-elements .related h2 { margin-top: 0px; }
+            .section-sport.desktop #article-bottom-elements h2,
+            .section-sport.tablet #article-bottom-elements h2 { height: 20px; line-height: 20px; margin-top: 0px; }
+            .section-forbruker .main-navbar-content { background: url(//cdn.vgc.no/img/ie8-forbruker-header-bg.gif) repeat-x; }
+            .section-rampelys .main-navbar-content { background: url(//cdn.vgc.no/img/ie8-rampelys-header-bg.gif) repeat-x; }
+            .desktop #section-nav-bar .nav-header li.menu-active > a:before { background: url(//cdn.vgc.no/img/ie8-menu-active-item.png); background-size: initial; }
+
+            .twitter-shares, .facebook-shares { padding-left: 18px; }
+        </style>
+        <![endif]-->
+        <!--[if lte IE 10]>
+        <script src="//cdn.vgc.no/js/libs/polyfill/classList.min.js"></script>
+        <![endif]-->
+        
+<script src="https://acdn.adnxs.com/ast/c/3296/0.7.3/ast.js" async defer onload="apntag.l=true"></script>
+<script>
+    var apntag = apntag || {};
+    apntag.anq = apntag.anq || [];
+
+    (function() {
+    var keywords = {
+    'aa-sch-country_code': "no",
+    'aa-sch-publisher': "vg",
+    'aa-sch-ssa-market': "XNO",
+    'aa-sch-ssa-format': "NATIVE_CONTENT",
+    'aa-sch-ssa-cat': ["ssa_1","ssa_2","ssa_3","ssa_4","ssa_5","ssa_6","ssa_7","ssa_8","ssa_9","ssa_10","ssa_11","ssa_12","ssa_13","ssa_14","ssa_15","ssa_16","ssa_17","ssa_18","ssa_19","ssa_20","ssa_21","ssa_22","ssa_23","ssa_24","ssa_25","ssa_26","ssa_27","ssa_28","ssa_29","ssa_30"],
+    'aa-sch-inventory_type': "editorial",
+    'no-sno-publishergroup': "schibsted",
+    'no-sno-device': "desktop",
+    'aa-sch-page_type': "front",
+    'aa-sch-supply_type': "web_desktop",
+    };
+    var tags = [];
+    if (window.adtags && window.adtags.getTags instanceof Function) {
+        var localTags = window.adtags.getTags();
+
+        if (localTags) {
+            if (typeof localTags === 'string') {
+                localTags = localTags.split(',');
+            }
+
+            tags = tags.concat(localTags);
+        }
+    }
+
+    var userId = getAdId();
+    var doNotTrack = false;
+
+    if (userId === 'DO_NOT_TRACK') {
+        doNotTrack = true;
+    }
+
+    if (navigator.doNotTrack === '1') {
+        doNotTrack = true;
+    }
+
+    
+
+            function getAdId() {
+    var cookie = decodeURIComponent(
+        document.cookie.replace(
+            new RegExp(
+                '(?:(?:^|.*;)\\s*' + encodeURIComponent('_pulse2data').replace(/[\-\.\+\*]/g, '\\$&'
+            ) + '\\s*\\=\\s*([^;]*).*$)|^.*$'), '$1'
+        )
+    ) || false;
+    if (cookie) {
+        return cookie.split(',')[9];
+    }
+    return;
+}
+    
+    if (tags.length) {
+        tags = tags.slice(0, 20);
+        tags.forEach(function(tag) {
+            if (tag) {
+                keywords['no-sno-glimr-' + tag.toLowerCase()] = 'true';
+            }
+        });
+    }
+
+    apntag.anq.push(function() {
+        var pageOpts = {
+            member: 3296,
+            disablePsa: true,
+            noBidIfUnsold: true,
+            keywords: keywords
+        };
+
+                pageOpts['user'] = {
+            dnt: doNotTrack,
+            externalUid: userId
+        }
+        
+        apntag.setPageOpts(pageOpts);
+    });
+
+    apntag.anq.push(function() {
+                                    (function() {
+                                (function render(event) {
+                    if (document.hidden) {
+                        document.addEventListener('visibilitychange', render);
+                    } else {
+                        var placements = {"front-smartboard_1":{"sizes":[[1,1],[300,250],[320,250]],"group":"smartboard","refresh":false,"invCode":"no-vg-wde-front_smartboard_1","safeFrame":false,"enableSSA":"false","placementIdPrefix":"front-","adFormat":"smartboard_1","rendererOptions":null},"front-smartboard_2":{"sizes":[[1,1],[300,250],[320,250]],"group":"smartboard","refresh":false,"invCode":"no-vg-wde-front_smartboard_2","safeFrame":false,"enableSSA":"false","placementIdPrefix":"front-","adFormat":"smartboard_2","rendererOptions":null},"front-smartboard_3":{"sizes":[[1,1],[300,250],[320,250]],"group":"smartboard","refresh":false,"invCode":"no-vg-wde-front_smartboard_3","safeFrame":false,"enableSSA":"false","placementIdPrefix":"front-","adFormat":"smartboard_3","rendererOptions":null},"front-netboard_10":{"sizes":[[580,400],[580,500],[1,1]],"group":"smartboard","enableSSA":true,"videoEnabled":true,"refresh":true,"invCode":"no-vg-wde-front_netboard_10","safeFrame":false,"placementIdPrefix":"front-","adFormat":"netboard_10","rendererOptions":{"disableCollapse":{"enabled":true,"replay":true},"allowFullscreen":true}},"front-netboard_11":{"sizes":[[580,400],[580,500],[1,1]],"group":"smartboard","enableSSA":true,"videoEnabled":true,"refresh":true,"invCode":"no-vg-wde-front_netboard_11","safeFrame":false,"placementIdPrefix":"front-","adFormat":"netboard_11","rendererOptions":{"disableCollapse":{"enabled":true,"replay":true},"allowFullscreen":true}},"front-smartboard_8":{"sizes":[[300,250],[300,600],[1,1]],"group":"smartboard","refresh":true,"invCode":"no-vg-wde-front_smartboard_8","safeFrame":false,"enableSSA":"false","placementIdPrefix":"front-","adFormat":"smartboard_8","rendererOptions":null}};
+                        for (var name in placements) {
+                            (function(placement, name) {
+                                apntag.defineTag({
+                                    invCode: placement.invCode,
+                                    sizes: placement.sizes,
+                                    targetId: 'ad-' + name,
+                                    keywords: {
+                                        'no-sno-adformat': placement.adFormat,
+                                        'aa-sch-ssa-native-ad': String(placement.enableSSA)
+                                    },
+                                    alwaysUseXDomainIframe: (location.search.indexOf('no-safeframe') === -1 && placement.safeFrame),
+                                    rendererOptions: placement.rendererOptions
+                                });
+                                apntag.onEvent('adNoBid', 'ad-' + name, function() {
+                                    apntag.requests.tags['ad-' + name].empty = true;
+                                });
+                            })(placements[name], name);
+                        }
+                        apntag.loadTags();
+
+                        if (event) {
+                            document.removeEventListener('visibilitychange', render);
+                        }
+                    }
+                })();
+                                })();
+                            (function() {
+                                (function render(event) {
+                    if (document.hidden) {
+                        document.addEventListener('visibilitychange', render);
+                    } else {
+                        var placements = {"front-topboard":{"sizes":[[980,150],[1000,150],[1010,150],[980,300],[1010,300],[728,90],[928,120],[980,240]],"group":"horseshoe","invCode":"no-vg-wde-front_topboard","safeFrame":false,"enableSSA":"false","placementIdPrefix":"front-","adFormat":"topboard","rendererOptions":null},"front-skyscraperleft_1":{"sizes":[[180,701],[180,501]],"group":"horseshoe","lazyload":false,"invCode":"no-vg-wde-front_skyscraperleft_1","safeFrame":false,"enableSSA":"false","placementIdPrefix":"front-","adFormat":"skyscraperleft_1","rendererOptions":null},"front-skyscraperright_1":{"sizes":[[160,600],[180,500],[180,700],[300,600]],"group":"horseshoe","lazyload":false,"invCode":"no-vg-wde-front_skyscraperright_1","safeFrame":false,"enableSSA":"false","placementIdPrefix":"front-","adFormat":"skyscraperright_1","rendererOptions":null},"front-wallpaper":{"sizes":[[2,2]],"group":"horseshoe","lazyload":false,"invCode":"no-vg-wde-front_wallpaper","safeFrame":false,"enableSSA":"false","placementIdPrefix":"front-","adFormat":"wallpaper","rendererOptions":null},"front-netboard_backfill_1":{"sizes":[[580,400],[580,500],[1,1]],"group":"horseshoe","adFormat":"netboard_backfill","enableSSA":true,"refresh":false,"videoEnabled":true,"defer":true,"invCode":"no-vg-wde-front_netboard_backfill","safeFrame":false,"placementIdPrefix":"front-","rendererOptions":{"disableCollapse":{"enabled":true,"replay":true},"allowFullscreen":true}},"front-netboard_backfill_2":{"sizes":[[580,400],[580,500],[1,1]],"group":"horseshoe","adFormat":"netboard_backfill","enableSSA":true,"refresh":false,"videoEnabled":true,"defer":true,"invCode":"no-vg-wde-front_netboard_backfill","safeFrame":false,"placementIdPrefix":"front-","rendererOptions":{"disableCollapse":{"enabled":true,"replay":true},"allowFullscreen":true}},"front-netboard_backfill_3":{"sizes":[[580,400],[580,500],[1,1]],"group":"horseshoe","adFormat":"netboard_backfill","enableSSA":true,"refresh":false,"videoEnabled":true,"defer":true,"invCode":"no-vg-wde-front_netboard_backfill","safeFrame":false,"placementIdPrefix":"front-","rendererOptions":{"disableCollapse":{"enabled":true,"replay":true},"allowFullscreen":true}}};
+                        for (var name in placements) {
+                            (function(placement, name) {
+                                apntag.defineTag({
+                                    invCode: placement.invCode,
+                                    sizes: placement.sizes,
+                                    targetId: 'ad-' + name,
+                                    keywords: {
+                                        'no-sno-adformat': placement.adFormat,
+                                        'aa-sch-ssa-native-ad': String(placement.enableSSA)
+                                    },
+                                    alwaysUseXDomainIframe: (location.search.indexOf('no-safeframe') === -1 && placement.safeFrame),
+                                    rendererOptions: placement.rendererOptions
+                                });
+                                apntag.onEvent('adNoBid', 'ad-' + name, function() {
+                                    apntag.requests.tags['ad-' + name].empty = true;
+                                });
+                            })(placements[name], name);
+                        }
+                        apntag.loadTags();
+
+                        if (event) {
+                            document.removeEventListener('visibilitychange', render);
+                        }
+                    }
+                })();
+                                })();
+                            (function() {
+                                (function render(event) {
+                    if (document.hidden) {
+                        document.addEventListener('visibilitychange', render);
+                    } else {
+                        var placements = {"front-netboard_1":{"sizes":[[580,400],[580,500],[1,1]],"group":"netboard","enableSSA":true,"videoEnabled":true,"refresh":false,"invCode":"no-vg-wde-front_netboard_1","safeFrame":false,"placementIdPrefix":"front-","adFormat":"netboard_1","rendererOptions":{"disableCollapse":{"enabled":true,"replay":true},"allowFullscreen":true}},"front-netboard_2":{"sizes":[[580,400],[580,500],[1,1]],"group":"netboard","enableSSA":true,"videoEnabled":true,"refresh":false,"defer":true,"invCode":"no-vg-wde-front_netboard_2","safeFrame":false,"placementIdPrefix":"front-","adFormat":"netboard_2","rendererOptions":{"disableCollapse":{"enabled":true,"replay":true},"allowFullscreen":true}},"front-netboard_3":{"sizes":[[580,400],[580,500],[1,1]],"group":"netboard","enableSSA":true,"refresh":false,"videoEnabled":true,"invCode":"no-vg-wde-front_netboard_3","safeFrame":false,"placementIdPrefix":"front-","adFormat":"netboard_3","rendererOptions":{"disableCollapse":{"enabled":true,"replay":true},"allowFullscreen":true}},"front-netboard_4":{"sizes":[[580,400],[580,500],[1,1]],"group":"netboard","enableSSA":true,"videoEnabled":true,"refresh":true,"invCode":"no-vg-wde-front_netboard_4","safeFrame":false,"placementIdPrefix":"front-","adFormat":"netboard_4","rendererOptions":{"disableCollapse":{"enabled":true,"replay":true},"allowFullscreen":true}},"front-netboard_5":{"sizes":[[580,400],[580,500],[1,1]],"group":"netboard","enableSSA":true,"videoEnabled":true,"refresh":true,"invCode":"no-vg-wde-front_netboard_5","safeFrame":false,"placementIdPrefix":"front-","adFormat":"netboard_5","rendererOptions":{"disableCollapse":{"enabled":true,"replay":true},"allowFullscreen":true}},"front-netboard_6":{"sizes":[[580,400],[580,500],[1,1]],"group":"netboard","enableSSA":true,"videoEnabled":true,"refresh":true,"invCode":"no-vg-wde-front_netboard_6","safeFrame":false,"placementIdPrefix":"front-","adFormat":"netboard_6","rendererOptions":{"disableCollapse":{"enabled":true,"replay":true},"allowFullscreen":true}},"front-netboard_7":{"sizes":[[580,400],[580,500]],"group":"netboard","enableSSA":true,"videoEnabled":true,"refresh":true,"invCode":"no-vg-wde-front_netboard_7","safeFrame":false,"placementIdPrefix":"front-","adFormat":"netboard_7","rendererOptions":{"disableCollapse":{"enabled":true,"replay":true},"allowFullscreen":true}},"front-netboard_8":{"sizes":[[580,400],[580,500]],"group":"netboard","enableSSA":true,"videoEnabled":true,"refresh":true,"invCode":"no-vg-wde-front_netboard_8","safeFrame":false,"placementIdPrefix":"front-","adFormat":"netboard_8","rendererOptions":{"disableCollapse":{"enabled":true,"replay":true},"allowFullscreen":true}},"front-netboard_9":{"sizes":[[580,400],[580,500]],"group":"netboard","enableSSA":true,"videoEnabled":true,"refresh":true,"invCode":"no-vg-wde-front_netboard_9","safeFrame":false,"placementIdPrefix":"front-","adFormat":"netboard_9","rendererOptions":{"disableCollapse":{"enabled":true,"replay":true},"allowFullscreen":true}}};
+                        for (var name in placements) {
+                            (function(placement, name) {
+                                apntag.defineTag({
+                                    invCode: placement.invCode,
+                                    sizes: placement.sizes,
+                                    targetId: 'ad-' + name,
+                                    keywords: {
+                                        'no-sno-adformat': placement.adFormat,
+                                        'aa-sch-ssa-native-ad': String(placement.enableSSA)
+                                    },
+                                    alwaysUseXDomainIframe: (location.search.indexOf('no-safeframe') === -1 && placement.safeFrame),
+                                    rendererOptions: placement.rendererOptions
+                                });
+                                apntag.onEvent('adNoBid', 'ad-' + name, function() {
+                                    apntag.requests.tags['ad-' + name].empty = true;
+                                });
+                            })(placements[name], name);
+                        }
+                        apntag.loadTags();
+
+                        if (event) {
+                            document.removeEventListener('visibilitychange', render);
+                        }
+                    }
+                })();
+                                })();
+                        });
+        })();
+
+(function() {
+    var threshold = 200;
+    var thresholdAbove = 150;
+    var thresholdRefresh = 300;
+    var thresholdAboveRefresh = 300;
+    var aboveTheFold = false;
+    var bound = null;
+    var items = [];
+    var showTag;
+    var cachedElements = {};
+    var refreshItems = [];
+    var shouldRefreshItems = [];
+
+    apntag.anq.push(function() {
+        showTag = apntag.showTag;
+        apntag.showTag = function(item) {
+            items.push(item);
+
+            if (visible(item)) {
+                showTag(item);
+                items.splice(items.length-1, 1);
+
+                if (shouldRefresh(item)) {
+                    refreshItems.push(item);
+                }
+            }
+        };
+    });
+
+    var throttle = (function() {
+        var tasks = [];
+        var wait = false;
+
+        function flush() {
+            if (!wait) {
+                wait = true;
+                requestAnimationFrame(runTasks.bind(null, tasks));
+            }
+        }
+
+        function runTasks(tasks) {
+            var task;
+            while (task = tasks.shift()) {
+                task();
+            }
+
+            wait = false;
+        }
+
+        function throttle(fn, scope) {
+            scope = scope || this;
+
+            return function () {
+                tasks.push(fn.bind(scope));
+                flush();
+            };
+        }
+
+        return throttle;
+    })();
+
+    function resolveElement(id) {
+        if (typeof id === 'string') {
+            var element;
+            if (!(id in cachedElements)) {
+                element = cachedElements[id] = document.getElementById(id);
+            } else {
+                element = cachedElements[id];
+            }
+            return element;
+        }
+        return null;
+    }
+
+    function visible(id, _threshold, _thresholdAbove) {
+        _threshold = _threshold || threshold;
+        _thresholdAbove = _thresholdAbove || thresholdAbove;
+        var element = resolveElement(id);
+
+        if (!element) {
+            return false;
+        }
+
+        var offset = element.getBoundingClientRect();
+
+        return (
+            (offset.top-window.innerHeight-_threshold) <= 0 &&
+            (offset.bottom+_thresholdAbove >= 0 || aboveTheFold === true)
+        );
+    }
+
+    function isEmpty(name) {
+        if (apntag.requests.tags[name]) {
+            return apntag.requests.tags[name].empty === false;
+        } else {
+            return false;
+        }
+    }
+
+    function shouldLazyload(id) {
+        if (resolveElement(id)) {
+            return resolveElement(id).getAttribute('data-lazyload') === 'true';
+        } else {
+            return false;
+        }
+    }
+
+    function shouldRefresh(id) {
+        if (resolveElement(id)) {
+            return resolveElement(id).getAttribute('data-refresh') === 'true';
+        } else {
+            return false;
+        }
+    }
+
+    function refresh(id) {
+        apntag.anq.push(function() {
+            apntag.refresh([id]);
+        });
+    }
+
+    function setContainerHeight(elem) {
+        if (elem.className.indexOf('ad-refreshed') > -1) {
+            return;
+        }
+
+        elem.className += ' ad-refreshed';
+        elem.style.minHeight = elem.clientHeight + 'px';
+    }
+
+    function queueRefreshItems() {
+        refreshItems.forEach(function(item) {
+            var shouldRefreshItem = shouldRefreshItems.indexOf(item) > -1;
+            var isVisible = visible(item, thresholdRefresh, thresholdAboveRefresh);
+
+            if (!isVisible && !shouldRefreshItem) {
+                shouldRefreshItems.push(item);
+                var elem = resolveElement(item);
+                setContainerHeight(elem);
+            } else if (shouldRefreshItem && isVisible) {
+                var idx = shouldRefreshItems.indexOf(item);
+                refresh(item);
+                shouldRefreshItems.splice(idx, 1);
+            }
+        });
+    }
+
+    
+    function load(event) {
+        items.forEach(function(item, i) {
+            if (visible(item) || !shouldLazyload(item)) {
+                apntag.anq.push(function() {
+                    if (!isEmpty(item)) {
+                        showTag(item);
+                    }
+
+                                    });
+
+                items.splice(i, 1);
+            }
+        });
+
+        if (bound && items.length === 0 && event) {
+            window.removeEventListener('scroll', bound);
+        }
+    }
+
+    (function addOnScroll() {
+        bound = throttle(load);
+        load();
+        window.addEventListener('scroll', bound);
+    })();
+})();
+</script>
+
+        <!-- Fav and touch icons -->
+        <link rel="apple-touch-icon-precomposed" sizes="114x114" href="https://vgc.no/vgnett-prod/img/icons/apple-touch-icon-114-precomposed.png">
+        <link rel="apple-touch-icon-precomposed" sizes="72x72" href="https://vgc.no/vgnett-prod/img/icons/apple-touch-icon-72-precomposed.png">
+        <link rel="apple-touch-icon-precomposed" href="https://vgc.no/vgnett-prod/img/icons/apple-touch-icon-57-precomposed.png">
+        <link rel="shortcut icon" href="/favicon.ico">
+        <link rel="shortcut icon" type="image/vnd.microsoft.icon" href="/favicon.ico">
+        <link rel="author" href="/humans.txt">
+
+        <script>
+!function(e,t,n){n=e.getElementsByTagName(t)[0],this.getScript=function(a,o,c){var r=e.createElement(t)
+r.src=r.async=a,r.onreadystatechange=r.onload=function(){(!r.readyState||/loaded|complete/.test(r.readyState))&&(o&&o(),r.onreadystatechange=r.onload=null)},c&&(r.id=c),(!n||!n.parentNode)&&(n=e.getElementsByTagName(t)[0]),n.parentNode.insertBefore(r,n); return r;}}(document,"script")
+</script>
+
+                
+        <script src="https://vgc.no/vgnett-prod/js/ably.min.js?v=2.0.3"></script>
+
+        <script defer data-main="https://vgc.no/vgnett-prod/js/scripts20180509123724" src="https://cdn.vgc.no/js/libs/require/require-2.1.20.min.js"></script>
+
+        
+        <meta name="theme-color" content="#2b2b2b">
+        <meta name="msapplication-navbutton-color" content="#2b2b2b">
+        <meta name="apple-mobile-web-app-status-bar-style" content="#2b2b2b">
+
+        <meta name="google-play-app" content="app-id=com.agens.android.vgsnarvei">
+        <meta name="title" content="VG">
+        <meta name="description" content="Norges største nettsted. Oppdateres minutt for minutt på siste nytt innen sport, innenriks, utenriks, og underholdning.">
+        <meta name="twitter:title" content="VG">
+        <meta name="twitter:url" content="http://www.vg.no/">
+        <meta name="twitter:description" content="Norges største nettsted. Oppdateres minutt for minutt på siste nytt innen sport, innenriks, utenriks, og underholdning.">
+
+        <meta property="og:title" content="VG">
+        <meta property="og:description" content="Norges største nettsted. Oppdateres minutt for minutt på siste nytt innen sport, innenriks, utenriks, og underholdning.">
+        <meta property="og:url" content="http://www.vg.no/">
+        <meta property="og:type" content="website">
+        <meta property="article:publisher" content="https://www.facebook.com/vgnett">
+        <meta property="fb:pages" content="137059286994">
+
+        <meta name="twitter:image" content="http://1.vgc.no/vgnett-prod/img/vgLogoSquare.png?28042014-1">
+        <meta property="og:image" content="http://1.vgc.no/vgnett-prod/img/vgLogoSquare.png?28042014-1">
+        <meta property="og:site_name" content="VG">
+        <meta property="fb:admins" content="100001267707307">
+        <meta property="fb:admins" content="725375931">
+        <meta property="fb:admins" content="521285702">
+        <meta property="fb:app_id" content="152316758161786">
+        <meta property="fb:pages" content="137059286994">
+        <meta property="al:ios:url" content="vg.no://">
+        <meta property="al:ios:app_store_id" content="381071021">
+        <meta property="al:ios:app_name" content="VG">
+        <meta property="al:android:url" content="vg.no:///">
+        <meta property="al:android:package" content="com.agens.android.vgsnarvei">
+        <meta property="al:android:app_name" content="VG">
+        <meta property="al:web:url" content="http://www.vg.no/">
+        <meta name="twitter:card" content="summary_large_image">
+        <meta name="google-site-verification" content="MLm3DHfNZRq9rzqHRktoUtYV0ZBtYfImmmqKByf_RJM">
+        <meta name="apple-itunes-app" content="app-id=381071021, affiliate-data=&uo=4&at=10lugu, app-argument=http://www.vg.no/">
+        <meta name="twitter:app:country" content="NO">
+        <meta name="twitter:app:name:iphone" content="VG">
+        <meta name="twitter:app:id:iphone" content="381071021">
+        <meta name="twitter:app:url:iphone" content="vg.no://">
+        <meta name="twitter:app:name:ipad" content="VG">
+        <meta name="twitter:app:id:ipad" content="381071021">
+        <meta name="twitter:app:url:ipad" content="vg.no://">
+        <meta name="twitter:app:name:googleplay" content="VG">
+        <meta name="twitter:app:id:googleplay" content="com.agens.android.vgsnarvei">
+        <meta name="twitter:app:url:googleplay" content="vg.no:///">
+
+    <link rel="alternate"
+                    type="application/rss+xml"
+                            title="VG :: forsiden"
+            href="http://www.vg.no/rss/feed/forsiden/?format=rss"/>
+    <link rel="alternate"
+                    type="application/atom+xml"
+                            title="VG :: forsiden"
+            href="http://www.vg.no/rss/feed/forsiden/?format=atom"/>
+    <link rel="alternate"
+                    type="application/rss+xml"
+                            title="VG"
+            href="http://www.vg.no/rss/feed/?categories=&keywords=&format=rss&limit=10"/>
+    <link rel="alternate"
+                    type="application/atom+xml"
+                            title="VG"
+            href="http://www.vg.no/rss/feed/?categories=&keywords=&format=atom&limit=10"/>
+    <link rel="alternate"
+                    type="application/rss+xml"
+                            title="VG :: Nyheter"
+            href="http://www.vg.no/rss/feed/?categories=1068&keywords=&format=rss&limit=10"/>
+    <link rel="alternate"
+                    type="application/atom+xml"
+                            title="VG :: Nyheter"
+            href="http://www.vg.no/rss/feed/?categories=1068&keywords=&format=atom&limit=10"/>
+    <link rel="alternate"
+                    type="application/rss+xml"
+                            title="VG :: Sport"
+            href="http://www.vg.no/rss/feed/?categories=1072&keywords=&format=rss&limit=10"/>
+    <link rel="alternate"
+                    type="application/atom+xml"
+                            title="VG :: Sport"
+            href="http://www.vg.no/rss/feed/?categories=1072&keywords=&format=atom&limit=10"/>
+    <link rel="alternate"
+                    type="application/rss+xml"
+                            title="VG :: Fotball"
+            href="http://www.vg.no/rss/feed/?categories=1073&keywords=&format=rss&limit=10"/>
+    <link rel="alternate"
+                    type="application/atom+xml"
+                            title="VG :: Fotball"
+            href="http://www.vg.no/rss/feed/?categories=1073&keywords=&format=atom&limit=10"/>
+    <link rel="alternate"
+                    type="application/rss+xml"
+                            title="VG :: Rampelys"
+            href="http://www.vg.no/rss/feed/?categories=1096&keywords=&format=rss&limit=10"/>
+    <link rel="alternate"
+                    type="application/atom+xml"
+                            title="VG :: Rampelys"
+            href="http://www.vg.no/rss/feed/?categories=1096&keywords=&format=atom&limit=10"/>
+    <link rel="alternate"
+                    type="application/rss+xml"
+                            title="VG :: Forbruker"
+            href="http://www.vg.no/rss/feed/?categories=1102&keywords=&format=rss&limit=10"/>
+    <link rel="alternate"
+                    type="application/atom+xml"
+                            title="VG :: Forbruker"
+            href="http://www.vg.no/rss/feed/?categories=1102&keywords=&format=atom&limit=10"/>
+    <link rel="alternate"
+                    href="android-app://com.agens.android.vgsnarvei/vg.no/www.vg.no/"/>
+
+            </head>
+    <body id="frontpage" class="front desktop section-forsiden  ">
+        <script type="text/javascript">
+                    </script>
+        <!--googleoff: index-->
+
+        <a class="screen-reader-hidden" href="/#skip-nav">Hopp til hovedinnhold</a>
+        <div id="top-bar">
+    <div class="top-bar-content">
+        <div class="vg-service">
+            <ul class="section-nav-topbar">
+    <li>
+        <a href="https://www.vektklubb.no">Vektklubb</a>
+    </li>
+    <li>
+        <a href="https://www.minmote.no">MinMote</a>
+    </li>
+    <li>
+        <a href="https://www.godt.no">Godt</a>
+    </li>
+    <li>
+        <a href="https://www.tek.no">Tek.no</a>
+    </li>
+    <li>
+        <a href="http://vgd.no/">VGD</a>
+    </li>
+    <li>
+        <a href="https://www.dinepenger.no">Dine Penger</a>
+    </li>
+    <li>
+        <a href="https://www.e24.no">E24</a>
+    </li>
+    <li>
+        <a href="https://mittanbud.no/?vgmenu=true&amp;utm_source=vgnett&amp;utm_medium=link&amp;utm_content=mittanbud&amp;utm_campaign=forsidelink_topbar">Mittanbud</a>
+    </li>
+    <li>
+        <a href="https://tipster.no/">Tipster</a>
+    </li>
+    <li>
+        <a href="https://www.pent.no">Pent</a>
+    </li>
+    <li>
+        <a href="https://www.vg.no/rabattkode/">Rabattkode</a>
+    </li>
+</ul>        </div>
+        <div class="login-form"></div>
+    </div>
+</div>
+        <div class="reg-grid-container">
+                        <div id="ad-front-topboard"
+    class="ad appnexus topboard"
+    data-lazyload="true"
+    data-refresh="false"
+    data-invcode="no-vg-wde-front_topboard"
+    data-sizes="[[980,150],[1000,150],[1010,150],[980,300],[1010,300],[728,90],[928,120],[980,240]]"
+        data-format="topboard"
+></div>
+            
+                        <div class="ad-wrapper">
+            <div id="ad-front-skyscraperright_1"
+    class="ad appnexus skyscraperright_1"
+    data-lazyload="false"
+    data-refresh="false"
+    data-invcode="no-vg-wde-front_skyscraperright_1"
+    data-sizes="[[160,600],[180,500],[180,700],[300,600]]"
+        data-format="skyscraperright_1"
+></div>
+            </div>
+            <div class="ad-wrapper ad-wrapper-left">
+            <div id="ad-front-skyscraperleft_1"
+    class="ad appnexus skyscraperleft_1"
+    data-lazyload="false"
+    data-refresh="false"
+    data-invcode="no-vg-wde-front_skyscraperleft_1"
+    data-sizes="[[180,701],[180,501]]"
+        data-format="skyscraperleft_1"
+></div>
+            </div>
+            
+            <div class="reg-grid-main-content">
+            <a name="top"></a>
+            <header role="banner">
+            <div id="main-nav-bar">
+        <div class="main-navbar-content">
+            <h1 class="main-logo">
+                <a href="/" title="Klikk for å komme til VGs forside">
+                    <svg class="logo-red" viewBox="0 0 495 115" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+                        <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                            <g id="Imported-Layers" transform="translate(1.000000, 1.000000)">
+                                <path d="M-0.012,-0.5 L493.703,-0.5 L493.703,113.199 L-0.012,113.199 L-0.012,-0.5 Z" id="Fill-1" fill="#DD0000"></path>
+                                <path d="M429.86,99.098 L275.461,99.098 C275.461,99.098 256.76,100.163 256.76,83.45 L256.76,32.242 C256.76,12.335 275.461,13.546 275.461,13.546 L431.453,13.546 C450.58,13.546 450.243,32.346 450.243,32.346 L450.243,35.482 L389.287,35.482 L389.287,32.057 C389.287,32.057 388.565,23.363 378.159,23.363 L330.931,23.363 C318.087,23.363 318.432,34.036 318.432,34.036 L318.432,77.223 C318.432,77.223 317,89.496 330.086,89.496 L377.704,89.496 C388.494,89.496 389.539,78.878 389.539,78.878 L389.539,62.758 L354.861,62.758 L354.861,52.822 L450.213,52.822 L450.213,80.975 C450.213,80.975 450.213,99.098 429.86,99.098" id="Fill-2" fill="#FFFFFF"></path>
+                                <path d="M93.868,99.204 L20.459,13.494 L96.131,13.494 L134.388,71.365 L175.662,13.494 L250.464,13.494 L176.154,99.204 L93.868,99.204" id="Fill-3" fill="#FFFFFF"></path>
+                            </g>
+                        </g>
+                    </svg>
+                    <!--[if lte IE 8]>
+                    <img class="logo-red" src="https://vgc.no/vgnett-prod/img/vgLogoDesktop.png?20180509123724" alt="VG.no" />
+                    <![endif]-->
+                </a>
+            </h1>
+            <div class="section-nav-top-stripe bg-size">
+                <div class="main">
+                                                                                                                                                <span class="date">
+                            <span class="capitalize">torsdag</span><br />
+                            10. mai<br />
+                            2018                        </span>
+                                    </div>
+            </div>
+
+            <div id="nav-bar-search">
+                <form method="get" action="/sok/" id="search-form">
+                    <input type="search" name="q" id="search-input" placeholder="Søk på VG">
+                    <input type="submit" class="submit" value="Søk" />
+                </form>
+            </div><!-- nav-bar-search -->
+            <div id="nav-bar-form" class="contact-form">
+                
+    <div class="inner">
+        <div class="form-template-header">
+             TIPS 2200
+        </div>
+
+        <div class="form-template-content">
+            <form action="/_kontakt/submit" method="POST" name="headerContactForm" enctype="multipart/form-data" novalidate="" class="form-poster" id="headerContactForm"><input type="hidden" name="name" value="headerContactForm"><input type="hidden" name="journalist-receiver" id="journalistReceiver" value=""><label><span>Tips:</span><textarea name="message" required="required" placeholder="Henvendelsen gjelder"></textarea></label><div class="fileupload fileupload-new" data-provides="fileupload">
+    <div class="input-append">
+        <div class="uneditable-input span3">
+            <i class="icon-file fileupload-exists"></i>
+            <span class="fileupload-preview"></span>
+        </div>
+        <span class="btn btn-file">
+            <span class="fileupload-new">Velg bilde</span>
+            <span class="fileupload-exists">Velg bilde</span>
+
+            <input type="file" capture="gallery"
+                name="upload-image"
+                class=""
+                accept="image/*" />
+        </span>
+
+                                        <span class="btn btn-file fileupload-video">
+                    <a target="_blank" href="https://www.filemail.com/incoming/vg02943870363">
+                        Video                    </a>
+                </span>
+                            <span class="btn btn-file fileupload-document">
+                    <a target="_blank" href="https://www.filemail.com/incoming/4724212109">
+                        Dokument                    </a>
+                </span>
+                        </div>
+</div>
+<input type="submit" name="submit" value="Send inn"><input type="hidden" name="article-url" value="http://www.vg.no/"><fieldset><legend>Kontaktinfo:</legend><input type="text" name="sender[important-field]" required="required" class="important-field" value=""><input type="text" name="sender[sender-name]" placeholder="Navn" id="sender-name" value=""><input type="email" name="sender[sender-mail]" placeholder="E-postadresse" value=""><input type="text" name="sender[sender-phone]" placeholder="Telefon" class="sender-phone" value=""></fieldset></form>        </div>
+
+        <div class="form-template-footer">
+            <p>SMS: <a class="sms-link" href="sms:2200">2200</a> Tlf: <a class="call-link" href="tel:22000000">22 000 000</a></p>
+            <p>VG AS | Akersgata 55, Postboks 1185 Sentrum, 0107 Oslo</p>
+        </div>
+    </div>
+            </div><!-- nav-bar-form -->
+            <div id="section-nav-bar">
+                <nav class="section-nav-bar-content" role="navigation">
+                    <ul class="nav-header">
+                                            </ul>
+                </nav>
+            </div><!-- section-nav-bar -->
+
+            <ul class="button-container">
+                <li><a class="menu-menu-btn bg-size" data-for="#section-nav-bar" id="menu-btn" href="/a-aa">Meny</a></li>
+                <li><a class="menu-tip-btn bg-size" data-for="#nav-bar-form" id="tip-btn" href="/tips-oss">Tips 2200</a></li>
+                <li><a class="menu-search-btn bg-size" data-for="#nav-bar-search" id="search-btn" href="/sok/">Søk</a></li>
+            </ul>
+                            <div class="second">
+                    <div class="wid-weather">
+    <div class="wid-container">
+        <div class="forecast">
+            <div class="yr">
+                <a href="http://pent.no">
+                    <span class="details">
+                        <span class="temperature"></span><br /> <span class="service">yr.no</span>
+                    </span>
+                    <i class=""></i>
+                </a>
+            </div>
+            <div class="storm">
+                <a href="http://pent.no">
+                    <i class=""></i>
+                    <span class="details">
+                        <span class="temperature"></span><br /> <span class="service">Storm</span>
+                    </span>
+                </a>
+            </div>
+        </div>
+        <div class="city">
+            <a href="#" class="toggle-locations"><span class="current-city"><i class="bg-size"></i> <span class="name"></span></span></a>
+        </div>
+        <div class="locations">
+            <form method="get" action="" id="locations-form">
+                <input type="text" id="locations-input" name="location" autocomplete="off" />
+            </form>
+
+            <a class="close" href="#">Lukk vinduet</a>
+
+            <div class="list"></div>
+            <div class="byline">
+                <a href="http://pent.no" class="pent"></a>
+                <span>Presentert i samarbeid med storm.no og yr.no</span>
+            </div>
+        </div>
+    </div>
+</div>
+                </div>
+                    </div>
+    </div><!-- main-nav-bar -->
+        <div class="navbar-content">
+                    <ul class="section-nav-submenu">
+            <li class="submenu-link">
+            <a class="submenu-link cursor-default" href="https://www.vg.no/nyheter/innenriks/i/zLPdVr/prisdryss-til-vg-paa-aarets-mediepriser" data-parent=""><span class="red">Årets nyhetsnettsted!</span></a>
+                    </li>
+            <li >
+            <a class="" href="/nyheter/" data-parent="">NYHETER</a>
+                    </li>
+            <li >
+            <a class="" href="/nyheter/meninger/" data-parent="">MENINGER</a>
+                    </li>
+            <li >
+            <a class="" href="/sport/" data-parent="">VG SPORTEN</a>
+                    </li>
+            <li >
+            <a class="" href="http://vglive.no/" data-parent="">VG LIVE</a>
+                    </li>
+            <li >
+            <a class="" href="/rampelys/" data-parent="">RAMPELYS</a>
+                    </li>
+            <li >
+            <a class="" href="http://www.vg.no/tv-guide/" data-parent="">TV-GUIDE</a>
+                    </li>
+            <li >
+            <a class="" href="http://www.vgtv.no/" data-parent="">VGTV</a>
+                    </li>
+            <li >
+            <a class="" href="http://www.vg.no/pluss" data-parent="">VG+</a>
+                    </li>
+            <li >
+            <a class="eavis hide-ios" href="http://vg.no/eavis/?tag=meny" data-parent="">E-AVIS</a>
+                    </li>
+    </ul>                <div class="clearer"></div>
+    </div>
+</header>
+
+            <div id="wid-header-below"></div>
+
+            <div class="reg-grid-wrapper">
+                        <!--[if lte IE 8 | IEMobile 7 ]>
+            <style>
+            .browserupgrade {
+                background: #b41c0a;
+                color: #fff;
+                padding: 20px;
+                margin-top: 20px;
+            }
+            .browserupgrade .browserupgrade-bold {
+                margin-bottom: 10px;
+                font-size: 18px;
+            }
+            .browserupgrade a {
+                color: #fff;
+                font-weight: bold;
+            }
+            </style>
+            <div class="browserupgrade"><p class="browserupgrade-bold"><strong>Du bruker en eldre versjon av nettleseren Internet Explorer.</strong></p><p>For å få en best mulig opplevelse av våre nettsider, bør du <a href="http://browsehappy.com/" target="_blank">gratis oppgradere nettleseren din her</a>.</p></div>
+        <![endif]-->
+                
+                
+
+<a id="skip-nav"></a>
+<div id="page-wrapper" class="pag-front">
+    <div class="reg-grid-full">
+        <time data-front="topp-oppslag-desktop" class="last-modified" datetime="2018-01-31T20:02:39Z"></time>
+            </div>
+    <!--googleon: index-->
+    <main id="wid-data" class="reg-grid-main" data-page-type="front">
+        <div id="touchpoint-placement-front" class="touchpoint-placement"></div>
+        <time data-front="hovedlopet-desktop" class="last-modified" datetime="2018-05-10T13:34:54Z"></time>
+        <div id="front-86" class="drfront">
+<style>
+                div.drfront.ab-df-86-d3e7c365-df-86-d3e7c365
+                div.article-extract[data-experiment-id="df-86-d3e7c365"][data-variant-id="df-86-d3e7c365"] {
+                    display: inline !important;
+                }
+                div.drfront.ab-df-86-d3e7c365-df-86-d3e7c365
+                div.article-extract[data-experiment-id="df-86-d3e7c365"] {
+                    display: none !important;
+                }
+                
+                div.drfront.ab-df-86-d3e7c365-df-86-v038570a
+                div.article-extract[data-experiment-id="df-86-d3e7c365"][data-variant-id="df-86-v038570a"] {
+                    display: inline !important;
+                }
+                div.drfront.ab-df-86-d3e7c365-df-86-v038570a
+                div.article-extract[data-experiment-id="df-86-d3e7c365"] {
+                    display: none !important;
+                }
+                
+                div.drfront.ab-df-86-d3e7c365-df-86-r859df0c
+                div.article-extract[data-experiment-id="df-86-d3e7c365"][data-variant-id="df-86-r859df0c"] {
+                    display: inline !important;
+                }
+                div.drfront.ab-df-86-d3e7c365-df-86-r859df0c
+                div.article-extract[data-experiment-id="df-86-d3e7c365"] {
+                    display: none !important;
+                }
+                </style>
+<script>(function() { 
+            var ably = new Ably("drfront");
+            var fronts = document.getElementsByClassName("drfront");
+        
+                var i, front;
+                for (i = 0; i < fronts.length; i++) {
+                    front = fronts[i];
+                    ably.on('df-86-d3e7c365', function(test) {
+                        front.className = front.className + ' ab-df-86-d3e7c365-' + test.getAssignment();
+                    });
+                    ably.addTest({
+                        name: 'df-86-d3e7c365',
+                        sampler: ably.samplers.default({"df-86-d3e7c365":1,"df-86-v038570a":1,"df-86-r859df0c":1}),
+                        scope: 'device'
+                    });
+                }
+             })();</script><div class="articles">
+		<div id="container_df-86-ab78089b" class="df-container row-1 df-container-skin-default">
+	<div class="df-container-inner">
+		<div class="df-container-header">
+					<span class="df-container-header-inner"></span>
+				</div>
+		<div id="df-86-p785d3b0" class="article-extract article-extract-full left row-1 img-brd-1 bg-default df-left-in-row df-right-in-row df-top-in-row df-bottom-in-row">
+	
+	<div class="article-content">
+		<span class="df-img-container"><span class="df-img-container-inner" style="padding-bottom:52.599388%"><a href="https://www.vg.no/nyheter/innenriks/i/rL1EKa/frank-52-kan-bade-paa-plattingen-store-traer-flyter-forbi"><img alt="" class="article-image" src="https://vgc.no/drfront/images/2018/05/10/c=4,0,1462,769;w=654;h=344;402044.jpg"></a><span class="df-img-layer"><a href="https://www.vg.no/nyheter/innenriks/i/rL1EKa/frank-52-kan-bade-paa-plattingen-store-traer-flyter-forbi"> </a></span></span></span>
+<h3 class=" vg-fs101"><span class="vg-fs101"><a href="https://www.vg.no/nyheter/innenriks/i/rL1EKa/frank-52-kan-bade-paa-plattingen-store-traer-flyter-forbi">NVE: Alvorlig</a></span></h3>
+<div class="clearer"></div>
+	</div>
+	
+</div>
+		<div class="df-container-footer">
+			<div class="df-container-footer-inner"></div>
+		</div>
+	</div>
+</div>
+<div class="clearer"></div>
+<div id="df-86-mf899409" class="article-extract article-extract-three-fifth left row-2 img-brd-1 bg-default df-left-in-row df-top-in-row df-bottom-in-row">
+	
+	<div class="article-content">
+		<span class="df-img-container"><span class="df-img-container-inner" style="padding-bottom:75.668449%"><a href="https://www.vg.no/nyheter/innenriks/i/dd8mbw/ett-doegn-paa-jobb-med-akuttmedisinsk-avdeling-gambler-med-liv-og-doed"><img alt="" class="article-image" src="https://vgc.no/drfront/images/2018/05/10/c=305,64,1586,1200;w=374;h=283;402031.jpg"></a><span class="df-img-layer"><a href="https://www.vg.no/nyheter/innenriks/i/dd8mbw/ett-doegn-paa-jobb-med-akuttmedisinsk-avdeling-gambler-med-liv-og-doed"> </a></span></span></span>
+<h3 class="insert-title vg-fs25"><span class="vg-fs25"><a href="https://www.vg.no/nyheter/innenriks/i/dd8mbw/ett-doegn-paa-jobb-med-akuttmedisinsk-avdeling-gambler-med-liv-og-doed">Ambulanse-krisen:</a></span></h3>
+<h3 class=" vg-fs49"><span class="vg-fs49"><a href="https://www.vg.no/nyheter/innenriks/i/dd8mbw/ett-doegn-paa-jobb-med-akuttmedisinsk-avdeling-gambler-med-liv-og-doed">- Jeg må gamble </a></span></h3>
+<h3 class=" vg-fs55"><span><a href="https://www.vg.no/nyheter/innenriks/i/dd8mbw/ett-doegn-paa-jobb-med-akuttmedisinsk-avdeling-gambler-med-liv-og-doed"><span class="vg-fs55">med liv og død</span><br></a></span></h3>
+<div class="clearer"></div>
+	</div>
+	
+</div>
+<div id="df-86-m527e2ab" class="article-extract article-extract-two-fifth left row-2 img-brd-1 bg-default df-right-in-row df-top-in-row">
+	
+	<div class="article-content">
+		<span class="df-img-container top"><span class="df-img-container-inner" style="padding-bottom:45.038168%"><a href="https://www.vg.no/nyheter/utenriks/i/gPG6xJ/merkel-eskaleringen-i-midtoesten-er-et-spoersmaal-om-krig-og-fred"><img alt="" class="article-image" src="https://vgc.no/drfront/images/2018/05/10/c=135,202,1765,795;w=262;h=118;402029.jpg"></a><span class="df-img-layer"><a href="https://www.vg.no/nyheter/utenriks/i/gPG6xJ/merkel-eskaleringen-i-midtoesten-er-et-spoersmaal-om-krig-og-fred"> </a></span></span></span>
+<h3 class=" vg-fs44"><span class="vg-fs44"><a href="https://www.vg.no/nyheter/utenriks/i/gPG6xJ/merkel-eskaleringen-i-midtoesten-er-et-spoersmaal-om-krig-og-fred">Frykter krig</a></span></h3>
+<h3 class=" vg-fs50"><span class="vg-fs50"><a href="https://www.vg.no/nyheter/utenriks/i/gPG6xJ/merkel-eskaleringen-i-midtoesten-er-et-spoersmaal-om-krig-og-fred"> i Midtøsten</a></span></h3>
+<div class="clearer"></div>
+	</div>
+	
+</div>
+<div id="df-86-d88d107d" class="article-extract article-extract-two-fifth left row-2 img-brd-1 bg-default df-right-in-row">
+	
+	<div class="article-content">
+		<span class="df-img-container"><span class="df-img-container-inner" style="padding-bottom:41.984733%"><a href="https://www.vg.no/sport/fotball/i/vmP5Gm/derby-sjefen-langer-ut-mot-johansen-foer-playoff-duell-rart-det-ikke-fikk-konsekvenser"><img alt="" class="article-image" src="https://vgc.no/drfront/images/2018/05/10/c=168,48,657,276;w=262;h=110;402032.jpg"></a><span class="df-img-layer"><a href="https://www.vg.no/sport/fotball/i/vmP5Gm/derby-sjefen-langer-ut-mot-johansen-foer-playoff-duell-rart-det-ikke-fikk-konsekvenser"> </a></span></span></span>
+<h3 class=" vg-fs27"><span class="vg-fs27"><a href="https://www.vg.no/sport/fotball/i/vmP5Gm/derby-sjefen-langer-ut-mot-johansen-foer-playoff-duell-rart-det-ikke-fikk-konsekvenser">Derby-sjefen langer </a></span></h3>
+<h3 class=" vg-fs32"><a href="https://www.vg.no/sport/fotball/i/vmP5Gm/derby-sjefen-langer-ut-mot-johansen-foer-playoff-duell-rart-det-ikke-fikk-konsekvenser"><span class="vg-fs32">ut mot Johansen</span><br></a></h3>
+<div class="clearer"></div>
+	</div>
+	
+</div>
+<div id="container_df-86-w4dcc14a" class="df-container row-3 df-container-skin-default df-container-locked">
+	<div class="df-container-inner">
+		<div class="df-container-header">
+					<span class="df-container-header-inner"></span>
+				</div>
+		<div class="clearer"></div>
+<div id="df-86-dfd945d4" class="article-extract article-extract-half left row-3 img-brd-1 bg-default df-left-in-row df-top-in-row df-bottom-in-row">
+	
+	<div class="article-content">
+		<span class="df-img-container df-img-skin-play-button"><span class="df-img-container-inner" style="padding-bottom:67.610063%"><a href="https://www.vgtv.no/video/158205/se-airbus-flyets-spektakulaere-take-off"><img src="https://vgc.no/vgnett/img/t.gif" alt="" title="H" class="article-image lazy" data-src="https://vgc.no/drfront/images/2018/05/10/c=246,112,1374,929;w=318;h=215;402021.jpg"><noscript><img src="https://vgc.no/drfront/images/2018/05/10/c=246,112,1374,929;w=318;h=215;402021.jpg" alt="" title="H" class="article-image"></noscript></a><span class="df-img-layer"><a href="https://www.vgtv.no/video/158205/se-airbus-flyets-spektakulaere-take-off"> </a></span></span></span>
+<h3 class=" vg-fs50"><span class="vg-fs50"><a title="Se Airbus-flyets spektakulære take-off" href="https://www.vgtv.no/video/158205/se-airbus-flyets-spektakulaere-take-off">Spektakulær</a></span></h3>
+<h3 class=" vg-fs85"><span class="vg-fs85"><a title="Se Airbus-flyets spektakulære take-off" href="https://www.vgtv.no/video/158205/se-airbus-flyets-spektakulaere-take-off"> take-off</a></span></h3>
+<div class="clearer"></div>
+	</div>
+	
+</div>
+<div id="df-86-p004f866" class="article-extract article-extract-half left row-3 img-brd-1 bg-default df-right-in-row df-top-in-row">
+	
+	<div class="article-content">
+		<span class="df-img-container df-img-skin-pluss"><span class="df-img-container-inner" style="padding-bottom:72.012579%"><a href="https://www.vg.no/i/Eo9wgj"><img src="https://vgc.no/vgnett/img/t.gif" alt="" class="article-image lazy" data-src="https://vgc.no/drfront/images/2018/05/09/c=176,0,1696,1221;w=318;h=229;401910.jpg"><noscript><img src="https://vgc.no/drfront/images/2018/05/09/c=176,0,1696,1221;w=318;h=229;401910.jpg" alt="" class="article-image"></noscript></a><span class="df-img-layer"><a href="https://www.vg.no/i/Eo9wgj"> </a></span></span></span>
+<h3 class=" vg-fs23"><a href="https://www.vg.no/i/Eo9wgj"><span class="vg-fs23 insert-title">VG-kårer:</span></a></h3>
+<h3 class=" vg-fs57"><a href="https://www.vg.no/i/Eo9wgj"><span class="vg-fs57">De 50 beste </span></a></h3>
+<h3 class=" vg-fs36"><a href="https://www.vg.no/i/Eo9wgj"><span class="vg-fs36">spissene i England</span></a></h3>
+<div class="clearer"></div>
+	</div>
+	
+</div>
+		<div class="df-container-footer">
+			<div class="df-container-footer-inner"></div>
+		</div>
+	</div>
+</div>
+<div id="ad-front-netboard_1" class="ad appnexus netboard_1" data-lazyload="true" data-refresh="false" data-invcode="no-vg-wde-front_netboard_1" data-sizes="[[580,400],[580,500],[1,1]]" data-format="netboard_1"></div>
+<div id="container_df-86-m611aa34" class="df-container row-4 df-container-skin-default">
+	<div class="df-container-inner">
+		<div class="df-container-header">
+					<span class="df-container-header-inner"></span>
+				</div>
+		<div class="clearer"></div>
+<div id="df-86-d41abb47" class="article-extract article-extract-full left row-4 img-brd-1 bg-default df-left-in-row df-right-in-row df-top-in-row">
+	
+	<div class="article-content">
+		<h3 class=" vg-fs50"><span class="vg-fs50"><a href="https://direkte.vg.no/studio/nyhetsdoegnet#!verbatimId=5af445c05152f73f3346e70d">Forrykende prøve av Rybak</a></span></h3>
+<div class="clearer"></div>
+	</div>
+	
+</div>
+<div class="clearer"></div>
+<div id="df-86-ra5b64eb" class="article-extract article-extract-three-fifth right row-4 img-brd-1 bg-default df-right-in-row df-top-in-row">
+	
+	<div class="article-content">
+		<span class="df-img-container df-img-skin-play-button"><span class="df-img-container-inner" style="padding-bottom:89.572193%"><a href="https://www.minmote.no/#!/video/158192/elise-undersoeker-prevensjon"><img src="https://vgc.no/vgnett/img/t.gif" alt="" title="Tomas Rodriguez" class="article-image lazy" data-src="https://vgc.no/drfront/images/2018/05/09/c=690,0,3910,3502;w=374;h=335;401827.jpg"><noscript><img src="https://vgc.no/drfront/images/2018/05/09/c=690,0,3910,3502;w=374;h=335;401827.jpg" alt="" title="Tomas Rodriguez" class="article-image"></noscript></a><span class="df-img-layer"><a href="https://www.minmote.no/#!/video/158192/elise-undersoeker-prevensjon"> </a></span></span></span>
+<h3 class=" vg-fs20">
+<span class="vg-fs52"><a href="https://www.minmote.no/#!/video/158192/elise-undersoeker-prevensjon">- Gutter nekter </a></span><br><span class="vg-fs46"><a href="https://www.minmote.no/#!/video/158192/elise-undersoeker-prevensjon">sex med kondom</a></span>
+</h3>
+<div class="clearer"></div>
+	</div>
+	
+</div>
+<div id="df-86-m2929170" class="article-extract article-extract-two-fifth left row-4 img-brd-1 bg-default df-left-in-row df-top-in-row">
+	
+	<div class="article-content">
+		<span class="df-img-container df-img-skin-terningkast-4"><span class="df-img-container-inner" style="padding-bottom:42.366412%"><a href="https://www.vg.no/rampelys/musikk/i/Mgk1GM/semifinale-2-i-eurovision-song-contest-alexander-rybak-nest-best"><img alt="" class="article-image lazy" src="https://vgc.no/vgnett/img/t.gif" data-src="https://vgc.no/drfront/images/2018/05/10/c=405,86,1341,570;w=262;h=111;401984.jpg"><noscript><img alt="" class="article-image" src="https://vgc.no/drfront/images/2018/05/10/c=405,86,1341,570;w=262;h=111;401984.jpg"></noscript></a><span class="df-img-layer"><a href="https://www.vg.no/rampelys/musikk/i/Mgk1GM/semifinale-2-i-eurovision-song-contest-alexander-rybak-nest-best"> </a></span></span></span>
+<h3 style="text-align: center;" class=" vg-fs51"><span class="vg-fs51"><em><a href="https://www.vg.no/rampelys/musikk/i/Mgk1GM/semifinale-2-i-eurovision-song-contest-alexander-rybak-nest-best">Ifølge</a></em></span></h3>
+<h3 style="text-align: center;" class=" vg-fs51"><span><em><span class="vg-fs51"><a href="https://www.vg.no/rampelys/musikk/i/Mgk1GM/semifinale-2-i-eurovision-song-contest-alexander-rybak-nest-best"> ryktene...</a></span><a href="https://www.vg.no/rampelys/musikk/i/Mgk1GM/semifinale-2-i-eurovision-song-contest-alexander-rybak-nest-best"><br></a></em></span></h3>
+<div class="clearer"></div>
+	</div>
+	
+</div>
+<div id="df-86-qeb6ada7" class="article-extract article-extract-two-fifth left row-4 img-brd-1 bg-dropp-toppstripe df-left-in-row df-bottom-in-row">
+	
+	<div class="article-content">
+		<span class="df-img-container"><span class="df-img-container-inner" style="padding-bottom:44.274809%"><a href="https://www.vg.no/rampelys/musikk/i/xRE38B/alexander-rybaks-floert-med-konkurrentene"><img alt="" class="article-image lazy" src="https://vgc.no/vgnett/img/t.gif" data-src="https://vgc.no/drfront/images/2018/05/10/c=300,323,1226,543;w=262;h=116;401985.jpg"><noscript><img alt="" class="article-image" src="https://vgc.no/drfront/images/2018/05/10/c=300,323,1226,543;w=262;h=116;401985.jpg"></noscript></a><span class="df-img-layer"><a href="https://www.vg.no/rampelys/musikk/i/xRE38B/alexander-rybaks-floert-med-konkurrentene"> </a></span></span></span>
+<h3 class=" vg-fs87"><span class="vg-fs87"><a href="https://www.vg.no/rampelys/musikk/i/xRE38B/alexander-rybaks-floert-med-konkurrentene">Hylles </a></span></h3>
+<div class="clearer"></div>
+	</div>
+	
+</div>
+		<div class="df-container-footer">
+			<div class="df-container-footer-inner"></div>
+		</div>
+	</div>
+</div>
+<div id="ad-front-netboard_backfill_1" class="ad appnexus netboard_backfill_1 ad-defer" data-lazyload="true" data-refresh="false" data-invcode="no-vg-wde-front_netboard_backfill" data-sizes="[[580,400],[580,500],[1,1]]" data-defer="true" data-format="netboard_backfill_1"></div>
+<div class="partnerstudio-inscreen-measure" data-row="5"><div class="inscreen-target"></div></div>
+<div id="front-3" class="drfront df-skin-vgpartnerstudio df-published" data-pulse-variant-id="VGP-variant-3" data-pulse-revision-id="7412">
+	<div class="df-articles">
+		<div id="df-3-nc4ce476" class="df-container df-row-5 partner-studio df-skin-cm-yellowbg">
+	<div class="df-container-inner">
+		<div class="df-container-header">
+					<span class="df-container-header-inner"></span>
+				</div>
+		<div id="df-3-p0fa2121" class="df-article df-width-100 df-left df-row-5 df-skin-default">
+	
+	<div class="df-article-content">
+		<div class="df-img-container"><div class="df-img-container-inner" style="padding-bottom:7.798165%">
+<img src="https://vgc.no/vgnett/img/t.gif" alt="" title="" class="df-article-img lazy" data-src="https://vgc.no/drfront3/images/2b3d3da82b69d584457cd3030968b7f2.jpg"><span class="df-img-layer"> </span>
+<noscript><img src="https://vgc.no/drfront3/images/2b3d3da82b69d584457cd3030968b7f2.jpg" alt="" title="" class="df-article-img"></noscript>
+</div></div>
+<div class="df-clearer"></div>
+	</div>
+	
+</div>
+<div id="df-3-w043e1d0" class="df-article df-width-100 df-left df-row-5 df-skin-default">
+	
+	<div class="df-article-content">
+		<div class="df-img-container"><div class="df-img-container-inner" style="padding-bottom:55.657492%"><a href="https://www.vg.no/annonsorinnhold/smart/komplett/538-koss-porta-pro-er-tilbake-dette-er-nytt"><img src="https://vgc.no/vgnett/img/t.gif" alt="" title="" class="df-article-img lazy" data-src="https://vgc.no/drfront3/images/771597ea8e0d3922efc2301fe74489d5.jpg"><span class="df-img-layer"> </span><noscript><img src="https://vgc.no/drfront3/images/771597ea8e0d3922efc2301fe74489d5.jpg" alt="" title="" class="df-article-img"></noscript></a></div></div>
+<h3><a href="https://www.vg.no/annonsorinnhold/smart/komplett/538-koss-porta-pro-er-tilbake-dette-er-nytt"><span class="df-fs-49">De ikoniske hodetelefonene</span></a></h3>
+<h3><a href="https://www.vg.no/annonsorinnhold/smart/komplett/538-koss-porta-pro-er-tilbake-dette-er-nytt"><span class="df-fs-58">er tilbake - dette er nytt</span></a></h3>
+<div class="df-clearer"></div>
+	</div>
+	
+</div>
+		<div class="df-container-footer">
+			<div class="df-container-footer-inner"></div>
+		</div>
+	</div>
+</div>	</div>
+	<br class="df-clearer">
+</div>
+<div id="container_df-86-x259cfd1" class="df-container row-6 df-container-skin-default df-container-locked">
+	<div class="df-container-inner">
+		<div class="df-container-header">
+					<span class="df-container-header-inner"></span>
+				</div>
+		<div class="clearer"></div>
+<div id="df-86-h44743bc" class="article-extract article-extract-half left row-6 img-brd-1 bg-default df-left-in-row df-top-in-row">
+	
+	<div class="article-content">
+		<span class="df-img-container df-img-skin-play-button"><span class="df-img-container-inner" style="padding-bottom:62.893082%"><a href="https://www.vgtv.no/video/158197/blir-saa-flau-at-hun-forlater-studio"><img class="article-image lazy" alt="" src="https://vgc.no/vgnett/img/t.gif" data-src="https://vgc.no/drfront/images/2018/05/10/c=87,17,1106,696;w=318;h=200;401967.jpg"><noscript><img class="article-image" alt="" src="https://vgc.no/drfront/images/2018/05/10/c=87,17,1106,696;w=318;h=200;401967.jpg"></noscript></a><span class="df-img-layer"><a href="https://www.vgtv.no/video/158197/blir-saa-flau-at-hun-forlater-studio"> </a></span></span></span>
+<h3 class=" vg-fs37"><span class="vg-fs37"><a title="Blir så flau at hun forlater studio" href="https://www.vgtv.no/video/158197/blir-saa-flau-at-hun-forlater-studio">Blir så flau at hun</a></span></h3>
+<h3 class=" vg-fs45"><span class="vg-fs45"><a title="Blir så flau at hun forlater studio" href="https://www.vgtv.no/video/158197/blir-saa-flau-at-hun-forlater-studio"> forlater studio</a></span></h3>
+<div class="clearer"></div>
+	</div>
+	
+</div>
+<div id="df-86-c07340e7" class="article-extract article-extract-half left row-6 img-brd-0 bg-default df-right-in-row df-top-in-row">
+	
+	<div class="article-content">
+		<span class="df-img-container df-img-skin-pluss"><span class="df-img-container-inner" style="padding-bottom:48.113208%"><a href="https://www.vg.no/nyheter/i/rLK7pa/naar-foreldre-dreper-barna-sine"><img src="https://vgc.no/vgnett/img/t.gif" alt="" class="df-img-skin-pluss article-image lazy" data-src="https://vgc.no/drfront/images/2018/05/09/c=0,201,1000,481;w=318;h=153;401923.jpg"><noscript><img src="https://vgc.no/drfront/images/2018/05/09/c=0,201,1000,481;w=318;h=153;401923.jpg" alt="" class="df-img-skin-pluss article-image"></noscript></a><span class="df-img-layer"><a href="https://www.vg.no/nyheter/i/rLK7pa/naar-foreldre-dreper-barna-sine"> </a></span></span></span>
+<h3 class=" vg-fs49"><span class="vg-fs49"><a href="https://www.vg.no/nyheter/i/rLK7pa/naar-foreldre-dreper-barna-sine">Hva får en far</a></span></h3>
+<h3 class=" vg-fs33"><span class="vg-fs33"><a href="https://www.vg.no/nyheter/i/rLK7pa/naar-foreldre-dreper-barna-sine"> eller mor til </a><a href="https://www.vg.no/nyheter/i/rLK7pa/naar-foreldre-dreper-barna-sine">å </a><a href="https://www.vg.no/nyheter/i/rLK7pa/naar-foreldre-dreper-barna-sine">drepe</a></span></h3>
+<h3 class=" vg-fs47"><span class="vg-fs47"><a href="https://www.vg.no/nyheter/i/rLK7pa/naar-foreldre-dreper-barna-sine"> sitt eget barn?</a></span></h3>
+<div class="clearer"></div>
+	</div>
+	
+</div>
+<div id="df-86-k7493562" class="article-extract article-extract-full left row-6 img-brd-1 bg-default df-left-in-row df-right-in-row df-top-in-row df-bottom-in-row">
+	
+	<div class="article-content">
+		<span class="df-img-container df-img-skin-pluss"><span class="df-img-container-inner" style="padding-bottom:41.896024%"><a href="https://www.vg

@@ -407,3 +407,180 @@ class VSE(nn.Module):
             clip_grad_norm(self.params, self.grad_clip)
         self.optimizer.step()
         # return loss
+
+    def encode_data(self, data_loader, log_step=10, logging=print):
+        """Encode all images and captions loadable by `data_loader`
+        """
+        # switch to evaluate mode
+        self.val_start()
+        # numpy array to keep all the embeddings
+        img_embs = None
+        cap_embs = None
+        for i, (images, captions, lengths, ids) in enumerate(data_loader):
+            # compute the embeddings
+            img_emb, cap_emb = self.forward_emb(images, captions, lengths,
+                                                 volatile=True)
+
+            # initialize the numpy arrays given the size of the embeddings
+            if img_embs is None:
+                img_embs = np.zeros((len(data_loader.dataset), img_emb.size(1)))
+                cap_embs = np.zeros((len(data_loader.dataset), cap_emb.size(1)))
+
+            # preserve the embeddings by copying from gpu and converting to numpy
+            img_embs[ids] = img_emb.data.cpu().numpy().copy()
+            cap_embs[ids] = cap_emb.data.cpu().numpy().copy()
+
+            # measure accuracy and record loss
+            self.forward_loss(img_emb, cap_emb)
+            del images, captions
+
+        return img_embs, cap_embs
+
+    def train_model(self, train_loader, epochs):
+        if opt.train_shuffle:
+            train_loader.dataset.shuffle()
+
+        self.train_start()
+        if len(train_loader) > 0:
+            for epoch in range(epochs):
+                self.adjust_learning_rate(self.optimizer, epoch)
+                for i, train_data in enumerate(train_loader):
+                    self.train_start()
+                    self.train_emb(*train_data)
+
+
+    def validate_loss(self, loader):
+        total_loss = 0
+        self.val_start()
+        for i, (images, captions, lengths, ids) in enumerate(loader):
+            img_emb, cap_emb = self.forward_emb(images, captions, lengths, volatile=True)
+            loss = self.forward_loss(img_emb, cap_emb)
+            total_loss += loss.data[0]
+        return total_loss
+
+    def performance_validate(self):
+        """returns the performance messure with recall at 1, 5, 10
+        for both image -> caption and cap -> img, and the sum of them all added together"""
+        # compute the encoding for all the validation images and captions
+        val_loader = loaders["val_tot_loader"]
+        img_embs, cap_embs = self.encode_data(val_loader)
+        # caption retrieval
+        (r1, r5, r10, medr, meanr) = i2t(img_embs, cap_embs, measure=opt.measure)
+        # image retrieval
+        (r1i, r5i, r10i, medri, meanr) = t2i(img_embs, cap_embs, measure=opt.measure)
+
+        performance = r1 + r5 + r10 + r1i + r5i + r10i
+        return (performance, r1, r5, r10, r1i, r5i, r10i)
+
+
+def i2t(images, captions, npts=None, measure='cosine', return_ranks=False):
+    """
+    Images->Text (Image Annotation)
+    Images: (5N, K) matrix of images
+    Captions: (5N, K) matrix of captions
+    """
+    if npts is None:
+        npts = images.shape[0] / 5
+    index_list = []
+
+    # TODO check if this is always correct
+    npts = int(npts)
+    ranks = np.zeros(npts)
+    top1 = np.zeros(npts)
+    for index in range(npts):
+
+        # Get query image
+        im = images[5 * index].reshape(1, images.shape[1])
+
+        # Compute scores
+        if measure == 'order':
+            bs = 100
+            if index % bs == 0:
+                mx = min(images.shape[0], 5 * (index + bs))
+                im2 = images[5 * index:mx:5]
+                a = torch.Tensor(im2)
+                b = torch.Tensor(captions)
+                if torch.cuda.is_available():
+                    a, b = a.cuda(), b.cuda()
+                d2 = order_sim(a,b)
+                d2 = d2.cpu().numpy()
+            d = d2[index % bs]
+        else:
+            d = np.dot(im, captions.T).flatten()
+        inds = np.argsort(d)[::-1]
+        index_list.append(inds[0])
+
+        # Score
+        rank = 1e20
+        for i in range(5 * index, 5 * index + 5, 1):
+            tmp = np.where(inds == i)[0][0]
+            if tmp < rank:
+                rank = tmp
+        ranks[index] = rank
+        top1[index] = inds[0]
+
+    # Compute metrics
+    r1 = 100.0 * len(np.where(ranks < 1)[0]) / len(ranks)
+    r5 = 100.0 * len(np.where(ranks < 5)[0]) / len(ranks)
+    r10 = 100.0 * len(np.where(ranks < 10)[0]) / len(ranks)
+    medr = np.floor(np.median(ranks)) + 1
+    meanr = ranks.mean() + 1
+    if return_ranks:
+        return (r1, r5, r10, medr, meanr), (ranks, top1)
+    else:
+        return (r1, r5, r10, medr, meanr)
+
+
+def t2i(images, captions, npts=None, measure='cosine', return_ranks=False):
+    """
+    Text->Images (Image Search)
+    Images: (5N, K) matrix of images
+    Captions: (5N, K) matrix of captions
+    """
+    if npts is None:
+        npts = images.shape[0] / 5
+
+    # TODO check if ok
+    npts = int(npts)
+    ims = np.array([images[i] for i in range(0, len(images), 5)])
+
+    ranks = np.zeros(5 * npts)
+    top1 = np.zeros(5 * npts)
+    for index in range(npts):
+
+        # Get query captions
+        queries = captions[5 * index:5 * index + 5]
+
+        # Compute scores
+        if measure == 'order':
+            bs = 100
+            if 5 * index % bs == 0:
+                mx = min(captions.shape[0], 5 * index + bs)
+                q2 = captions[5 * index:mx]
+
+                a = torch.Tensor(ims)
+                b = torch.Tensor(q2)
+                if torch.cuda.is_available():
+                    a, b = a.cuda(), b.cuda()
+                d2 = order_sim(a, b)
+                d2 = d2.cpu().numpy()
+
+            d = d2[:, (5 * index) % bs:(5 * index) % bs + 5].T
+        else:
+            d = np.dot(queries, ims.T)
+        inds = np.zeros(d.shape)
+        for i in range(len(inds)):
+            inds[i] = np.argsort(d[i])[::-1]
+            ranks[5 * index + i] = np.where(inds[i] == index)[0][0]
+            top1[5 * index + i] = inds[i][0]
+
+    # Compute metrics
+    r1 = 100.0 * len(np.where(ranks < 1)[0]) / len(ranks)
+    r5 = 100.0 * len(np.where(ranks < 5)[0]) / len(ranks)
+    r10 = 100.0 * len(np.where(ranks < 10)[0]) / len(ranks)
+    medr = np.floor(np.median(ranks)) + 1
+    meanr = ranks.mean() + 1
+    if return_ranks:
+        return (r1, r5, r10, medr, meanr), (ranks, top1)
+    else:
+        return (r1, r5, r10, medr, meanr)

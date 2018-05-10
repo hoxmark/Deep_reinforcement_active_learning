@@ -9,7 +9,7 @@ from torch.autograd import Variable
 
 from config import opt, data, loaders
 from data.utils import timer, average_vector, get_distance, pairwise_distances
-from data.evaluation import encode_data, i2t, t2i
+# from data.evaluation import encode_data, i2t, t2i
 from data.dataset import get_active_loader
 
 
@@ -28,10 +28,11 @@ class Game:
 
         if opt.embedding != 'static':
             self.encode_episode_data(model, loaders["train_loader"])
-        self.performance = self.validate(model)
+        # self.performance = self.validate(model)
+        self.performance = model.validate(loaders["val_loader"])
 
     def encode_episode_data(self, model, loader):
-        img_embs, cap_embs = timer(encode_data, (model, loader))
+        img_embs, cap_embs = timer(model.encode_data, (loader,))
         captions = torch.FloatTensor(cap_embs)
         images = []
 
@@ -51,24 +52,28 @@ class Game:
 
     def get_state(self, model):
         current_idx = self.order[self.current_state]
+        # observation = self.construct_distance_state(current_idx)
+        observation = self.construct_entropy_state(model, current_idx)
+        self.current_state += 1
+        return observation
 
+    def construct_distance_state(self, index):
         # Distances to topk closest captions
-        image_topk = data["image_caption_distances_topk"][current_idx].view(1, -1)
+        image_topk = data["image_caption_distances_topk"][index].view(1, -1)
         state = image_topk
 
         # Distances to topk closest images
         if opt.topk_image > 0:
-            current_image = data["images_embed_all"][current_idx].view(1 ,-1)
+            current_image = data["images_embed_all"][index].view(1 ,-1)
             all_images = data["images_embed_all"]
             image_image_dist = pairwise_distances(current_image, all_images)
             image_image_dist_topk = torch.topk(image_image_dist, opt.topk_image, 1, largest=False)[0]
 
             state = torch.cat((state, image_image_dist_topk), 1)
 
-
         # Distance from average image vector
         if opt.image_distance:
-            current_image = data["images_embed_all"][current_idx].view(1 ,-1)
+            current_image = data["images_embed_all"][index].view(1 ,-1)
             img_distance = get_distance(current_image, data["img_embs_avg"].view(1, -1))
             image_dist_tensor = torch.FloatTensor([img_distance]).view(1, -1)
             state = torch.cat((state, image_dist_tensor), 1)
@@ -76,15 +81,48 @@ class Game:
         observation = torch.autograd.Variable(state)
         if opt.cuda:
             observation = observation.cuda()
-        self.current_state += 1
         return observation
+
+    def construct_entropy_state(self, model, index):
+        current_sentence = loaders["train_loader"].dataset[index][0]
+        current_sentence = Variable(torch.LongTensor(current_sentence))
+        current_sentence.volatile = True
+
+        if opt.cuda:
+            current_sentence = current_sentence.cuda()
+        preds = model(current_sentence)
+        # preds = torch.sort(pred)
+
+        # print(preds)
+        return preds
+
+    def construct_all_predictions(self, model):
+        # all_predictions = torch.FloatTensor()
+        all_predictions = None
+        # if opt.cuda:
+            # all_predictions = all_predictions.cuda()
+
+        for i, train_data in enumerate(loaders["train_loader"]):
+            sentences, targets = train_data
+            features = Variable(sentences, requires_grad=False)
+
+            if opt.cuda:
+                features = features.cuda()
+
+            preds = model(features)
+            if i == 0:
+                all_predictions = preds
+            else:
+                all_predictions = torch.cat((all_predictions, preds), dim=0)
+        # print(all_predictions)
+        data["all_predictions"] = all_predictions
 
     def feedback(self, action, model):
         reward = 0.
         is_terminal = False
 
         if action == 1:
-            timer(self.query, ())
+            timer(self.query, (model,))
             new_performance = self.get_performance(model)
             reward = self.performance - new_performance
 
@@ -105,22 +143,39 @@ class Game:
         next_observation = timer(self.get_state, (model,))
         return reward, next_observation, is_terminal
 
-    def query(self):
+    def query(self, model):
+        self.construct_all_predictions(model)
         current = self.order[self.current_state]
-        current_dist_vector = data["image_caption_distances_topk"][current].view(1, -1)
-        all_dist_vectors = data["image_caption_distances_topk"]
-        current_all_dist = pairwise_distances(current_dist_vector, all_dist_vectors)
+        # construct_state = self.construct_entropy_state
+        #
+        # current_state = construct_state(model, current)
+        # all_states = torch.cat([construct_state(model, index) for index in range(len(self.order))])
+        current_state = data["all_predictions"][current].view(1, -1)
+        all_states = data["all_predictions"]
+        # print(current_state)
+        # print(all_states)
+        current_all_dist = pairwise_distances(current_state, all_states)
         similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
 
-        for index in similar_indices[0]:
-            image = loaders["train_loader"].dataset[5 * index][0]
+        for index in similar_indices.data[0].cpu().numpy():
+            image = loaders["train_loader"].dataset[index][0]
+            caption = loaders["train_loader"].dataset[index][1]
             # There are 5 captions for every image
-            for cap in range(5):
-                caption = loaders["train_loader"].dataset[5 * index + cap][1]
-                loaders["active_loader"].dataset.add_single(image, caption)
+            loaders["active_loader"].dataset.add_single(image, caption)
             # Only count images as an actual request.
             # Reuslt is that we have 5 times as many training points as requests.
             self.queried_times += 1
+
+
+        # for index in similar_indices[0]:
+        #     image = loaders["train_loader"].dataset[5 * index][0]
+        #     # There are 5 captions for every image
+        #     for cap in range(5):
+        #         caption = loaders["train_loader"].dataset[5 * index + cap][1]
+        #         loaders["active_loader"].dataset.add_single(image, caption)
+        #     # Only count images as an actual request.
+        #     # Reuslt is that we have 5 times as many training points as requests.
+        #     self.queried_times += 1
 
     def init_train_k_random(self, model, num_of_init_samples):
         for i in range(0, num_of_init_samples):
@@ -130,56 +185,22 @@ class Game:
             loaders["active_loader"].dataset.add_single(image, caption)
 
         # TODO: delete used init samples (?)
-        timer(self.train_model, (model, loaders["active_loader"], 30))
-        print("Validation after training on random data: {}".format(self.validate(model)))
+        timer(model.train_model, (loaders["active_loader"], 30))
+
+        print("Validation after training on random data: {}".format(model.validate(loaders["val_loader"])))
 
     def get_performance(self, model):
-        timer(self.train_model, (model, loaders["active_loader"]))
-        performance = self.validate(model)
+        # timer(self.train_model, (model, loaders["active_loader"]))
+        timer(model.train_model, (loaders["active_loader"], opt.num_epochs))
+        performance = model.validate(loaders["val_loader"])
 
         if (self.queried_times % 20 == 0):
             if opt.embedding != 'static':
                 self.encode_episode_data(model, loaders["train_loader"])
         return performance
 
-    def performance_validate(self, model):
-        """returns the performance messure with recall at 1, 5, 10
-        for both image -> caption and cap -> img, and the sum of them all added together"""
-        # compute the encoding for all the validation images and captions
-        val_loader = loaders["val_tot_loader"]
-        img_embs, cap_embs = encode_data(model, val_loader)
-        # caption retrieval
-        (r1, r5, r10, medr, meanr) = i2t(img_embs, cap_embs, measure=opt.measure)
-        # image retrieval
-        (r1i, r5i, r10i, medri, meanr) = t2i(img_embs, cap_embs, measure=opt.measure)
 
-        performance = r1 + r5 + r10 + r1i + r5i + r10i
-        return (performance, r1, r5, r10, r1i, r5i, r10i)
-
-    def validate(self, model):
-        performance = timer(self.validate_loss, (model,))
-        return performance
-
-    def validate_loss(self, model):
-        total_loss = 0
-        model.val_start()
-        for i, (images, captions, lengths, ids) in enumerate(loaders["val_loader"]):
-            img_emb, cap_emb = model.forward_emb(images, captions, lengths, volatile=True)
-            loss = model.forward_loss(img_emb, cap_emb)
-            total_loss += loss.data[0]
-        return total_loss
-
-    def train_model(self, model, train_loader, epochs=opt.num_epochs):
-        if opt.train_shuffle:
-            train_loader.dataset.shuffle()
-        
-        model.train_start()
-        if len(train_loader) > 0:
-            for epoch in range(epochs):
-                self.adjust_learning_rate(model.optimizer, epoch)
-                for i, train_data in enumerate(train_loader):
-                    model.train_start()
-                    model.train_emb(*train_data)
+    # def train(self, model, train_loader, epochs=opt.num_epochs):
 
     def adjust_learning_rate(self, optimizer, epoch):
         """Sets the learning rate to the initial LR

@@ -11,7 +11,7 @@ class Dict(dict):
 
 # opt = Namespace()
 opt = Dict()
-data = {}
+data = Dict()
 w2v = {}
 loaders = {}
 global_logger = {}

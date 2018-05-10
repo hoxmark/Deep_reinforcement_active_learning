@@ -3,8 +3,9 @@ from game import Game
 from agents import DQNAgent, DQNTargetAgent, PolicyAgent, ActorCriticAgent, RandomAgent
 from config import data, opt, loaders, global_logger
 from models.vse import VSE
-from data.evaluation import encode_data
 from data.utils import save_model, timer, load_external_model, average_vector, save_VSE_model,get_full_VSE_model
+
+from models.cnn import CNN
 
 
 def train():
@@ -33,10 +34,13 @@ def train():
         agent.load_policynetwork(old_model)
 
     game = Game()
+    # classifier = VSE
+    classifier = CNN
 
-    if opt.embedding == 'static' :
+
+    if opt.embedding == 'static' and opt.dataset == 'vse':
         path_to_full_model ="{}/fullModel.pth.tar".format(opt.data_path)
-        full_model = VSE()
+        full_model = classifier()
 
         if os.path.isfile(path_to_full_model):
             get_full_VSE_model(full_model,path_to_full_model)
@@ -49,7 +53,7 @@ def train():
             save_VSE_model(full_model.state_dict(), path=opt.data_path)
 
     for episode in range(start_episode, opt.episodes):
-        model = VSE()
+        model = classifier()
         game.reboot(model)
         print('##>>>>>>> Episode {} of {} <<<<<<<<<##'.format(episode, opt.episodes))
         terminal = False
@@ -61,17 +65,17 @@ def train():
             if terminal:
                 agent.finish_episode(episode)
                 break
-                
+
             agent.update(state, action, reward, next_state, terminal)
             print("\n")
             state = next_state
             if (action == 1):
                 lg.scalar_summary("last_episode_performance", game.performance, game.queried_times)
                 # Reset the model every time we add to train set
-                model = VSE()
+                model = classifier()
 
         # Reset model
-        model = VSE()
+        model = classifier()
         game.train_model(model, loaders["active_loader"], epochs=30)
 
         (performance, r1, r5, r10, r1i, r5i, r10i) = timer(game.performance_validate, (model,))
