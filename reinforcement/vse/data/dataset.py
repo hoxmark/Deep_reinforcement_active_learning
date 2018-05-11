@@ -319,12 +319,12 @@ def get_loader_single(data_name, split, root, json, vocab, transform,
                                 json=json,
                                 vocab=vocab,
                                 transform=transform)
-
+    
     # Data loader
     data_loader = torch.utils.data.DataLoader(dataset=dataset,
                                               batch_size=batch_size,
                                               shuffle=shuffle,
-                                              pin_memory=True,
+                                              pin_memory=torch.cuda.is_available(),
                                               num_workers=num_workers,
                                               collate_fn=collate_fn)
     return data_loader
@@ -338,7 +338,7 @@ def get_mr_loader(data_path, data_split, vocab, opt, batch_size=100,
     data_loader = torch.utils.data.DataLoader(dataset=dset,
                                               batch_size=batch_size,
                                               shuffle=shuffle,
-                                              pin_memory=True,
+                                              pin_memory=torch.cuda.is_available(),
                                               collate_fn=collate_fn_mr)
     return data_loader
 
@@ -346,11 +346,12 @@ def get_precomp_loader(data_path, data_split, vocab, opt, batch_size=100,
                        shuffle=True, num_workers=2, data_length=100):
     """Returns torch.utils.data.DataLoader for custom coco dataset."""
     dset = PrecompDataset(data_path, data_split, vocab, data_length)
+    
 
     data_loader = torch.utils.data.DataLoader(dataset=dset,
                                               batch_size=batch_size,
                                               shuffle=shuffle,
-                                              pin_memory=True,
+                                              pin_memory=torch.cuda.is_available(),
                                               collate_fn=collate_fn)
     return data_loader
 
@@ -360,7 +361,7 @@ def get_active_loader(batch_size=100, shuffle=True, num_workers=2):
     data_loader = torch.utils.data.DataLoader(dataset=dset,
                                               batch_size=batch_size,
                                               shuffle=shuffle,
-                                              pin_memory=True,
+                                              pin_memory=torch.cuda.is_available(),
                                               collate_fn=collate_fn_mr)
     return data_loader
 
