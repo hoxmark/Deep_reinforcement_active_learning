@@ -60,6 +60,12 @@ class ExternalLogger(object):
         """Create a summary writer logging to log_dir."""
         self.external_logger_name = external_logger_name
 
+    def dict_scalar_summary(self, prefix, values, step):
+        for key in values:
+            tag = "{}/{}".format(prefix, key)
+            self.scalar_summary(tag, values[key], step)
+
+
     def scalar_summary(self, tag, value, step):
         """Log a list of images."""
 
@@ -77,6 +83,9 @@ class ExternalLogger(object):
 
 #A dummy Logger. 
 class NoLogger(object):
+    def dict_scalar_summary(self, prefix, values, step):
+        pass
+
 
     def scalar_summary(self, tag, value, step):
         pass

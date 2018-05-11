@@ -17,9 +17,10 @@ class Game:
     def reboot(self, model):
         """resets the Game Object, to make it ready for the next episode """
 
-        loaders["active_loader"] = get_active_loader(opt.vocab)
+        loaders["active_loader"] = get_active_loader(opt.batch_size)
         data_len = loaders["train_loader"].dataset.length
-        self.order = random.sample(list(range(0, data_len // 5)), data_len // 5)
+        # self.order = random.sample(list(range(0, data_len // 5)), data_len // 5)
+        self.order = random.sample(list(range(0, data_len)), data_len)
         self.budget = opt.budget
         self.queried_times = 0
         self.current_state = 0
