@@ -75,11 +75,18 @@ class ExternalLogger(object):
         except:
             print("unable to connect to logserver.")
 
-#A dummy Logger.
+#A dummy Logger. 
 class NoLogger(object):
 
     def scalar_summary(self, tag, value, step):
         pass
+
+    def dict_scalar_summary(self, prefix, values, step):
+        pass
+    
+    def visualize_scalars(scalars, names, title, iteration, env='main'):
+        pass
+
 
 class VisdomLogger(object):
     def __init__(self):
@@ -127,3 +134,42 @@ class VisdomLogger(object):
             env = opt.logger_name,
         )
         self.vis.save([opt.logger_name])
+
+
+    # def visualize_scalars(scalars, names, title, iteration, env='main'):
+    #     assert len(scalars) == len(names)
+    #     # Convert scalar tensors to numpy arrays.
+    #     scalars, names = list(scalars), list(names)
+    #     print(scalars)
+    #     print(names
+    #     quit()
+    #     scalars = [s.cpu() if isinstance(s, CUDATensor) else s for s in scalars]
+    #     scalars = [s.numpy() if hasattr(s, 'numpy') else np.array([s]) for s in
+    #             scalars]
+    #     multi = len(scalars) > 1
+    #     num = len(scalars)
+
+    #     options = dict(
+    #         fillarea=True,
+    #         legend=names,
+    #         width=400,
+    #         height=400,
+    #         xlabel='Iterations',
+    #         ylabel=title,
+    #         title=title,
+    #         marginleft=30,
+    #         marginright=30,
+    #         marginbottom=80,
+    #         margintop=30,
+    #     )
+
+    #     X = (
+    #         np.column_stack(np.array([iteration] * num)) if multi else
+    #         np.array([iteration] * num)
+    #     )
+    #     Y = np.column_stack(scalars) if multi else scalars[0]
+
+    #     if title in _WINDOW_CASH:
+    #         _vis(env).updateTrace(X=X, Y=Y, win=_WINDOW_CASH[title])
+    #     else:
+    #         _WINDOW_CASH[title] = _vis(env).line(X=X, Y=Y, opts=options)

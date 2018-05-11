@@ -98,7 +98,7 @@ def main():
     parser.add_argument('--reward_clip', action='store_true', help='Clip rewards using tanh')
     parser.add_argument('--val_size', default=500, type=int, help='Number of validation set size to use for reward')
     parser.add_argument('--train_shuffle', action='store_true', help='Shuffle active train set every time')
-    parser.add_argument('--dataset', default='vse', help='Dataset. (vse | mr)')
+    parser.add_argument('--dataset', default='mr', help='Dataset. (vse | mr)')
     parser.add_argument('--w2v', action='store_true', help='Use w2v embeddings')
 
     params = parser.parse_args()
