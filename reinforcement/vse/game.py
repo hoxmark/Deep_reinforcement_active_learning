@@ -158,9 +158,7 @@ class Game:
         current_all_dist = pairwise_distances(current_state, all_states)
         similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
 
-        # for index in similar_indices.data[0].cpu().numpy():
-        data_len = loaders["train_loader"].dataset.length
-        for index in random.sample(list(range(0, data_len)), data_len):
+        for index in similar_indices.data[0].cpu().numpy():
             image = loaders["train_loader"].dataset[index][0]
             caption = loaders["train_loader"].dataset[index][1]
             # There are 5 captions for every image
