@@ -76,17 +76,10 @@ def train():
 
         # Reset model
         model = classifier()
-        game.train_model(model, loaders["active_loader"], epochs=30)
+        timer(model.train_model, (loaders["active_loader"], 100))
+        metrics = timer(model.performance_validate, (loaders["val_loader"],))
+        lg.dict_scalar_summary('episode-validation', metrics, episode)
 
-        (performance, r1, r5, r10, r1i, r5i, r10i) = timer(game.performance_validate, (model,))
-        lg.scalar_summary("episode-validation/sum", performance, episode)
-        lg.scalar_summary("episode-validation/r1", r1, episode)
-        lg.scalar_summary("episode-validation/r5", r5, episode)
-        lg.scalar_summary("episode-validation/r10", r10, episode)
-        lg.scalar_summary("episode-validation/r1i", r1i, episode)
-        lg.scalar_summary("episode-validation/r5i", r5i, episode)
-        lg.scalar_summary("episode-validation/r10i", r10i, episode)
-        lg.scalar_summary("episode-validation/loss", game.performance, episode)
 
         # save_VSE_model(model.state_dict(), path=opt.data_path)
         # new_m = VSE()
@@ -100,7 +93,7 @@ def train():
         # Save the model
         if opt.agent != 'random':
             model_path = '{}/{}'.format(opt.agent, str(episode).zfill(4) )
-            model_name = '{:.2f}'.format(performance)
+            model_name = '{:.2f}'.format(metrics["performance"])
             path = "{}/{}".format(model_path, model_name)
             print(path)
             save_model(path, agent.policynetwork.cpu())

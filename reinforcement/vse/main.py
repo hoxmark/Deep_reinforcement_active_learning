@@ -7,7 +7,7 @@ import os
 import tensorboard_logger as tb_logger
 import pickle
 from config import opt, data, loaders, global_logger
-from data.utils import external_logger, visdom_logger, local_logger, no_logger
+from data.utils import external_logger, visdom_logger, local_logger, no_logger, load_word2vec
 
 
 
@@ -99,6 +99,7 @@ def main():
     parser.add_argument('--val_size', default=500, type=int, help='Number of validation set size to use for reward')
     parser.add_argument('--train_shuffle', action='store_true', help='Shuffle active train set every time')
     parser.add_argument('--dataset', default='vse', help='Dataset. (vse | mr)')
+    parser.add_argument('--w2v', action='store_true', help='Use w2v embeddings')
 
     params = parser.parse_args()
     params.actions = 2
@@ -126,12 +127,14 @@ def main():
     loaders["val_tot_loader"] = val_tot_loader  #Total val dataset for validation each episode
     # TODO Check if this is correct order
 
-
     # params.state_size = params.topk + params.topk_image + 1 if params.image_distance else params.topk + params.topk_image
     params.state_size = 2
 
     for arg in vars(params):
         opt[arg] = vars(params)[arg]
+
+    if params.w2v:
+        load_word2vec()
 
     # sending tensorboard logs to external server
     if params.log == "external":

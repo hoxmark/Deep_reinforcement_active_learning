@@ -28,8 +28,8 @@ class Game:
 
         if opt.embedding != 'static':
             self.encode_episode_data(model, loaders["train_loader"])
-        # self.performance = self.validate(model)
-        self.performance = model.validate(loaders["val_loader"])
+        metrics = model.validate(loaders["val_loader"])
+        self.performance = metrics["avg_loss"]
 
     def encode_episode_data(self, model, loader):
         img_embs, cap_embs = timer(model.encode_data, (loader,))
@@ -192,7 +192,8 @@ class Game:
     def get_performance(self, model):
         # timer(self.train_model, (model, loaders["active_loader"]))
         timer(model.train_model, (loaders["active_loader"], opt.num_epochs))
-        performance = model.validate(loaders["val_loader"])
+        metrics = model.validate(loaders["val_loader"])
+        performance = metrics["avg_loss"]
 
         if (self.queried_times % 20 == 0):
             if opt.embedding != 'static':

@@ -30,7 +30,6 @@ class CNN(nn.Module):
         # self.NUM_EMBEDDINGS = self.VOCAB_SIZE + 2
         self.NUM_EMBEDDINGS = 21427
         assert (len(self.FILTERS) == len(self.FILTER_NUM))
-        # self.wv_matrix = timer(self.load_word2vec, ())
         self.init_model()
 
     def get_conv(self, i):
@@ -39,7 +38,8 @@ class CNN(nn.Module):
     def init_model(self):
         self.embed = nn.Embedding(self.NUM_EMBEDDINGS, self.WORD_DIM, padding_idx=21425)
 
-        # self.embed.weight.data.copy_(torch.from_numpy(self.wv_matrix))
+        if opt.w2v:
+            self.embed.weight.data.copy_(torch.from_numpy(data["w2v"]))
 
         for i in range(len(self.FILTERS)):
             conv = nn.Conv1d(
@@ -92,25 +92,6 @@ class CNN(nn.Module):
         # print(x)
         return x
 
-    def load_word2vec(self):
-        print("loading word2vec...")
-        word_vectors = KeyedVectors.load_word2vec_format(
-            "{}/GoogleNews-vectors-negative300.bin".format(opt.data_path), binary=True)
-        wv_matrix = []
-
-        for word in data.vocab:
-            if word in word_vectors.vocab:
-                wv_matrix.append(word_vectors.word_vec(word))
-            else:
-                wv_matrix.append(
-                    np.random.uniform(-0.01, 0.01, 300).astype("float32"))
-
-        # one for UNK and one for zero padding
-        wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32"))
-        wv_matrix.append(np.zeros(300).astype("float32"))
-        wv_matrix = np.array(wv_matrix)
-        return wv_matrix
-
     def train_model(self, train_loader, epochs):
         parameters = filter(lambda p: p.requires_grad, self.parameters())
         optimizer = optim.Adadelta(parameters, 0.1)
@@ -144,7 +125,7 @@ class CNN(nn.Module):
 
                 if ((e + 1) % 10) == 0:
                     accuracy = 100.0 * corrects / size
-                    dev_accuracy, dev_loss, dev_corrects, dev_size = evaluate(model, e, mode="dev")
+                    # dev_accuracy, dev_loss, dev_corrects, dev_size = evaluate(model, e, mode="dev")
 
                     s1 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format(
                         "train", avg_loss, accuracy, corrects, size)
@@ -176,5 +157,11 @@ class CNN(nn.Module):
         avg_loss = avg_loss / size
         accuracy = 100.0 * corrects / size
 
-        # return accuracy, avg_loss, corrects, size
-        return avg_loss
+        return {
+            'accuracy': accuracy,
+            'avg_loss': avg_loss,
+            'performance': accuracy
+        }
+
+    def performance_validate(self, loader):
+        return self.validate(loader)

@@ -85,6 +85,12 @@ class VisdomLogger(object):
     def __init__(self):
         self.vis = Visdom('http://logserver.duckdns.org', port=5010)
 
+
+    def dict_scalar_summary(self, prefix, values, step):
+        for key in values:
+            tag = "{}/{}".format(prefix, key)
+            self.scalar_summary(tag, values[key], step)
+
     def scalar_summary(self, tag, value, step):
         update = None
 

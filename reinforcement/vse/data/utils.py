@@ -124,15 +124,12 @@ def logAreaGraph(distribution, classes, name):
 
 
 def load_word2vec():
-    """Load word2vec pre trained vectors"""
     print("loading word2vec...")
     word_vectors = KeyedVectors.load_word2vec_format(
         "{}/GoogleNews-vectors-negative300.bin".format(opt.data_path), binary=True)
-
-    # data["w2v_kv"] = word_vectors
-
     wv_matrix = []
-    for word in data["vocab"]:
+
+    for word in data.vocab:
         if word in word_vectors.vocab:
             wv_matrix.append(word_vectors.word_vec(word))
         else:
@@ -143,10 +140,7 @@ def load_word2vec():
     wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32"))
     wv_matrix.append(np.zeros(300).astype("float32"))
     wv_matrix = np.array(wv_matrix)
-    w2v["w2v"] = wv_matrix
-    w2v["w2v_kv"] = word_vectors
-    # return word_vectors, wv_matrix
-
+    data["w2v"] = wv_matrix
 
 def average_vector(data):
     tot_vector = np.zeros(len(data[0]), dtype="float64") #TODO: change size to something better than data[0]
