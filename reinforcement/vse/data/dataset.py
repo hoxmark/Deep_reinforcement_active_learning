@@ -217,6 +217,9 @@ class MRDataset(torch.utils.data.Dataset):
         self.length = len(self.sentences)
 
 
+    def shuffle(self):
+        self.sentences, self.targets = sklearn.utils.shuffle(self.sentences, self.targets)
+
     def __getitem__(self, index):
         sentence = self.sentences[index]
         target = self.targets[index]
@@ -256,7 +259,7 @@ class ActiveDataset(torch.utils.data.Dataset):
     def add_single(self, image, caption):
         self.images.append(image)
         self.captions.append(caption)
-        # self.length = len(self.captions)
+        self.length = len(self.images)
 
     def add_multiple(self, images, captions):
         self.images.extend(images)
@@ -319,7 +322,7 @@ def get_loader_single(data_name, split, root, json, vocab, transform,
                                 json=json,
                                 vocab=vocab,
                                 transform=transform)
-    
+
     # Data loader
     data_loader = torch.utils.data.DataLoader(dataset=dataset,
                                               batch_size=batch_size,
@@ -346,7 +349,7 @@ def get_precomp_loader(data_path, data_split, vocab, opt, batch_size=100,
                        shuffle=True, num_workers=2, data_length=100):
     """Returns torch.utils.data.DataLoader for custom coco dataset."""
     dset = PrecompDataset(data_path, data_split, vocab, data_length)
-    
+
 
     data_loader = torch.utils.data.DataLoader(dataset=dset,
                                               batch_size=batch_size,

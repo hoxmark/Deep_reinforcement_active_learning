@@ -92,19 +92,20 @@ class CNN(nn.Module):
         # print(x)
         return x
 
-    def train_model(self, train_loader, epochs):
+    def train_model(self, loader, epochs):
         parameters = filter(lambda p: p.requires_grad, self.parameters())
         optimizer = optim.Adadelta(parameters, 0.1)
         criterion = nn.NLLLoss()
 
-        size = len(train_loader.dataset)
+        size = len(loader.dataset)
 
         if size > 0:
             self.train()
             for e in range(epochs):
+                loader.dataset.shuffle()
                 avg_loss = 0
                 corrects = 0
-                for i, train_data in enumerate(train_loader):
+                for i, train_data in enumerate(loader):
                     sentences, targets = train_data
 
                     features = Variable(sentences)
