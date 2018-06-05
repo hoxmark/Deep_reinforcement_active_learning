@@ -195,7 +195,7 @@ class MRDataset(torch.utils.data.Dataset):
                 x.append(line.split())
                 y.append(0)
 
-        # x, y = shuffle(x, y)
+        x, y = sklearn.utils.shuffle(x, y)
         dev_idx = len(x) // 10 * 8
         test_idx = len(x) // 10 * 9
 

@@ -409,8 +409,7 @@ class VSE(nn.Module):
         # return loss
 
     def encode_data(self, data_loader, log_step=10, logging=print):
-        """Encode all images and captions loadable by `data_loader`
-        """
+        """Encode all images and captions loadable by `data_loader`"""
         # switch to evaluate mode
         self.val_start()
         # numpy array to keep all the embeddings

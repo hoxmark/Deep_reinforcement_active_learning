@@ -71,7 +71,7 @@ class CNN(nn.Module):
         # x = (25 x 300) - concatenate all the filter results
         x = self.dropout(x)
         x = self.fc(x)
-        x = self.softmax(x)
+        # x = self.softmax(x)
 
         return x
 
@@ -95,7 +95,8 @@ class CNN(nn.Module):
     def train_model(self, loader, epochs):
         parameters = filter(lambda p: p.requires_grad, self.parameters())
         optimizer = optim.Adadelta(parameters, 0.1)
-        criterion = nn.NLLLoss()
+        # criterion = nn.NLLLoss()
+        criterion = nn.CrossEntropyLoss()
 
         size = len(loader.dataset)
 
@@ -150,7 +151,8 @@ class CNN(nn.Module):
                 target = target.cuda()
 
             logit = self.forward(feature)
-            loss = torch.nn.functional.nll_loss(logit, target, size_average=False)
+            # loss = torch.nn.functional.nll_loss(logit, target, size_average=False)
+            loss = torch.nn.functional.cross_entropy(logit, target, size_average=False)
             avg_loss += loss.data[0]
             corrects += (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
 
@@ -158,11 +160,14 @@ class CNN(nn.Module):
         avg_loss = avg_loss / size
         accuracy = 100.0 * corrects / size
 
-        return {
+        metrics = {
             'accuracy': accuracy,
             'avg_loss': avg_loss,
             'performance': accuracy
         }
+
+        return metrics
+
 
     def performance_validate(self, loader):
         return self.validate(loader)

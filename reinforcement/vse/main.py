@@ -2,7 +2,7 @@ import torch
 import argparse
 import datetime
 import getpass
-from data.vocab import Vocabulary  # NOQAimport logging
+# from data.vocab import Vocabulary  # NOQAimport logging
 import os
 import tensorboard_logger as tb_logger
 import pickle
@@ -114,9 +114,10 @@ def main():
     params.cuda = (not params.no_cuda) and torch.cuda.is_available()
 
 
-    vocab = pickle.load(open(os.path.join(params.vocab_path, '%s_vocab.pkl' % params.data_name), 'rb'))
-    params.vocab = vocab
-    params.vocab_size = len(vocab)
+    vocab = {}
+    # vocab = pickle.load(open(os.path.join(params.vocab_path, '%s_vocab.pkl' % params.data_name), 'rb'))
+    # params.vocab = vocab
+    # params.vocab_size = len(vocab)
 
     active_loader, train_loader, val_loader, val_tot_loader = get_loaders(
         params.data_name, vocab, params.crop_size, params.batch_size, params.workers, params)
