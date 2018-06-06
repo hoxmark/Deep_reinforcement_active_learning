@@ -27,8 +27,8 @@ class Game:
 
         self.init_train_k_random(model, opt.init_samples)
 
-        if opt.embedding != 'static':
-            self.encode_episode_data(model, loaders["train_loader"])
+        # if opt.embedding != 'static':
+            # self.encode_episode_data(model, loaders["train_loader"])
         metrics = model.validate(loaders["val_loader"])
         self.performance = metrics["performance"]
 
