@@ -90,7 +90,7 @@ class DQNAgent:
 
     def get_action(self, state):
         action = 0
-        if random.random() <= self.epsilon:
+        if True: #TODO - Help #random.random() <= self.epsilon:
             action = random.randrange(self.actions)
         else:
             qvalue = self.policynetwork(state)

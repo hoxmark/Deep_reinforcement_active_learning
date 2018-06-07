@@ -29,8 +29,8 @@ class Game:
 
         # if opt.embedding != 'static':
             # self.encode_episode_data(model, loaders["train_loader"])
-        metrics = model.validate(loaders["val_loader"])
-        self.performance = metrics["performance"]
+        # metrics = model.validate(loaders["val_loader"])
+        # self.performance = metrics["performance"]
 
     def encode_episode_data(self, model, loader):
         img_embs, cap_embs = timer(model.encode_data, (loader,))
@@ -85,15 +85,12 @@ class Game:
         return observation
 
     def construct_entropy_state(self, model, index):
-        current_sentence = loaders["train_loader"].dataset[index][0]
-        current_sentence = Variable(torch.LongTensor(current_sentence))
-        current_sentence.volatile = True
+        current_image = loaders["train_loader"].dataset[index][0]
+     
+       
+        preds = model.classifier.predict_proba([current_image])
+        print(preds)
 
-        if opt.cuda:
-            current_sentence = current_sentence.cuda()
-        preds = model(current_sentence)
-        preds = nn.functional.softmax(preds, dim=1)
-        # preds = torch.sort(pred)
         return preds
 
     def construct_all_predictions(self, model):
@@ -102,26 +99,28 @@ class Game:
         # if opt.cuda:
             # all_predictions = all_predictions.cuda()
 
-        for i, train_data in enumerate(loaders["train_loader"]):
-            sentences, targets = train_data
-            features = Variable(sentences, requires_grad=False, volatile=True)
-
-            if opt.cuda:
-                features = features.cuda()
-
-            preds = model(features)
-            preds = nn.functional.softmax(preds, dim=1)
-            if i == 0:
-                all_predictions = preds
-            else:
-                all_predictions = torch.cat((all_predictions, preds), dim=0)
-            del features
-        data["all_predictions"] = all_predictions
+        images = []
+       
+        for i, train_data in enumerate(loaders["train_loader"].dataset): 
+            images.append(train_data[0])
+           
+        
+        preds = model.classifier.predict_proba(images)
+        # preds = nn.functional.softmax(preds, dim=1)
+        # if i == 0:
+        #     all_predictions = preds
+        # else:
+        #     all_predictions = torch.cat((all_predictions, preds), dim=0)
+        del images
+        
+        #TODO make tensor or not? 
+        # data["all_predictions"] = Variable(torch.FloatTensor(preds), requires_grad=False, volatile=True)
+        data["all_predictions"] = preds
 
     def feedback(self, action, model):
         reward = 0.
         is_terminal = False
-
+        
         if action == 1:
             timer(self.query, (model,))
             new_performance = self.get_performance(model)
@@ -134,7 +133,6 @@ class Game:
             self.performance = new_performance
         else:
             reward = 0.
-
         # TODO fix this
         if self.queried_times >= self.budget or self.current_state >= len(self.order):
             # Return terminal
@@ -152,7 +150,8 @@ class Game:
         #
         # current_state = construct_state(model, current)
         # all_states = torch.cat([construct_state(model, index) for index in range(len(self.order))])
-        current_state = data["all_predictions"][current].view(1, -1)
+        
+        current_state = data["all_predictions"][current]
         all_states = data["all_predictions"]
         current_all_dist = pairwise_distances(current_state, all_states)
         similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
@@ -166,7 +165,6 @@ class Game:
             # Reuslt is that we have 5 times as many training points as requests.
             self.queried_times += 1
 
-
         # for index in similar_indices[0]:
         #     image = loaders["train_loader"].dataset[5 * index][0]
         #     # There are 5 captions for every image
@@ -177,18 +175,17 @@ class Game:
         #     # Reuslt is that we have 5 times as many training points as requests.
         #     self.queried_times += 1
 
-    def init_train_k_random(self, model, num_of_init_samples):
+    def init_train_k_random(self, model, num_of_init_samples):        
         for i in range(0, num_of_init_samples):
             current = self.order[(-1*(i + 1))]
             image = loaders["train_loader"].dataset[current][0]
             caption = loaders["train_loader"].dataset[current][1]
             loaders["active_loader"].dataset.add_single(image, caption)
 
-        # TODO: delete used init samples (?)
         timer(model.train_model, (loaders["active_loader"], opt.num_epochs))
 
         print("Validation after training on random data: {}".format(model.validate(loaders["val_loader"])))
-
+        
     def get_performance(self, model):
         # timer(self.train_model, (model, loaders["active_loader"]))
         # timer(model.train_model, (loaders["active_loader"], opt.num_epochs))

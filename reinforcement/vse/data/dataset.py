@@ -3,6 +3,7 @@ import torchvision.transforms as transforms
 import os
 import nltk
 from PIL import Image
+from sklearn import datasets, svm, metrics
 # from pycocotools.coco import COCO
 import numpy as np
 import json as jsonmod
@@ -203,7 +204,7 @@ class MRDataset(torch.utils.data.Dataset):
         # print(len(words))
         self.vocab = {w: i for i, w in enumerate(words)}
         data.vocab = {w: i for i, w in enumerate(words)}
-
+        
         if data_split == 'train':
             self.sentences = x[:dev_idx]
             self.targets = y[:dev_idx]
@@ -228,6 +229,50 @@ class MRDataset(torch.utils.data.Dataset):
         tokens_padded = tokens + padding
         return tokens_padded, target
 
+
+    def __len__(self):
+        return self.length
+
+    def shuffle(self):
+        pass
+
+class DigitDataset(torch.utils.data.Dataset):
+    def __init__(self, data_path, data_split):
+                
+        # The digits dataset
+        digits = datasets.load_digits()
+        n_samples = len(digits.images)
+        data = digits.images.reshape((n_samples, -1))
+        target = digits.target
+        
+        data, target = sklearn.utils.shuffle(data, target)
+        
+        dev_idx = n_samples // 4 #TODO correct? 
+        test_idx = n_samples // 2
+
+        if data_split == 'train':
+            self.images = data[:dev_idx]
+            self.targets = target[:dev_idx]
+        elif data_split == 'dev':
+            self.images = data[dev_idx:test_idx]
+            self.targets = target[dev_idx:test_idx]
+        elif data_split == 'test':
+            self.images = data[test_idx:]
+            self.targets = target[test_idx:]
+
+        self.length = len(self.images)
+
+
+    def shuffle(self):
+        self.images, self.targets = sklearn.utils.shuffle(self.images, self.targets)
+
+    def __getitem__(self, index):
+        image = self.images[index]
+        target = self.targets[index]
+        # tokens = [self.vocab[word] for word in image] #OK? 
+        # padding = (59 - len(image)) * [len(self.vocab)]
+        # tokens_padded = tokens + padding
+        return image, target
 
     def __len__(self):
         return self.length
@@ -275,6 +320,14 @@ def collate_fn_mr(data):
     sentences = torch.stack(torch.LongTensor(sentences))
     targets = torch.LongTensor(targets)
     return sentences, targets
+
+#TODO why is this here? 
+def collate_fn_digit(data):
+    images, targets = zip(*data)
+    images, targets = list(images), list(targets)
+    # images = torch.stack(torch.LongTensor(images))
+    # targets = torch.LongTensor(targets)
+    return images, targets
 
 
 def collate_fn(data):
@@ -343,6 +396,18 @@ def get_mr_loader(data_path, data_split, vocab, opt, batch_size=100,
                                               shuffle=shuffle,
                                               pin_memory=torch.cuda.is_available(),
                                               collate_fn=collate_fn_mr)
+    return data_loader
+
+def get_digit_loader(data_path, data_split, vocab, opt, batch_size=100,
+                       shuffle=True, num_workers=2, data_length=100):
+    """Returns torch.utils.data.DataLoader for custom coco dataset."""
+    dset = DigitDataset(data_path, data_split)
+
+    data_loader = torch.utils.data.DataLoader(dataset=dset,
+                                              batch_size=batch_size,
+                                              shuffle=shuffle,
+                                              pin_memory=torch.cuda.is_available(),
+                                              collate_fn=collate_fn_digit)
     return data_loader
 
 def get_precomp_loader(data_path, data_split, vocab, opt, batch_size=100,
@@ -430,12 +495,20 @@ def get_loaders(data_name, vocab, crop_size, batch_size, workers, opt):
                                            num_workers=workers,
                                            collate_fn=collate_fn)
 
-    else:
+    elif opt.dataset == "MR" :
         train_loader = get_mr_loader(opt.data_path, 'train', vocab, opt,
                                           batch_size, True, workers)
         val_loader = get_mr_loader(opt.data_path, 'dev', vocab, opt,
                                         batch_size, False, workers)
         val_tot_loader = get_mr_loader(opt.data_path, 'dev', vocab, opt,
+                                        batch_size, False, workers)
+
+    elif opt.dataset == "digit":
+        train_loader = get_digit_loader(opt.data_path, 'train', vocab, opt,
+                                          batch_size, True, workers)
+        val_loader = get_digit_loader(opt.data_path, 'dev', vocab, opt,
+                                        batch_size, False, workers)
+        val_tot_loader = get_digit_loader(opt.data_path, 'dev', vocab, opt,
                                         batch_size, False, workers)
 
 

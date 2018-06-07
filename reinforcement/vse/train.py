@@ -6,6 +6,8 @@ from models.vse import VSE
 from data.utils import save_model, timer, load_external_model, average_vector, save_VSE_model,get_full_VSE_model
 
 from models.cnn import CNN
+from models.svm import SVM
+from sklearn import datasets, svm, metrics
 
 
 def train():
@@ -35,32 +37,36 @@ def train():
 
     game = Game()
     # classifier = VSE
-    classifier = CNN
+    # classifier = CNN
+    classifier = SVM
 
 
-    if opt.embedding == 'static' and opt.dataset == 'vse':
-        path_to_full_model ="{}/fullModel.pth.tar".format(opt.data_path)
-        full_model = classifier()
+    # if opt.embedding == 'static' and opt.dataset == 'vse':
+    #     path_to_full_model ="{}/fullModel.pth.tar".format(opt.data_path)
+    #     full_model = classifier()
 
-        if os.path.isfile(path_to_full_model):
-            get_full_VSE_model(full_model,path_to_full_model)
-            game.encode_episode_data(full_model, loaders["train_loader"])
-        else:
-            print("No old model found, training a new one")
-            print("Please wait... ")
-            game.train_model(full_model, loaders["train_loader"], epochs=30)
-            game.encode_episode_data(full_model, loaders["train_loader"])
-            save_VSE_model(full_model.state_dict(), path=opt.data_path)
+    #     if os.path.isfile(path_to_full_model):
+    #         get_full_VSE_model(full_model,path_to_full_model)
+    #         game.encode_episode_data(full_model, loaders["train_loader"])
+    #     else:
+    #         print("No old model found, training a new one")
+    #         print("Please wait... ")
+    #         game.train_model(full_model, loaders["train_loader"], epochs=30)
+    #         game.encode_episode_data(full_model, loaders["train_loader"])
+    #         save_VSE_model(full_model.state_dict(), path=opt.data_path)
 
     for episode in range(start_episode, opt.episodes):
         model = classifier()
+        model.init_model()
         game.reboot(model)
         print('##>>>>>>> Episode {} of {} <<<<<<<<<##'.format(episode, opt.episodes))
         terminal = False
 
         state = game.get_state(model)
         while not terminal:
-            action = agent.get_action(state)
+            action = agent.get_action(state) #TODO( Always randm)
+            #Crash
+            quit()
             reward, next_state, terminal = game.feedback(action, model)
             if terminal:
                 agent.finish_episode(episode)

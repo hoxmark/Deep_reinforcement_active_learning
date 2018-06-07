@@ -35,7 +35,7 @@ def main():
                         help='Rank loss margin.')
     parser.add_argument('--num_epochs', default=5, type=int,
                         help='Number of training epochs.')
-    parser.add_argument('--init_samples', default=0, type=int,
+    parser.add_argument('--init_samples', default=10, type=int,
                         help='number of random inital training data')
     parser.add_argument('--batch_size', default=128, type=int,
                         help='Size of a training mini-batch.')
@@ -98,7 +98,7 @@ def main():
     parser.add_argument('--reward_clip', action='store_true', help='Clip rewards using tanh')
     parser.add_argument('--val_size', default=500, type=int, help='Number of validation set size to use for reward')
     parser.add_argument('--train_shuffle', action='store_true', help='Shuffle active train set every time')
-    parser.add_argument('--dataset', default='mr', help='Dataset. (vse | mr)')
+    parser.add_argument('--dataset', default='digit', help='Dataset. (vse | mr | digit)')
     parser.add_argument('--w2v', action='store_true', help='Use w2v embeddings')
 
     params = parser.parse_args()
@@ -128,6 +128,11 @@ def main():
     loaders["val_tot_loader"] = val_tot_loader  #Total val dataset for validation each episode
     # TODO Check if this is correct order
 
+    # print(loaders["active_loader"])
+    # print(loaders["train_loader"])
+    # print(loaders["val_loader"])
+    # print(loaders["val_tot_loader"])
+    # quit()
     # params.state_size = params.topk + params.topk_image + 1 if params.image_distance else params.topk + params.topk_image
     params.state_size = 2
 
