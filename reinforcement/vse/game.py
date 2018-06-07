@@ -27,10 +27,9 @@ class Game:
 
         self.init_train_k_random(model, opt.init_samples)
 
-        # if opt.embedding != 'static':
-            # self.encode_episode_data(model, loaders["train_loader"])
         metrics = model.validate(loaders["val_loader"])
         self.performance = metrics["performance"]
+        self.construct_all_predictions(model)
 
     def encode_episode_data(self, model, loader):
         img_embs, cap_embs = timer(model.encode_data, (loader,))
@@ -86,21 +85,17 @@ class Game:
 
     def construct_entropy_state(self, model, index):
         current_sentence = loaders["train_loader"].dataset[index][0]
-        current_sentence = Variable(torch.LongTensor(current_sentence))
-        current_sentence.volatile = True
-
+        current_sentence = Variable(torch.LongTensor(current_sentence), volatile=True)
         if opt.cuda:
             current_sentence = current_sentence.cuda()
+
         preds = model(current_sentence)
         preds = nn.functional.softmax(preds, dim=1)
-        # preds = torch.sort(pred)
+        del current_sentence
         return preds
 
     def construct_all_predictions(self, model):
-        # all_predictions = torch.FloatTensor()
         all_predictions = None
-        # if opt.cuda:
-            # all_predictions = all_predictions.cuda()
 
         for i, train_data in enumerate(loaders["train_loader"]):
             sentences, targets = train_data
@@ -115,7 +110,14 @@ class Game:
                 all_predictions = preds
             else:
                 all_predictions = torch.cat((all_predictions, preds), dim=0)
+            del preds
             del features
+            del sentences
+            del targets
+
+        if "all_predictions" in data:
+            del data["all_predictions"]
+
         data["all_predictions"] = all_predictions
 
     def feedback(self, action, model):
@@ -125,9 +127,7 @@ class Game:
         if action == 1:
             timer(self.query, (model,))
             new_performance = self.get_performance(model)
-            # reward = self.performance - new_performance
             reward = new_performance - self.performance
-
             if opt.reward_clip:
                 reward = np.tanh(reward / 100)
 
@@ -146,12 +146,7 @@ class Game:
         return reward, next_observation, is_terminal
 
     def query(self, model):
-        self.construct_all_predictions(model)
         current = self.order[self.current_state]
-        # construct_state = self.construct_entropy_state
-        #
-        # current_state = construct_state(model, current)
-        # all_states = torch.cat([construct_state(model, index) for index in range(len(self.order))])
         current_state = data["all_predictions"][current].view(1, -1)
         all_states = data["all_predictions"]
         current_all_dist = pairwise_distances(current_state, all_states)
@@ -190,20 +185,12 @@ class Game:
         print("Validation after training on random data: {}".format(model.validate(loaders["val_loader"])))
 
     def get_performance(self, model):
-        # timer(self.train_model, (model, loaders["active_loader"]))
-        # timer(model.train_model, (loaders["active_loader"], opt.num_epochs))
         timer(model.train_model, (loaders["active_loader"], opt.num_epochs))
         metrics = model.validate(loaders["val_loader"])
-        # performance = metrics["avg_loss"]
         performance = metrics["performance"]
-
-        # if (self.queried_times % 20 == 0):
-            # if opt.embedding != 'static':
-        # self.encode_episode_data(model, loaders["train_loader"])
+        # We have trained the model. Update the predictions to reflect this
+        self.construct_all_predictions(model)
         return performance
-
-
-    # def train(self, model, train_loader, epochs=opt.num_epochs):
 
     def adjust_learning_rate(self, optimizer, epoch):
         """Sets the learning rate to the initial LR

@@ -68,6 +68,7 @@ def train():
 
             agent.update(state, action, reward, next_state, terminal)
             print("\n")
+            del state
             state = next_state
             if (action == 1):
                 lg.scalar_summary("last_episode_performance", game.performance, game.queried_times)

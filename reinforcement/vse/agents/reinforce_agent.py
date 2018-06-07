@@ -37,10 +37,12 @@ class PolicyAgent:
             self.policynetwork.cuda()
 
     def get_action(self, state):
+        state = Variable(state.data)
         probs = self.policynetwork(state)
         m = Categorical(probs)
         action = m.sample()
         self.policynetwork.saved_log_probs.append(m.log_prob(action))
+        del state
         return action.data[0]
 
     def update(self, state, action, reward, next_state, terminal):
