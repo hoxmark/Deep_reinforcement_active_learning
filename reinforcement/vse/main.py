@@ -100,10 +100,11 @@ def main():
     parser.add_argument('--train_shuffle', action='store_true', help='Shuffle active train set every time')
     parser.add_argument('--dataset', default='digit', help='Dataset. (vse | mr | digit)')
     parser.add_argument('--w2v', action='store_true', help='Use w2v embeddings')
+    parser.add_argument('--c', default='', help='comment')
 
     params = parser.parse_args()
     params.actions = 2
-    params.logger_name = '{}_{}_{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), params.agent)
+    params.logger_name = '{}_{}_{}_{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), params.agent, params.c)
     print(params.logger_name)
     params.external_log_url = 'http://logserver.duckdns.org:5000'
 
