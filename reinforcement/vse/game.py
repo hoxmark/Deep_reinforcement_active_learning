@@ -91,6 +91,7 @@ class Game:
 
         preds = model(current_sentence)
         preds = nn.functional.softmax(preds, dim=1)
+        preds = preds.sort(dim=1)[0]
         del current_sentence
         return preds
 
@@ -118,7 +119,7 @@ class Game:
         if "all_predictions" in data:
             del data["all_predictions"]
 
-        data["all_predictions"] = all_predictions
+        data["all_predictions"] = all_predictions.sort(dim=1)[0]
 
     def feedback(self, action, model):
         reward = 0.
@@ -172,15 +173,15 @@ class Game:
         #     # Reuslt is that we have 5 times as many training points as requests.
         #     self.queried_times += 1
 
-    def init_train_k_random(self, model, num_of_init_samples):
-        for i in range(0, num_of_init_samples):
+    def init_train_k_random(self, model, num_samples):
+        for i in range(0, num_samples):
             current = self.order[(-1*(i + 1))]
             image = loaders["train_loader"].dataset[current][0]
             caption = loaders["train_loader"].dataset[current][1]
             loaders["active_loader"].dataset.add_single(image, caption)
 
         # TODO: delete used init samples (?)
-        timer(model.train_model, (loaders["active_loader"], opt.num_epochs))
+        timer(model.train_model, (loaders["active_loader"], 100))
 
         print("Validation after training on random data: {}".format(model.validate(loaders["val_loader"])))
 

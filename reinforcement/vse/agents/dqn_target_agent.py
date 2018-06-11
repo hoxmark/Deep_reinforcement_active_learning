@@ -42,7 +42,7 @@ class DQNTargetAgent():
         self.action_size = opt.actions
 
         # These are hyper parameters for the DQN
-        self.discount_factor = 0.99
+        self.discount_factor = opt.gamma
         self.learning_rate = 0.001
         self.memory_size = 20000
         self.epsilon = 1.0
@@ -100,7 +100,6 @@ class DQNTargetAgent():
             target[0][action] = reward + self.discount_factor * torch.max(target_val)
 
         error = abs(old_val - target[0][action])
-
         self.memory.add(error, (state, action, reward, next_state, done))
         self.train_model()
 
@@ -113,8 +112,6 @@ class DQNTargetAgent():
             self.epsilon -= self.epsilon_decay
 
         minibatch, idxs, is_weights = self.memory.sample(self.batch_size)
-        # print(minibatch)
-
         batch_state, batch_action, batch_reward, batch_next_state, batch_terminal = zip(*minibatch)
         batch_state = torch.cat(batch_state)
         if not batch_state.requires_grad:

@@ -25,13 +25,12 @@ class Policy(nn.Module):
         action_scores = self.affine2(x)
         return F.softmax(action_scores, dim=1)
 
-
 class PolicyAgent:
     def __init__(self):
         self.policynetwork = Policy()
         self.optimizer = optim.Adam(self.policynetwork.parameters(), lr=1e-2)
         self.running_reward = 10
-        self.gamma = 0.99
+        self.gamma = opt.gamma
 
         if opt.cuda:
             self.policynetwork.cuda()
@@ -43,7 +42,8 @@ class PolicyAgent:
         action = m.sample()
         self.policynetwork.saved_log_probs.append(m.log_prob(action))
         del state
-        return action.data[0]
+        action = action.data[0]
+        return action
 
     def update(self, state, action, reward, next_state, terminal):
         self.policynetwork.rewards.append(reward)

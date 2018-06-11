@@ -20,6 +20,7 @@ def main():
     opt.batch_size_rl = 64
     opt.cuda = False
     opt.reward_clip = True
+    opt.gamma = 0
 
     from agents import DQNAgent, DQNTargetAgent, PolicyAgent, ActorCriticAgent, RandomAgent
     if params.agent == 'policy':

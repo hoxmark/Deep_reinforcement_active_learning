@@ -18,12 +18,12 @@ class CNN(nn.Module):
         self.BATCH_SIZE = 32
         self.MAX_SENT_LEN = 59
         self.WORD_DIM = 300
-        self.VOCAB_SIZE = 21425
+        # self.VOCAB_SIZE = 21425
         self.CLASS_SIZE = 2
         self.FILTERS = [3, 4, 5]
         self.FILTER_NUM = [100, 100, 100]
-        self.DROPOUT_EMBED_PROB = 0.2
-        self.DROPOUT_MODEL_PROB = 0.4
+        self.DROPOUT_EMBED_PROB = 0.3
+        self.DROPOUT_MODEL_PROB = 0.5
         self.IN_CHANNEL = 1
 
         # one for UNK and one for zero padding
@@ -64,14 +64,9 @@ class CNN(nn.Module):
             F.max_pool1d(F.relu(self.get_conv(i)(x)),
                          self.MAX_SENT_LEN - self.FILTERS[i] + 1).view(-1, self.FILTER_NUM[i])
             for i in range(len(self.FILTERS))]
-        # Take a max for each filter - each filter result is 25 x 100 x 57
-
-        # Each conv_result is (25 x 100)  - one max value for each application of each filter type, across each sentence
         x = torch.cat(conv_results, 1)
-        # x = (25 x 300) - concatenate all the filter results
         x = self.dropout(x)
         x = self.fc(x)
-        # x = self.softmax(x)
 
         return x
 
@@ -95,11 +90,9 @@ class CNN(nn.Module):
     def train_model(self, loader, epochs):
         parameters = filter(lambda p: p.requires_grad, self.parameters())
         optimizer = optim.Adadelta(parameters, 0.1)
-        # criterion = nn.NLLLoss()
         criterion = nn.CrossEntropyLoss()
 
         size = len(loader.dataset)
-
         if size > 0:
             self.train()
             for e in range(epochs):

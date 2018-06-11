@@ -81,19 +81,21 @@ class ExternalLogger(object):
         except:
             print("unable to connect to logserver.")
 
-#A dummy Logger. 
+#A dummy Logger.
 class NoLogger(object):
     def dict_scalar_summary(self, prefix, values, step):
         pass
-
 
     def scalar_summary(self, tag, value, step):
         pass
 
     def dict_scalar_summary(self, prefix, values, step):
         pass
-    
+
     def visualize_scalars(scalars, names, title, iteration, env='main'):
+        pass
+
+    def parameters_summary(self):
         pass
 
 
