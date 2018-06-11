@@ -29,8 +29,7 @@ class Game:
 
         # if opt.embedding != 'static':
             # self.encode_episode_data(model, loaders["train_loader"])
-        # metrics = model.validate(loaders["val_loader"])
-        # self.performance = metrics["performance"]
+        self.performance =  model.validate(loaders["val_loader"])
 
     def encode_episode_data(self, model, loader):
         img_embs, cap_embs = timer(model.encode_data, (loader,))
@@ -55,8 +54,10 @@ class Game:
         current_idx = self.order[self.current_state]
         # observation = self.construct_distance_state(current_idx)
         observation = self.construct_entropy_state(model, current_idx)
-        self.current_state += 1
-        return observation
+        self.current_state += 1        
+        returnOb = Variable(torch.FloatTensor(observation))
+        returnOb = returnOb.cuda()        
+        return returnOb
 
     def construct_distance_state(self, index):
         # Distances to topk closest captions
@@ -87,9 +88,7 @@ class Game:
     def construct_entropy_state(self, model, index):
         current_image = loaders["train_loader"].dataset[index][0]
      
-       
-        preds = model.classifier.predict_proba([current_image])
-        print(preds)
+        preds = model.predict_prob([current_image])
 
         return preds
 
@@ -98,14 +97,13 @@ class Game:
         all_predictions = None
         # if opt.cuda:
             # all_predictions = all_predictions.cuda()
-
         images = []
-       
+        np.set_printoptions(threshold=np.inf)
+
         for i, train_data in enumerate(loaders["train_loader"].dataset): 
             images.append(train_data[0])
-           
-        
-        preds = model.classifier.predict_proba(images)
+        preds = model.predict_prob(images)
+        assert(len(preds[0])==10)
         # preds = nn.functional.softmax(preds, dim=1)
         # if i == 0:
         #     all_predictions = preds
@@ -120,9 +118,9 @@ class Game:
     def feedback(self, action, model):
         reward = 0.
         is_terminal = False
-        
         if action == 1:
-            timer(self.query, (model,))
+            # timer(self.query, (model,))
+            self.query(model)
             new_performance = self.get_performance(model)
             # reward = self.performance - new_performance
             reward = new_performance - self.performance
@@ -140,7 +138,8 @@ class Game:
 
         print("> State {:2} Action {:2} - reward {:.4f} - accuracy {:.4f}".format(
             self.current_state, action, reward, self.performance))
-        next_observation = timer(self.get_state, (model,))
+        # next_observation = timer(self.get_state, (model,))
+        next_observation = self.get_state(model)
         return reward, next_observation, is_terminal
 
     def query(self, model):
@@ -153,14 +152,17 @@ class Game:
         
         current_state = data["all_predictions"][current]
         all_states = data["all_predictions"]
+        current_state = torch.from_numpy(current_state).view(1,-1)
+        all_states = torch.from_numpy(all_states)
         current_all_dist = pairwise_distances(current_state, all_states)
         similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
-
-        for index in similar_indices.data[0].cpu().numpy():
+        
+        for index in similar_indices.cpu().numpy():
             image = loaders["train_loader"].dataset[index][0]
             caption = loaders["train_loader"].dataset[index][1]
             # There are 5 captions for every image
-            loaders["active_loader"].dataset.add_single(image, caption)
+            loaders["active_loader"].dataset.add_single(image[0], caption[0])
+
             # Only count images as an actual request.
             # Reuslt is that we have 5 times as many training points as requests.
             self.queried_times += 1
@@ -181,19 +183,19 @@ class Game:
             image = loaders["train_loader"].dataset[current][0]
             caption = loaders["train_loader"].dataset[current][1]
             loaders["active_loader"].dataset.add_single(image, caption)
+            
+        # timer(model.train_model, (loaders["active_loader"], opt.num_epochs))
+        model.train_model(loaders["active_loader"], opt.num_epochs)
 
-        timer(model.train_model, (loaders["active_loader"], opt.num_epochs))
-
-        print("Validation after training on random data: {}".format(model.validate(loaders["val_loader"])))
+        # print("Validation after training on random data: {}".format(model.validate(loaders["val_loader"])))
         
     def get_performance(self, model):
         # timer(self.train_model, (model, loaders["active_loader"]))
         # timer(model.train_model, (loaders["active_loader"], opt.num_epochs))
-        timer(model.train_model, (loaders["active_loader"], opt.num_epochs))
+        model.train_model(loaders["active_loader"], opt.num_epochs)
+        # timer(model.train_model, (loaders["active_loader"], opt.num_epochs))        
         metrics = model.validate(loaders["val_loader"])
-        # performance = metrics["avg_loss"]
-        performance = metrics["performance"]
-
+        performance = metrics
         # if (self.queried_times % 20 == 0):
             # if opt.embedding != 'static':
         # self.encode_episode_data(model, loaders["train_loader"])

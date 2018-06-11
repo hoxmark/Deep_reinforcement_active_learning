@@ -35,13 +35,13 @@ def main():
                         help='Rank loss margin.')
     parser.add_argument('--num_epochs', default=5, type=int,
                         help='Number of training epochs.')
-    parser.add_argument('--init_samples', default=10, type=int,
+    parser.add_argument('--init_samples', default=5, type=int,
                         help='number of random inital training data')
     parser.add_argument('--batch_size', default=128, type=int,
                         help='Size of a training mini-batch.')
     parser.add_argument('--batch_size_rl', default=64, type=int,
                         help='Size of a training mini-batch.')
-    parser.add_argument('--budget', default=150, type=int,
+    parser.add_argument('--budget', default=50, type=int,
                         help='Our labeling budget')
     parser.add_argument('--embed_size', default=1024, type=int,
                         help='Dimensionality of the joint embedding.')
@@ -134,7 +134,7 @@ def main():
     # print(loaders["val_tot_loader"])
     # quit()
     # params.state_size = params.topk + params.topk_image + 1 if params.image_distance else params.topk + params.topk_image
-    params.state_size = 2
+    params.state_size = 10
 
     for arg in vars(params):
         opt[arg] = vars(params)[arg]

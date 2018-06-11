@@ -64,27 +64,32 @@ def train():
 
         state = game.get_state(model)
         while not terminal:
-            action = agent.get_action(state) #TODO( Always randm)
+            action = agent.get_action(state) 
+            
             #Crash
-            quit()
             reward, next_state, terminal = game.feedback(action, model)
             if terminal:
                 agent.finish_episode(episode)
                 break
-
-            agent.update(state, action, reward, next_state, terminal)
-            print("\n")
+            agent.update(state, action, reward, next_state, terminal) #TODO check 
+            # print("\n")
             state = next_state
             if (action == 1):
                 lg.scalar_summary("last_episode_performance", game.performance, game.queried_times)
                 # Reset the model every time we add to train set
-                model = classifier()
+                # model = classifier()
 
         # Reset model
-        model = classifier()
+        # model = classifier()
+        # print("OK")
+
         timer(model.train_model, (loaders["active_loader"], 100))
+        # model.train_model(loaders["active_loader"], 100)
         metrics = timer(model.performance_validate, (loaders["val_loader"],))
-        lg.dict_scalar_summary('episode-validation', metrics, episode)
+        # metrics = model.performance_validate(loaders["val_loader"])
+        print(metrics)
+        # lg.dict_scalar_summary('episode-validation', metrics, episode)
+        lg.scalar_summary('episode-validation', metrics, episode)
 
 
         # save_VSE_model(model.state_dict(), path=opt.data_path)
@@ -96,14 +101,14 @@ def train():
         #     old_model = load_external_model("Episode_0_performance_12.24")
         #     agent.set_policynetwork(old_model)
 
-        # Save the model
-        if opt.agent != 'random':
-            model_path = '{}/{}'.format(opt.agent, str(episode).zfill(4) )
-            model_name = '{:.2f}'.format(metrics["performance"])
-            path = "{}/{}".format(model_path, model_name)
-            print(path)
-            save_model(path, agent.policynetwork.cpu())
+        # Save the model TODO 
+        # if opt.agent != 'random':
+        #     model_path = '{}/{}'.format(opt.agent, str(episode).zfill(4) )
+        #     model_name = '{:.2f}'.format(metrics["performance"])
+        #     path = "{}/{}".format(model_path, model_name)
+        #     print(path)
+        #     save_model(path, agent.policynetwork.cpu())
 
-            # Move it back to the GPU.
-            if opt.cuda:
-                agent.policynetwork.cuda()
+        #     # Move it back to the GPU.
+        #     if opt.cuda:
+        #         agent.policynetwork.cuda()

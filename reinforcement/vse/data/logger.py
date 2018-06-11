@@ -25,6 +25,11 @@ class LocalLogger(object):
             value=[tf.Summary.Value(tag=tag, simple_value=value)])
         self.writer.add_summary(summary, step)
 
+    def dict_scalar_summary(self, prefix, values, step):
+        for key in values:
+            tag = "{}/{}".format(prefix, key)
+            self.scalar_summary(tag, values[key], step)
+
 
     def histo_summary(self, tag, values, step, bins=1000):
         """Log a histogram of the tensor of values."""
