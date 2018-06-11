@@ -21,7 +21,7 @@ def main():
                         help="Name of the model to load from external server")
     parser.add_argument("--episodes", default=10000, type=int,
                         help="number of episodes")
-    parser.add_argument("--hidden_size", default=64, type=int,
+    parser.add_argument("--hidden_size", default=2, type=int,
                         help="Size of hidden layer in deep RL")
     parser.add_argument("--learning_rate_rl", default=0.1,
                         type=float, help="learning rate")
@@ -103,7 +103,7 @@ def main():
 
     params = parser.parse_args()
     params.actions = 2
-    params.logger_name = '{}_{}_{}_topk_{}_topkimage_{}_imagesim_{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), params.agent, params.topk, params.topk_image, params.image_distance)
+    params.logger_name = '{}_{}_{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), params.agent)
     print(params.logger_name)
     params.external_log_url = 'http://logserver.duckdns.org:5000'
 
