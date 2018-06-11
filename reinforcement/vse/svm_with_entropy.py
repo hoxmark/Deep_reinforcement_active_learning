@@ -9,7 +9,7 @@ from sklearn import datasets, svm, metrics
 
 # The digits dataset
 digits = datasets.load_digits()
-batch_size = 20
+batch_size = 2
 # The data that we are interested in is made of 8x8 images of digits, let's
 # have a look at the first 4 images, stored in the `images` attribute of the
 # dataset.  If we were working from image files, we could load them using
@@ -66,9 +66,9 @@ classifier = svm.SVC(gamma=0.001, probability=True)
 
 activeData =[]
 activeTargets =[]
-for step in range(0,10):   
-    test_data, test_activeTagets = selectBestData(test_data, test_activeTagets, step)
-    # test_data, test_activeTagets = selectRandomData(test_data, test_activeTagets, step)
+for step in range(0,100):   
+    # test_data, test_activeTagets = selectBestData(test_data, test_activeTagets, step)
+    test_data, test_activeTagets = selectRandomData(test_data, test_activeTagets, step)
     activeData.extend(test_data[:batch_size])
     activeTargets.extend(test_activeTagets[:batch_size])
     test_data = test_data[batch_size:]
