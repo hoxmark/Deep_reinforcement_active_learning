@@ -57,7 +57,6 @@ def train():
 
     for episode in range(start_episode, opt.episodes):
         model = classifier()
-        model.init_model()
         game.reboot(model)
         print('##>>>>>>> Episode {} of {} <<<<<<<<<##'.format(episode, opt.episodes))
         terminal = False
@@ -77,11 +76,12 @@ def train():
             if (action == 1):
                 lg.scalar_summary("last_episode_performance", game.performance, game.queried_times)
                 # Reset the model every time we add to train set
-                # model = classifier()
+                # model = classifier() Should this be done? 
+                
 
         # Reset model
-        # model = classifier()
-        # print("OK")
+        model = classifier()
+
 
         timer(model.train_model, (loaders["active_loader"], 100))
         # model.train_model(loaders["active_loader"], 100)

@@ -14,6 +14,7 @@ from sklearn import datasets, svm, metrics
 
 class SVM():
     def __init__(self):
+        self.init_model()
         pass
 
     def init_model(self):
