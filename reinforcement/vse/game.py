@@ -128,7 +128,7 @@ class Game:
         if action == 1:
             timer(self.query, (model,))
             new_performance = self.get_performance(model)
-            reward = new_performance - self.performance
+            reward = new_performance - self.performance - opt.reward_threshold
             if opt.reward_clip:
                 reward = np.tanh(reward / 100)
 

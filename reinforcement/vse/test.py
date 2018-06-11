@@ -23,8 +23,8 @@ opt.gamma = 0
 opt.cuda = False
 opt.state_size = 2
 opt.reward_clip = False
-# agent = PolicyAgent()
-agent = DQNAgent()
+agent = PolicyAgent()
+# agent = DQNAgent()
 opt.logger_name = '{}_{}_test_{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), agent.__class__.__name__)
 
 budget = 500

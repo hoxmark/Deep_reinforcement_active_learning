@@ -100,6 +100,8 @@ def main():
     parser.add_argument('--train_shuffle', action='store_true', help='Shuffle active train set every time')
     parser.add_argument('--dataset', default='mr', help='Dataset. (vse | mr)')
     parser.add_argument('--w2v', action='store_true', help='Use w2v embeddings')
+    parser.add_argument("--gamma", default=0, type=float, help="Discount factor")
+    parser.add_argument("--reward_threshold", default=1.0, type=float, help="Reward threshold")
 
     params = parser.parse_args()
     params.actions = 2
