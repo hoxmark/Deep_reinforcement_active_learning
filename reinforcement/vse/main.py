@@ -24,7 +24,7 @@ def main():
                         help="Name of the model to load from external server")
     parser.add_argument("--episodes", default=10000, type=int,
                         help="number of episodes")
-    parser.add_argument("--hidden_size", default=64, type=int,
+    parser.add_argument("--hidden_size", default=320, type=int,
                         help="Size of hidden layer in deep RL")
     parser.add_argument("--learning_rate_rl", default=0.1,
                         type=float, help="learning rate")
@@ -40,11 +40,11 @@ def main():
                         help='Number of training epochs.')
     parser.add_argument('--init_samples', default=0, type=int,
                         help='number of random inital training data')
-    parser.add_argument('--batch_size', default=128, type=int,
+    parser.add_argument('--batch_size', default=512, type=int,
                         help='Size of a training mini-batch.')
     parser.add_argument('--batch_size_rl', default=64, type=int,
                         help='Size of a training mini-batch.')
-    parser.add_argument('--budget', default=150, type=int,
+    parser.add_argument('--budget', default=224, type=int,
                         help='Our labeling budget')
     parser.add_argument('--embed_size', default=1024, type=int,
                         help='Dimensionality of the joint embedding.')
@@ -93,8 +93,8 @@ def main():
     parser.add_argument('--no_cuda', action='store_true',
                         default=False, help='Disable cuda')
     parser.add_argument('--agent', default='dqn', help='Type of reinforcement agent. (dqn | policy, actor_critic)')
-    parser.add_argument('--selection_radius', default=1, type=int, help='Selection radius')
-    parser.add_argument('--topk', default=300, type=int, help='Topk similarity to use for state')
+    parser.add_argument('--selection_radius', default=32, type=int, help='Selection radius')
+    parser.add_argument('--topk', default=20, type=int, help='Topk similarity to use for state')
     parser.add_argument('--topk_image', default=0, type=int, help='Topk similarity images to use for state')
     parser.add_argument('--embedding', default='static', help='whether to pre-train a model and use its static embeddings or not. (static | train)')
     parser.add_argument('--image_distance', action='store_true', help='Include image distance in the state ')
@@ -102,7 +102,8 @@ def main():
     parser.add_argument('--val_size', default=500, type=int, help='Number of validation set size to use for reward')
     parser.add_argument('--train_shuffle', action='store_true', help='Shuffle active train set every time')
     parser.add_argument("--gamma", default=0, type=float, help="Discount factor")
-    parser.add_argument("--reward_threshold", default=0.28, type=float, help="Reward threshold")
+    parser.add_argument("--reward_threshold", default=12, type=float, help="Reward threshold")
+    parser.add_argument('--intra_caption', action='store_true', help='Include closest captions intra distance in state')
 
     params = parser.parse_args()
     params.actions = 2
@@ -127,8 +128,8 @@ def main():
     loaders["val_tot_loader"] = val_tot_loader  #Total val dataset for validation each episode
     # TODO Check if this is correct order
 
-
-    params.state_size = params.topk + params.topk_image + 1 if params.image_distance else params.topk + params.topk_image
+    state_size = 2 * params.topk + params.topk_image if params.intra_caption else params.topk + params.topk_image
+    params.state_size = state_size
 
     for arg in vars(params):
         opt[arg] = vars(params)[arg]

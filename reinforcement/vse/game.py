@@ -47,20 +47,14 @@ class Game:
         images = torch.cat(images)
 
         image_caption_distances = pairwise_distances(images, cap_embs)
-        image_caption_distances_topk = torch.topk(image_caption_distances, opt.topk, 1, largest=False)[0]
-
-        del image_caption_distances
-
-        if "images_embed_all" in data:
-            del data["images_embed_all"]
-        if "captions_embed_all" in data:
-            del data["captions_embed_all"]
-        if "image_caption_distances_topk" in data:
-            del data["image_caption_distances_topk"]
+        topk = torch.topk(image_caption_distances, opt.topk, 1, largest=False)
+        image_caption_distances_topk = topk[0]
+        image_caption_distances_topk_idx = topk[1]
 
         data["images_embed_all"] = images.data
         data["captions_embed_all"] = cap_embs.data
         data["image_caption_distances_topk"] = image_caption_distances_topk.data
+        data["image_caption_distances_topk_idx"] = image_caption_distances_topk_idx.data
         # data["img_embs_avg"] = average_vector(data["images_embed_all"])
         # data["cap_embs_avg"] = average_vector(data["captions_embed_all"])
 
@@ -69,6 +63,16 @@ class Game:
 
         # Distances to topk closest captions
         state = data["image_caption_distances_topk"][current_idx].view(1, -1)
+        # Softmin to make it general
+        state = torch.nn.functional.softmin(state, dim=1)
+
+        # Calculate intra-distance between closest captions
+        if opt.intra_caption:
+            closest_idx = data["image_caption_distances_topk_idx"][current_idx]
+            closest_captions = torch.index_select(data["captions_embed_all"], 0, closest_idx)
+            closest_captions_distances = pairwise_distances(closest_captions, closest_captions)
+            closest_captions_intra_distance = closest_captions_distances.mean(dim=1).view(1, -1)
+            state = torch.cat((state, closest_captions_intra_distance), dim=1)
 
         # Distances to topk closest images
         if opt.topk_image > 0:
