@@ -8,6 +8,7 @@ import tensorboard_logger as tb_logger
 import pickle
 from config import opt, data, loaders, global_logger
 from data.utils import external_logger, visdom_logger, local_logger, no_logger, load_word2vec
+import uuid
 
 
 
@@ -35,7 +36,7 @@ def main():
                         help='Rank loss margin.')
     parser.add_argument('--num_epochs', default=5, type=int,
                         help='Number of training epochs.')
-    parser.add_argument('--init_samples', default=5, type=int,
+    parser.add_argument('--init_samples', default=10, type=int,
                         help='number of random inital training data')
     parser.add_argument('--batch_size', default=128, type=int,
                         help='Size of a training mini-batch.')
@@ -101,10 +102,12 @@ def main():
     parser.add_argument('--dataset', default='digit', help='Dataset. (vse | mr | digit)')
     parser.add_argument('--w2v', action='store_true', help='Use w2v embeddings')
     parser.add_argument('--c', default='', help='comment')
+    parser.add_argument('--reward', default=1.0, help='minusreward')
 
     params = parser.parse_args()
     params.actions = 2
-    params.logger_name = '{}_{}_{}_{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), params.agent, params.c)
+    
+    params.logger_name = '{}_{}_{}_{}_{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), str(uuid.uuid4())[:4], params.agent, params.c)
     print(params.logger_name)
     params.external_log_url = 'http://logserver.duckdns.org:5000'
 
