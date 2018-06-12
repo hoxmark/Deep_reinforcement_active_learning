@@ -6,6 +6,7 @@ import torch
 import numpy as np
 from collections import OrderedDict
 
+from config import data
 from data.dataset import get_test_loader
 from data.vocab import Vocabulary  # NOQA
 from models.vse import VSE, order_sim
@@ -69,53 +70,21 @@ class LogCollector(object):
             tb_logger.log_value(prefix + k, v.val, step=step)
 
 
-def encode_data(model, data_loader, log_step=10, logging=print):
+def encode_data(model, type, log_step=10, logging=print):
     """Encode all images and captions loadable by `data_loader`
     """
-    batch_time = AverageMeter()
-    val_logger = LogCollector()
-
-    # switch to evaluate mode
     model.val_start()
-
-    end = time.time()
-
-    # numpy array to keep all the embeddings
-    img_embs = None
-    cap_embs = None
-    for i, (images, captions, lengths, ids) in enumerate(data_loader):
-        # make sure val logger is used
-        model.logger = val_logger
-
+    img_embs = []
+    cap_embs = []
+    for i, (images, captions, lengths, ids) in enumerate(data[type]):
         # compute the embeddings
-        img_emb, cap_emb = model.forward_emb(images, captions, lengths,
-                                             volatile=True)
-
-        # initialize the numpy arrays given the size of the embeddings
-        if img_embs is None:
-            img_embs = np.zeros((len(data_loader.dataset), img_emb.size(1)))
-            cap_embs = np.zeros((len(data_loader.dataset), cap_emb.size(1)))
-
-        # preserve the embeddings by copying from gpu and converting to numpy
-        img_embs[ids] = img_emb.data.cpu().numpy().copy()
-        cap_embs[ids] = cap_emb.data.cpu().numpy().copy()
-
-        # measure accuracy and record loss
-        model.forward_loss(img_emb, cap_emb)
-
-        # measure elapsed time
-        batch_time.update(time.time() - end)
-        end = time.time()
-
-        # if i % log_step == 0:
-        #     logging('Test: [{0}/{1}]\t'
-        #             '{e_log}\t'
-        #             'Time {batch_time.val:.3f} ({batch_time.avg:.3f})\t'
-        #             .format(
-        #                 i, len(data_loader), batch_time=batch_time,
-        #                 e_log=str(model.logger)))
+        img_emb, cap_emb = model.forward_emb(images, captions, lengths, volatile=True)
+        img_embs.append(img_emb.cpu())
+        cap_embs.append(cap_emb.cpu())
+        del img_emb, cap_emb
         del images, captions
-
+    img_embs = torch.cat(img_embs)
+    cap_embs = torch.cat(cap_embs)
     return img_embs, cap_embs
 
 
@@ -207,6 +176,8 @@ def i2t(images, captions, npts=None, measure='cosine', return_ranks=False):
     Images: (5N, K) matrix of images
     Captions: (5N, K) matrix of captions
     """
+    images = images.data.cpu().numpy()
+    captions = captions.data.cpu().numpy()
     if npts is None:
         npts = images.shape[0] / 5
     index_list = []
@@ -265,6 +236,8 @@ def t2i(images, captions, npts=None, measure='cosine', return_ranks=False):
     Images: (5N, K) matrix of images
     Captions: (5N, K) matrix of captions
     """
+    images = images.data.cpu().numpy()
+    captions = captions.data.cpu().numpy()
     if npts is None:
         npts = images.shape[0] / 5
 

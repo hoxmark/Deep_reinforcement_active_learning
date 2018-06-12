@@ -10,7 +10,7 @@ from config import opt
 
 # TODO put in params
 # Hyper Parameters:
-GAMMA = 0.99  # decay rate of past observations
+# GAMMA = 0.99  # decay rate of past observations
 OBSERVE = 32  # timesteps to observe before training
 REPLAY_MEMORY_SIZE = 10000  # number of previous transitions to remember
 BATCH_SIZE = 32  # size of minibatch
@@ -49,7 +49,6 @@ class DQNAgent:
         batch_state, batch_action, batch_reward, batch_next_state, batch_terminal = zip(*minibatch)
         batch_state = torch.cat(batch_state)
         batch_next_state = torch.cat(batch_next_state)
-        batch_next_state.volatile = True
 
         batch_action = Variable(torch.LongTensor(list(batch_action)).unsqueeze(1))
         batch_reward = Variable(torch.FloatTensor(list(batch_reward)))
@@ -60,14 +59,11 @@ class DQNAgent:
             batch_next_state = batch_next_state.cuda()
 
         current_q_values = self.policynetwork(batch_state).gather(1, batch_action)
-        max_next_q_values = self.policynetwork(batch_next_state).max(1)[0]
-        expected_q_values = batch_reward + (GAMMA * max_next_q_values)
-        # Undo volatility introduced above
-        expected_q_values = Variable(expected_q_values.data)
 
-        if opt.cuda:
-            expected_q_values = expected_q_values.cuda()
-        loss = F.mse_loss(current_q_values, expected_q_values)
+        with torch.no_grad():
+            max_next_q_values = self.policynetwork(batch_next_state).max(1)[0]
+        expected_q_values = batch_reward + (opt.gamma * max_next_q_values)
+        loss = F.mse_loss(current_q_values, expected_q_values.view(-1, 1))
 
         self.optimizer.zero_grad()
         loss.backward()

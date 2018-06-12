@@ -5,7 +5,7 @@ import torchvision.models as models
 from torch.autograd import Variable
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import torch.backends.cudnn as cudnn
-from torch.nn.utils.clip_grad import clip_grad_norm
+from torch.nn.utils import clip_grad_norm_
 import numpy as np
 from collections import OrderedDict
 from config import opt
@@ -369,15 +369,20 @@ class VSE(nn.Module):
         """Compute the image and caption embeddings
         """
         # Set mini-batch dataset
-        images = Variable(images, volatile=volatile)
-        captions = Variable(captions, volatile=volatile)
+        images = Variable(images)
+        captions = Variable(captions)
         if torch.cuda.is_available():
             images = images.cuda()
             captions = captions.cuda()
 
-        # Forward
-        img_emb = self.img_enc(images)
-        cap_emb = self.txt_enc(captions, lengths)
+        if volatile:
+            with torch.no_grad():
+                # Forward
+                img_emb = self.img_enc(images)
+                cap_emb = self.txt_enc(captions, lengths)
+        else:
+            img_emb = self.img_enc(images)
+            cap_emb = self.txt_enc(captions, lengths)
         return img_emb, cap_emb
 
     def forward_loss(self, img_emb, cap_emb, **kwargs):
@@ -404,6 +409,6 @@ class VSE(nn.Module):
         # compute gradient and do SGD step
         loss.backward()
         if self.grad_clip > 0:
-            clip_grad_norm(self.params, self.grad_clip)
+            clip_grad_norm_(self.params, self.grad_clip)
         self.optimizer.step()
         # return loss

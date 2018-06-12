@@ -23,38 +23,52 @@ class Game:
         self.budget = opt.budget
         self.queried_times = 0
         self.current_state = 0
-
+        self.load_data("train")
+        self.load_data("val_tot")
+        self.load_data("val")
         self.init_train_k_random(model, opt.init_samples)
-
-        if opt.embedding != 'static':
-            self.encode_episode_data(model, loaders["train_loader"])
+        timer(self.encode_episode_data, (model, "train"))
         self.performance = self.validate(model)
 
-    def encode_episode_data(self, model, loader):
-        img_embs, cap_embs = timer(encode_data, (model, loader))
-        captions = torch.FloatTensor(cap_embs)
+    def load_data(self, type):
+        """ Loads data from loader[type_loader] into memory. """
+        data[type] = []
+        for part in loaders["{}_loader".format(type)]:
+            data[type].append(part)
+
+    def encode_episode_data(self, model, type):
+        """ Encodes data from loaders["type_loader"] to use in the episode calculations """
+        img_embs, cap_embs = timer(encode_data, (model, type))
         images = []
 
         # TODO dynamic im_div
         for i in range(0, len(img_embs), 5):
-            images.append(img_embs[i])
-        images = torch.FloatTensor(images)
+            images.append(img_embs[i].view(1, -1))
+        images = torch.cat(images)
 
-        image_caption_distances = pairwise_distances(images, captions)
+        image_caption_distances = pairwise_distances(images, cap_embs)
         image_caption_distances_topk = torch.topk(image_caption_distances, opt.topk, 1, largest=False)[0]
 
-        data["images_embed_all"] = images
-        data["captions_embed_all"] = captions
-        data["image_caption_distances_topk"] = image_caption_distances_topk
-        data["img_embs_avg"] = average_vector(data["images_embed_all"])
-        data["cap_embs_avg"] = average_vector(data["captions_embed_all"])
+        del image_caption_distances
+
+        if "images_embed_all" in data:
+            del data["images_embed_all"]
+        if "captions_embed_all" in data:
+            del data["captions_embed_all"]
+        if "image_caption_distances_topk" in data:
+            del data["image_caption_distances_topk"]
+
+        data["images_embed_all"] = images.data
+        data["captions_embed_all"] = cap_embs.data
+        data["image_caption_distances_topk"] = image_caption_distances_topk.data
+        # data["img_embs_avg"] = average_vector(data["images_embed_all"])
+        # data["cap_embs_avg"] = average_vector(data["captions_embed_all"])
 
     def get_state(self, model):
         current_idx = self.order[self.current_state]
 
         # Distances to topk closest captions
-        image_topk = data["image_caption_distances_topk"][current_idx].view(1, -1)
-        state = image_topk
+        state = data["image_caption_distances_topk"][current_idx].view(1, -1)
 
         # Distances to topk closest images
         if opt.topk_image > 0:
@@ -65,7 +79,6 @@ class Game:
 
             state = torch.cat((state, image_image_dist_topk), 1)
 
-
         # Distance from average image vector
         if opt.image_distance:
             current_image = data["images_embed_all"][current_idx].view(1 ,-1)
@@ -73,11 +86,11 @@ class Game:
             image_dist_tensor = torch.FloatTensor([img_distance]).view(1, -1)
             state = torch.cat((state, image_dist_tensor), 1)
 
-        observation = torch.autograd.Variable(state)
+        state = torch.autograd.Variable(state)
         if opt.cuda:
-            observation = observation.cuda()
+            state = state.cuda()
         self.current_state += 1
-        return observation
+        return state
 
     def feedback(self, action, model):
         reward = 0.
@@ -86,10 +99,11 @@ class Game:
         if action == 1:
             timer(self.query, ())
             new_performance = self.get_performance(model)
-            reward = self.performance - new_performance
+            reward = self.performance - new_performance - opt.reward_threshold
 
-            if opt.reward_clip:
-                reward = np.tanh(reward / 100)
+            # TODO check batch size vs reward size
+            # if opt.reward_clip:
+                # reward = np.tanh(reward / 1000)
 
             self.performance = new_performance
         else:
@@ -137,17 +151,14 @@ class Game:
         timer(self.train_model, (model, loaders["active_loader"]))
         performance = self.validate(model)
 
-        if (self.queried_times % 20 == 0):
-            if opt.embedding != 'static':
-                self.encode_episode_data(model, loaders["train_loader"])
+        self.encode_episode_data(model, "train")
         return performance
 
     def performance_validate(self, model):
         """returns the performance messure with recall at 1, 5, 10
         for both image -> caption and cap -> img, and the sum of them all added together"""
         # compute the encoding for all the validation images and captions
-        val_loader = loaders["val_tot_loader"]
-        img_embs, cap_embs = encode_data(model, val_loader)
+        img_embs, cap_embs = encode_data(model, "val_tot")
         # caption retrieval
         (r1, r5, r10, medr, meanr) = i2t(img_embs, cap_embs, measure=opt.measure)
         # image retrieval
@@ -163,16 +174,15 @@ class Game:
     def validate_loss(self, model):
         total_loss = 0
         model.val_start()
-        for i, (images, captions, lengths, ids) in enumerate(loaders["val_loader"]):
+        for i, (images, captions, lengths, ids) in enumerate(data["val"]):
             img_emb, cap_emb = model.forward_emb(images, captions, lengths, volatile=True)
             loss = model.forward_loss(img_emb, cap_emb)
-            total_loss += loss.data[0]
+            total_loss += (loss.data.item() / opt.batch_size)
         return total_loss
 
     def train_model(self, model, train_loader, epochs=opt.num_epochs):
         if opt.train_shuffle:
             train_loader.dataset.shuffle()
-        
         model.train_start()
         if len(train_loader) > 0:
             for epoch in range(epochs):

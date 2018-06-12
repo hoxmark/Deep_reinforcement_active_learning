@@ -101,6 +101,8 @@ def main():
     parser.add_argument('--reward_clip', action='store_true', help='Clip rewards using tanh')
     parser.add_argument('--val_size', default=500, type=int, help='Number of validation set size to use for reward')
     parser.add_argument('--train_shuffle', action='store_true', help='Shuffle active train set every time')
+    parser.add_argument("--gamma", default=0, type=float, help="Discount factor")
+    parser.add_argument("--reward_threshold", default=0.28, type=float, help="Reward threshold")
 
     params = parser.parse_args()
     params.actions = 2

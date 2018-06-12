@@ -31,7 +31,7 @@ class PolicyAgent:
         self.policynetwork = Policy()
         self.optimizer = optim.Adam(self.policynetwork.parameters(), lr=1e-2)
         self.running_reward = 10
-        self.gamma = 0.99
+        self.gamma = opt.gamma
 
         if opt.cuda:
             self.policynetwork.cuda()
@@ -55,7 +55,9 @@ class PolicyAgent:
             R = r + self.gamma * R
             rewards.insert(0, R)
         rewards = torch.Tensor(rewards)
-        rewards = (rewards - rewards.mean()) / (rewards.std() + np.finfo(np.float32).eps)
+        rewards = (rewards - rewards.mean()) / (rewards.std() + np.finfo(np.float32).eps.item())
+        if opt.cuda:
+            rewards = rewards.cuda()
         for log_prob, reward in zip(self.policynetwork.saved_log_probs, rewards):
             policy_loss.append(-log_prob * reward)
         self.optimizer.zero_grad()

@@ -34,19 +34,19 @@ def train():
 
     game = Game()
 
-    if opt.embedding == 'static' :
-        path_to_full_model ="{}/fullModel.pth.tar".format(opt.data_path)
-        full_model = VSE()
-
-        if os.path.isfile(path_to_full_model):
-            get_full_VSE_model(full_model,path_to_full_model)
-            game.encode_episode_data(full_model, loaders["train_loader"])
-        else:
-            print("No old model found, training a new one")
-            print("Please wait... ")
-            game.train_model(full_model, loaders["train_loader"], epochs=30)
-            game.encode_episode_data(full_model, loaders["train_loader"])
-            save_VSE_model(full_model.state_dict(), path=opt.data_path)
+    # if opt.embedding == 'static' :
+    #     path_to_full_model ="{}/fullModel.pth.tar".format(opt.data_path)
+    #     full_model = VSE()
+    #
+    #     if os.path.isfile(path_to_full_model):
+    #         get_full_VSE_model(full_model,path_to_full_model)
+    #         game.encode_episode_data(full_model, loaders["train_loader"])
+    #     else:
+    #         print("No old model found, training a new one")
+    #         print("Please wait... ")
+    #         game.train_model(full_model, loaders["train_loader"], epochs=30)
+    #         game.encode_episode_data(full_model, loaders["train_loader"])
+    #         save_VSE_model(full_model.state_dict(), path=opt.data_path)
 
     for episode in range(start_episode, opt.episodes):
         model = VSE()
@@ -59,11 +59,13 @@ def train():
             action = agent.get_action(state)
             reward, next_state, terminal = game.feedback(action, model)
             if terminal:
+                del state
                 agent.finish_episode(episode)
                 break
-                
+
             agent.update(state, action, reward, next_state, terminal)
             print("\n")
+            del state
             state = next_state
             if (action == 1):
                 lg.scalar_summary("last_episode_performance", game.performance, game.queried_times)
