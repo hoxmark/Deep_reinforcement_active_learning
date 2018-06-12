@@ -54,12 +54,13 @@ def train():
     #         game.train_model(full_model, loaders["train_loader"], epochs=30)
     #         game.encode_episode_data(full_model, loaders["train_loader"])
     #         save_VSE_model(full_model.state_dict(), path=opt.data_path)
-
+ 
     for episode in range(start_episode, opt.episodes):
         model = classifier()
         game.reboot(model)
         print('##>>>>>>> Episode {} of {} <<<<<<<<<##'.format(episode, opt.episodes))
         terminal = False
+        num_of_zero = 0
 
         state = game.get_state(model)
         while not terminal:
@@ -70,27 +71,29 @@ def train():
             if terminal:
                 agent.finish_episode(episode)
                 break
-            agent.update(state, action, reward, next_state, terminal) #TODO check 
+            agent.update(state, action, reward, next_state, terminal)
             # print("\n")
             state = next_state
             if (action == 1):
                 lg.scalar_summary("last_episode_performance", game.performance, game.queried_times)
                 # Reset the model every time we add to train set
                 # model = classifier() Should this be done? 
-                
+            else: 
+                num_of_zero += 1    
 
+                
         # Reset model
         model = classifier()
-
+        
 
         timer(model.train_model, (loaders["active_loader"], 100))
         # model.train_model(loaders["active_loader"], 100)
         metrics = timer(model.performance_validate, (loaders["val_loader"],))
         # metrics = model.performance_validate(loaders["val_loader"])
-        print(metrics)
         # lg.dict_scalar_summary('episode-validation', metrics, episode)
         lg.scalar_summary('episode-validation', metrics, episode)
-
+        lg.scalar_summary('number-of-0-actions', num_of_zero, episode)
+        num_of_zero = 0
 
         # save_VSE_model(model.state_dict(), path=opt.data_path)
         # new_m = VSE()
