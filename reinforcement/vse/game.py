@@ -19,7 +19,7 @@ class Game:
         """resets the Game Object, to make it ready for the next episode """
 
         loaders["active_loader"] = get_active_loader(opt.batch_size)
-        data_len = loaders["train_loader"].dataset.length
+        data_len = loaders["train_loader"].dataset.length-opt.init_samples
         # self.order = random.sample(list(range(0, data_len // 5)), data_len // 5)
         self.order = random.sample(list(range(0, data_len)), data_len)
         self.budget = opt.budget
@@ -180,8 +180,8 @@ class Game:
             e = entropy(current_state)
             reward = e - avg_pred_entropy - float(opt.reward)
             
-            print("entropy:         {}        reward:     {}".format(e, reward) )
-            print("entropy:         {}        reward:     {}".format(self.entropy, (self.entropy - self.avg_entropy_in_train_loader) ))
+            # print("entropy: {}   -  reward:{}".format(e, reward) )
+            # print("entropy:         {}        reward:     {}".format(self.entropy, (self.entropy - self.avg_entropy_in_train_loader) ))
         
             if opt.reward_clip:
                 reward = np.tanh(reward / 100)
@@ -206,31 +206,47 @@ class Game:
         if (len(self.order) == self.current_state):            
             return True
         current = self.order[self.current_state]
-        # construct_state = self.construct_entropy_state
-        #
-        # current_state = construct_state(model, current)
-        # all_states = torch.cat([construct_state(model, index) for index in range(len(self.order))])
+        image = loaders["train_loader"].dataset[current][0]
+        self.entropy = entropy(loaders["train_loader"].dataset[current][0][0])
+
+        caption = loaders["train_loader"].dataset[current][1]
         
-        current_state = data["all_predictions"][current]
-        all_states = data["all_predictions"]
-        current_state = torch.from_numpy(current_state).view(1,-1)
-        all_states = torch.from_numpy(all_states)
-        current_all_dist = pairwise_distances(current_state, all_states)
-        similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
+        # There are 5 captions for every image
+        loaders["active_loader"].dataset.add_single(image, caption)
 
-        for index in similar_indices.cpu().numpy():
-            image = loaders["train_loader"].dataset[index][0]
-
-            self.entropy = entropy(loaders["train_loader"].dataset[index][0][0])
-            caption = loaders["train_loader"].dataset[index][1]
-            # There are 5 captions for every image
-            loaders["active_loader"].dataset.add_single(image[0], caption[0])
-
-            # Only count images as an actual request.
-            # Reuslt is that we have 5 times as many training points as requests.
-            self.queried_times += 1
+        self.queried_times += 1
         
         return False
+    # def query(self, model):
+    #     self.construct_all_predictions(model)        
+    #     if (len(self.order) == self.current_state):            
+    #         return True
+    #     current = self.order[self.current_state]
+    #     # construct_state = self.construct_entropy_state
+    #     #
+    #     # current_state = construct_state(model, current)
+    #     # all_states = torch.cat([construct_state(model, index) for index in range(len(self.order))])
+        
+    #     current_state = data["all_predictions"][current]
+    #     all_states = data["all_predictions"]
+    #     current_state = torch.from_numpy(current_state).view(1,-1)
+    #     all_states = torch.from_numpy(all_states)
+    #     current_all_dist = pairwise_distances(current_state, all_states)
+    #     similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
+
+    #     for index in similar_indices.cpu().numpy():
+    #         image = loaders["train_loader"].dataset[index][0]
+
+    #         self.entropy = entropy(loaders["train_loader"].dataset[index][0][0])
+    #         caption = loaders["train_loader"].dataset[index][1]
+    #         # There are 5 captions for every image
+    #         loaders["active_loader"].dataset.add_single(image[0], caption[0])
+
+    #         # Only count images as an actual request.
+    #         # Reuslt is that we have 5 times as many training points as requests.
+    #         self.queried_times += 1
+        
+    #     return False
         # for index in similar_indices[0]:
         #     image = loaders["train_loader"].dataset[5 * index][0]
         #     # There are 5 captions for every image

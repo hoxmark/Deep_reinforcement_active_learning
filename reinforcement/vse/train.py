@@ -1,4 +1,5 @@
 import os
+import random
 from game import Game
 from agents import DQNAgent, DQNTargetAgent, PolicyAgent, ActorCriticAgent, RandomAgent
 from config import data, opt, loaders, global_logger
@@ -65,7 +66,7 @@ def train():
         state = game.get_state(model)
         while not terminal:
             action = agent.get_action(state) 
-            
+            # action = random.randint(0,1)
             reward, next_state, terminal = game.feedback(action, model)
             if terminal:
                 agent.finish_episode(episode)
@@ -76,23 +77,25 @@ def train():
             if (action == 1):
                 lg.scalar_summary("last_episode_performance", game.performance, game.queried_times)
                 # Reset the model every time we add to train set
-                # model = classifier() Should this be done? 
+                # model = classifier()   #SHould this be done? 
             else: 
                 num_of_zero += 1    
 
                 
         # Reset model
         model = classifier()
-        
-
-        timer(model.train_model, (loaders["active_loader"], 100))
+        # print("len:")
+        # print(len(loaders["active_loader"].dataset))
+        print(timer(model.train_model, (loaders["active_loader"], 100)))
+    
         # model.train_model(loaders["active_loader"], 100)
         metrics = timer(model.performance_validate, (loaders["val_loader"],))
         # metrics = model.performance_validate(loaders["val_loader"])
+        # print(len(loaders["val_loader"].dataset))
+        
         # lg.dict_scalar_summary('episode-validation', metrics, episode)
         lg.scalar_summary('episode-validation', metrics, episode)
         lg.scalar_summary('number-of-0-actions', num_of_zero, episode)
-        num_of_zero = 0
 
         # save_VSE_model(model.state_dict(), path=opt.data_path)
         # new_m = VSE()
