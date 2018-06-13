@@ -13,27 +13,28 @@ from data.utils import visdom_logger, no_logger
 
 # agent = DQNTargetAgent()
 
-opt.state_size = 2
-opt.hidden_size = 24
+num_classes = 20
+num_data = 10000
+val_idx = 0.8
+budget = 500
+episodes = 10000
+
+opt.state_size = num_classes
+opt.hidden_size = 320
 opt.cuda = False
 opt.actions = 2
 opt.batch_size_rl = 32
-opt.gamma = 0
+opt.gamma = 0.9
 # opt.cuda = torch.cuda.is_available()
 opt.cuda = False
-opt.state_size = 2
 opt.reward_clip = False
-agent = PolicyAgent()
-# agent = DQNAgent()
+
+# agent = PolicyAgent()
+agent = DQNAgent()
 opt.logger_name = '{}_{}_test_{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), agent.__class__.__name__)
 
-budget = 500
-num_data = 10000
-episodes = 10000
-val_idx = 0.8
-
-logger = visdom_logger()
-# logger = no_logger()
+# logger = visdom_logger()
+logger = no_logger()
 
 class LinearRegressionModel(torch.nn.Module):
     def __init__(self):
@@ -47,18 +48,32 @@ class LinearRegressionModel(torch.nn.Module):
         out = self.fc2(self.relu(self.fc1(inp)))
         return out
 
-def generate_data():
+
+
+def generate_data(n_classes, num_data, val_idx):
+    softmax_scale_factor = 10
     data = []
     rewards = []
+    max_reward = torch.Tensor([1/n_classes for i in range(0, n_classes)])
+    max_reward = torch.mul(max_reward, torch.log(max_reward))
+    max_reward = torch.sum(max_reward)
+    max_reward = max_reward * -1
+    print(max_reward)
     for i in range(num_data):
-        class1 = random.random()
-        class2 = 1 - class1
-        probs = [class1, class2]
-        data.append(torch.FloatTensor(np.sort(probs)).view(1, -1))
-        reward = np.sum(-1 * (probs * np.log(probs)))
+        r = random.random()
+        probs = [random.random() * softmax_scale_factor for i in range(n_classes)]
+        probs = torch.Tensor(probs)
+        probs = torch.nn.functional.softmax(probs, dim=0)
+        probs = probs.sort()[0]
+        data.append(probs.view(1, -1))
 
-        # 0.69 is the max possible entropy, and should be the highest reward.
-        reward = reward / 0.69314718056
+        # Calculate entropy
+        reward = torch.mul(probs, torch.log(probs))
+        reward = torch.sum(reward)
+        reward = reward * -1
+
+        # Scale with max reward to get it in range [0, 1]
+        reward = reward / max_reward
         rewards.append(reward)
 
     train_x = data[0: int(num_data * 0.8)]
@@ -75,7 +90,11 @@ def batch(iterable, iterable2, n=1):
         yield (iterable[ndx:min(ndx + n, l)], iterable2[ndx:min(ndx + n, l)])
 
 def train_regression():
-    train_x, train_y, val_x, val_y = generate_data()
+    num_classes = 2
+    num_data = 10000
+    val_idx = 0.8
+
+    train_x, train_y, val_x, val_y = generate_data(num_classes, num_data, val_idx)
     model = LinearRegressionModel()
     features = torch.autograd.Variable(torch.cat(train_x))
     targets = torch.autograd.Variable(torch.FloatTensor(train_y))
@@ -110,7 +129,7 @@ def validate(model, epoch, features, targets):
 
 
 def train_rl():
-    train_x, train_y, val_x, val_y = generate_data()
+    train_x, train_y, val_x, val_y = generate_data(num_classes, num_data, val_idx)
     features = torch.autograd.Variable(torch.cat(train_x))
     targets = torch.FloatTensor(train_y)
     if opt.cuda:
@@ -152,12 +171,12 @@ def train_rl():
         running_avg.append(ep_reward)
         if episode >= running_mean_N:
             running_avg.pop(0)
-        print(running_avg)
+        # print(running_avg)
         running_mean = np.mean(running_avg)
 
         metrics = {
             'running_avg': running_mean,
-            'ep_reward': ep_reward
+            'ep_reward': ep_reward.item()
         }
 
         logger.dict_scalar_summary('test', metrics, episode)

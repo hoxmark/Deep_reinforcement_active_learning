@@ -71,7 +71,7 @@ class DQNAgent:
         if opt.cuda:
             expected_q_values = expected_q_values.cuda()
         # loss = F.mse_loss(current_q_values, expected_q_values)
-        loss = F.smooth_l1_loss(current_q_values, expected_q_values)
+        loss = F.smooth_l1_loss(current_q_values, expected_q_values.view(-1, 1))
 
         self.optimizer.zero_grad()
         loss.backward()
