@@ -66,7 +66,6 @@ def train():
         while not terminal:
             action = agent.get_action(state) 
             
-            #Crash
             reward, next_state, terminal = game.feedback(action, model)
             if terminal:
                 agent.finish_episode(episode)
