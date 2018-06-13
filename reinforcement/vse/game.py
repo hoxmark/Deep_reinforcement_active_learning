@@ -11,6 +11,7 @@ from config import opt, data, loaders
 from data.utils import timer, average_vector, get_distance, pairwise_distances
 # from data.evaluation import encode_data, i2t, t2i
 from data.dataset import get_active_loader
+from scipy.stats import entropy
 
 
 class Game:
@@ -24,12 +25,25 @@ class Game:
         self.budget = opt.budget
         self.queried_times = 0
         self.current_state = 0
-
+        self.entropy = 0
         self.init_train_k_random(model, opt.init_samples)
-
+        self.avg_entropy_in_train_loader = self.get_avg_entropy_in_train_loader(loaders["train_loader"])
         # if opt.embedding != 'static':
             # self.encode_episode_data(model, loaders["train_loader"])
         self.performance =  model.validate(loaders["val_loader"])
+
+    def get_avg_entropy_in_train_loader(self,loader): 
+        images = []
+        total = 0
+        
+        # np.set_printoptions(threshold=np.inf)        
+        length = len(loader.dataset)
+        for i, train_data in enumerate(loader.dataset): 
+            total += entropy(train_data[0])
+
+        print(length)
+        return total/length
+
 
     def encode_episode_data(self, model, loader):
         img_embs, cap_embs = timer(model.encode_data, (loader,))
@@ -98,8 +112,7 @@ class Game:
         # if opt.cuda:
             # all_predictions = all_predictions.cuda()
         images = []
-        np.set_printoptions(threshold=np.inf)
-
+        
         for i, train_data in enumerate(loaders["train_loader"].dataset): 
             images.append(train_data[0])
         preds = model.predict_prob(images)
@@ -114,20 +127,66 @@ class Game:
         #TODO make tensor or not? 
         # data["all_predictions"] = Variable(torch.FloatTensor(preds), requires_grad=False, volatile=True)
         data["all_predictions"] = preds
+    
+    def find_avg_pred_entropy(self, model):
+        images = []
+        tot = 0
+        length = len(data["all_predictions"])
+
+        for i, pred in enumerate(data["all_predictions"]):
+            tot += entropy(pred)
+        
+        avg = tot/length        
+        return avg
+
+    # def find_entropy(self, inp)
 
     def feedback(self, action, model):
         reward = 0.
         is_terminal = False
         if action == 1:
             # timer(self.query, (model,))
-            self.query(model)
+            is_terminal = self.query(model)
+            if is_terminal: 
+                return None, None, True
             new_performance = self.get_performance(model)
+            # print("old performance: {}".format(self.performance))
+            # print("new performance: {}".format(new_performance))
+            
             # reward = self.performance - new_performance
-            reward = new_performance - self.performance
+            # reward = new_performance - self.performance
+            # reward -= -0.4
+            # print("reward: {}".format(reward))
+            # reward = entropy - 0.6
+            # self.entropy = self.find_entropy(model)
+            
+            #find entropy from img entropy
+            # avg_active = self.get_avg_entropy_in_train_loader(loaders["active_loader"])
+            # avg_train = self.get_avg_entropy_in_train_loader(loaders["train_loader"])
+            # current = self.order[self.current_state]            
+            # current_state = data["all_predictions"][current]
+            # e = entropy(current_state)            
+            # # reward = e - float(opt.reward)
+            # reward = self.entropy - self.avg_entropy_in_train_loade
+            # # self.entropy = e 
+            # print("active_avg       {}        train_avg   {}".format(avg_active, avg_train))
+            # print("entropy:         {}        reward:     {}".format(self.entropy, reward) )
+            # print("current_state:   {}        e from c_s: {}".format(current_state, e) )
 
+            #find entropy of predictions
+            avg_pred_entropy = self.find_avg_pred_entropy(model)
+            current = self.order[self.current_state]            
+            current_state = data["all_predictions"][current]
+            e = entropy(current_state)
+            reward = e - avg_pred_entropy - float(opt.reward)
+            
+            print("entropy:         {}        reward:     {}".format(e, reward) )
+            print("entropy:         {}        reward:     {}".format(self.entropy, (self.entropy - self.avg_entropy_in_train_loader) ))
+        
             if opt.reward_clip:
                 reward = np.tanh(reward / 100)
 
+            # print("reward: {} after tanh".format(reward))
             self.performance = new_performance
         else:
             reward = 0.
@@ -143,7 +202,9 @@ class Game:
         return reward, next_observation, is_terminal
 
     def query(self, model):
-        self.construct_all_predictions(model)
+        self.construct_all_predictions(model)        
+        if (len(self.order) == self.current_state):            
+            return True
         current = self.order[self.current_state]
         # construct_state = self.construct_entropy_state
         #
@@ -156,9 +217,11 @@ class Game:
         all_states = torch.from_numpy(all_states)
         current_all_dist = pairwise_distances(current_state, all_states)
         similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
-        
+
         for index in similar_indices.cpu().numpy():
             image = loaders["train_loader"].dataset[index][0]
+
+            self.entropy = entropy(loaders["train_loader"].dataset[index][0][0])
             caption = loaders["train_loader"].dataset[index][1]
             # There are 5 captions for every image
             loaders["active_loader"].dataset.add_single(image[0], caption[0])
@@ -166,7 +229,8 @@ class Game:
             # Only count images as an actual request.
             # Reuslt is that we have 5 times as many training points as requests.
             self.queried_times += 1
-
+        
+        return False
         # for index in similar_indices[0]:
         #     image = loaders["train_loader"].dataset[5 * index][0]
         #     # There are 5 captions for every image
@@ -196,6 +260,7 @@ class Game:
         # timer(model.train_model, (loaders["active_loader"], opt.num_epochs))        
         metrics = model.validate(loaders["val_loader"])
         performance = metrics
+        print("performance: {}".format(performance))
         # if (self.queried_times % 20 == 0):
             # if opt.embedding != 'static':
         # self.encode_episode_data(model, loaders["train_loader"])
