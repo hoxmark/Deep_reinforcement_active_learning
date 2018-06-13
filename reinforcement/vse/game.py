@@ -60,9 +60,11 @@ class Game:
 
     def get_state(self, model):
         current_idx = self.order[self.current_state]
-
         # Distances to topk closest captions
         state = data["image_caption_distances_topk"][current_idx].view(1, -1)
+        # The distances themselves are very small. Scale them to increase the
+        # differences
+        state = state * 15
         # Softmin to make it general
         state = torch.nn.functional.softmin(state, dim=1)
 
@@ -94,6 +96,7 @@ class Game:
         if opt.cuda:
             state = state.cuda()
         self.current_state += 1
+        # print(state)
         return state
 
     def feedback(self, action, model):
@@ -103,7 +106,9 @@ class Game:
         if action == 1:
             timer(self.query, ())
             new_performance = self.get_performance(model)
-            reward = self.performance - new_performance - opt.reward_threshold
+            # reward = self.performance - new_performance - opt.reward_threshold
+            # reward = self.performance - new_performance - (0.33 * opt.selection_radius)
+            reward = self.performance - new_performance
 
             # TODO check batch size vs reward size
             # if opt.reward_clip:
@@ -113,14 +118,13 @@ class Game:
         else:
             reward = 0.
 
-        # TODO fix this
-        if self.queried_times >= self.budget or self.current_state >= len(self.order):
-            # Return terminal
-            return None, None, True
-
         print("> State {:2} Action {:2} - reward {:.4f} - accuracy {:.4f}".format(
             self.current_state, action, reward, self.performance))
         next_observation = timer(self.get_state, (model,))
+
+        if self.queried_times >= self.budget or self.current_state >= len(self.order):
+            is_terminal = True
+
         return reward, next_observation, is_terminal
 
     def query(self):

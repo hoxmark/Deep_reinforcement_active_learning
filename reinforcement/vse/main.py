@@ -36,9 +36,9 @@ def main():
                         help='Path to saved vocabulary pickle files.')
     parser.add_argument('--margin', default=0.2, type=float,
                         help='Rank loss margin.')
-    parser.add_argument('--num_epochs', default=5, type=int,
+    parser.add_argument('--num_epochs', default=15, type=int,
                         help='Number of training epochs.')
-    parser.add_argument('--init_samples', default=0, type=int,
+    parser.add_argument('--init_samples', default=480, type=int,
                         help='number of random inital training data')
     parser.add_argument('--batch_size', default=512, type=int,
                         help='Size of a training mini-batch.')
