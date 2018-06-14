@@ -10,6 +10,7 @@ from config import opt
 
 # TODO put in params
 # Hyper Parameters:
+# GAMMA = 0.99  # decay rate of past observations
 OBSERVE = 32  # timesteps to observe before training
 REPLAY_MEMORY_SIZE = 10000  # number of previous transitions to remember
 BATCH_SIZE = 32  # size of minibatch
@@ -18,6 +19,7 @@ BATCH_SIZE = 32  # size of minibatch
 # or alternative:
 FINAL_EPSILON = 0.0001  # final value of epsilon
 INITIAL_EPSILON = 0.1  # starting value of epsilon
+UPDATE_TIME = 100
 EXPLORE = 100000.  # frames over which to anneal epsilon
 
 
@@ -46,32 +48,22 @@ class DQNAgent:
 
         batch_state, batch_action, batch_reward, batch_next_state, batch_terminal = zip(*minibatch)
         batch_state = torch.cat(batch_state)
-        if not batch_state.requires_grad:
-            batch_state = Variable(batch_state.data)
         batch_next_state = torch.cat(batch_next_state)
-        batch_next_state.volatile = True
 
         batch_action = Variable(torch.LongTensor(list(batch_action)).unsqueeze(1))
         batch_reward = Variable(torch.FloatTensor(list(batch_reward)))
 
         if opt.cuda:
-            batch_state = batch_state.cuda()
             batch_action = batch_action.cuda()
             batch_reward = batch_reward.cuda()
             batch_next_state = batch_next_state.cuda()
 
         current_q_values = self.policynetwork(batch_state).gather(1, batch_action)
-        max_next_q_values = self.policynetwork(batch_next_state).max(1)[0]
-        expected_q_values = batch_reward + (opt.gamma * max_next_q_values)
-        # Undo volatility introduced above
-        expected_q_values = Variable(expected_q_values.data)
-        actual = -1 * torch.sum(batch_state * torch.log(batch_state), dim=1).view(-1, 1)
-        # print(torch.cat((current_q_values, actual, torch.abs(actual - current_q_values)), dim=1))
 
-        if opt.cuda:
-            expected_q_values = expected_q_values.cuda()
-        # loss = F.mse_loss(current_q_values, expected_q_values)
-        loss = F.smooth_l1_loss(current_q_values, expected_q_values.view(-1, 1))
+        with torch.no_grad():
+            max_next_q_values = self.policynetwork(batch_next_state).max(1)[0]
+        expected_q_values = batch_reward + (opt.gamma * max_next_q_values)
+        loss = F.mse_loss(current_q_values, expected_q_values.view(-1, 1))
 
         self.optimizer.zero_grad()
         loss.backward()

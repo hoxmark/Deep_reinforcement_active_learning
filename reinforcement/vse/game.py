@@ -25,11 +25,22 @@ class Game:
         self.queried_times = 0
         self.current_state = 0
 
+        self.load_data("train")
+        # self.load_data("val_tot")
+        # self.load_data("val")
+
         self.init_train_k_random(model, opt.init_samples)
 
         metrics = model.validate(loaders["val_loader"])
         self.performance = metrics["performance"]
         self.construct_all_predictions(model)
+
+    def load_data(self, type):
+        """ Loads data from loader[type_loader] into memory. """
+        data[type] = []
+
+        for part in loaders["{}_loader".format(type)]:
+            data[type].append(part)
 
     def encode_episode_data(self, model, loader):
         img_embs, cap_embs = timer(model.encode_data, (loader,))
@@ -84,42 +95,47 @@ class Game:
         return observation
 
     def construct_entropy_state(self, model, index):
-        current_sentence = loaders["train_loader"].dataset[index][0]
-        current_sentence = Variable(torch.LongTensor(current_sentence), volatile=True)
-        if opt.cuda:
-            current_sentence = current_sentence.cuda()
+        with torch.no_grad():
+            current_sentence = loaders["train_loader"].dataset[index][0]
+            # print(current_sentence)
+            current_sentence = Variable(torch.LongTensor(current_sentence))
+            if opt.cuda:
+                current_sentence = current_sentence.cuda()
 
-        preds = model(current_sentence)
-        preds = nn.functional.softmax(preds, dim=1)
-        preds = preds.sort(dim=1)[0]
-        del current_sentence
-        return preds
+            preds = model(current_sentence)
+            preds = nn.functional.softmax(preds, dim=1)
+            preds = preds.sort(dim=1)[0]
+            del current_sentence
+            return preds
 
     def construct_all_predictions(self, model):
-        all_predictions = None
+        with torch.no_grad():
+            all_predictions = None
 
-        for i, train_data in enumerate(loaders["train_loader"]):
-            sentences, targets = train_data
-            features = Variable(sentences, requires_grad=False, volatile=True)
+            # for i, train_data in enumerate(loaders["train_loader"]):
+            # for i, train_data in enumerate(loaders["train_loader"]):
+            for i, train_data in enumerate(data["train"]):
+                sentences, targets = train_data
+                features = Variable(sentences)
 
-            if opt.cuda:
-                features = features.cuda()
+                if opt.cuda:
+                    features = features.cuda()
 
-            preds = model(features)
-            preds = nn.functional.softmax(preds, dim=1)
-            if i == 0:
-                all_predictions = preds
-            else:
-                all_predictions = torch.cat((all_predictions, preds), dim=0)
-            del preds
-            del features
-            del sentences
-            del targets
+                preds = model(features)
+                preds = nn.functional.softmax(preds, dim=1)
+                if i == 0:
+                    all_predictions = preds
+                else:
+                    all_predictions = torch.cat((all_predictions, preds), dim=0)
+                del preds
+                del features
+                del sentences
+                del targets
 
-        if "all_predictions" in data:
-            del data["all_predictions"]
+            if "all_predictions" in data:
+                del data["all_predictions"]
 
-        data["all_predictions"] = all_predictions.sort(dim=1)[0]
+            data["all_predictions"] = all_predictions.sort(dim=1)[0]
 
     def feedback(self, action, model):
         reward = 0.
@@ -129,8 +145,8 @@ class Game:
             timer(self.query, (model,))
             new_performance = self.get_performance(model)
             reward = new_performance - self.performance - opt.reward_threshold
-            if opt.reward_clip:
-                reward = np.tanh(reward / 100)
+            # if opt.reward_clip:
+                # reward = np.tanh(reward / 100)
 
             self.performance = new_performance
         else:

@@ -13,18 +13,19 @@ from data.utils import visdom_logger, no_logger
 
 # agent = DQNTargetAgent()
 
-num_classes = 20
+num_classes = 2
 num_data = 10000
 val_idx = 0.8
 budget = 500
 episodes = 10000
 
 opt.state_size = num_classes
-opt.hidden_size = 320
+opt.hidden_size = 4
 opt.cuda = False
 opt.actions = 2
 opt.batch_size_rl = 32
-opt.gamma = 0.9
+# opt.gamma = 0.9
+opt.gamma = 0
 # opt.cuda = torch.cuda.is_available()
 opt.cuda = False
 opt.reward_clip = False
@@ -33,8 +34,8 @@ opt.reward_clip = False
 agent = DQNAgent()
 opt.logger_name = '{}_{}_test_{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), agent.__class__.__name__)
 
-# logger = visdom_logger()
-logger = no_logger()
+logger = visdom_logger()
+# logger = no_logger()
 
 class LinearRegressionModel(torch.nn.Module):
     def __init__(self):

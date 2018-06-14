@@ -8,7 +8,7 @@ import numpy as np
 import json as jsonmod
 import sklearn
 
-from config import data
+from config import data, opt
 
 def get_paths(path, name='coco', use_restval=False):
     """
@@ -178,44 +178,41 @@ class PrecompDataset(torch.utils.data.Dataset):
         pass
 
 
+def read_MR(data_path):
+    x, y = [], []
+    with open("{}/MR/rt-polarity.pos".format(data_path), "r", encoding="utf-8") as f:
+        for line in f:
+            if line[-1] == "\n":
+                line = line[:-1]
+            x.append(line.split())
+            y.append(1)
+
+    with open("{}/MR/rt-polarity.neg".format(data_path), "r", encoding="utf-8") as f:
+        for line in f:
+            if line[-1] == "\n":
+                line = line[:-1]
+            x.append(line.split())
+            y.append(0)
+
+    x, y = sklearn.utils.shuffle(x, y)
+    dev_idx = len(x) // 10 * 8
+    test_idx = len(x) // 10 * 9
+
+    words = sorted(list(set([w for sent in x for w in sent])))
+    # print(len(words))
+    data.vocab = {w: i for i, w in enumerate(words)}
+
+    return (
+        (x[:dev_idx], y[:dev_idx]),
+        (x[dev_idx:test_idx], y[dev_idx:test_idx]),
+        (x[test_idx:], y[test_idx:])
+    )
+
 class MRDataset(torch.utils.data.Dataset):
-    def __init__(self, data_path, data_split):
-        x, y = [], []
-        with open("{}/MR/rt-polarity.pos".format(data_path), "r", encoding="utf-8") as f:
-            for line in f:
-                if line[-1] == "\n":
-                    line = line[:-1]
-                x.append(line.split())
-                y.append(1)
-
-        with open("{}/MR/rt-polarity.neg".format(data_path), "r", encoding="utf-8") as f:
-            for line in f:
-                if line[-1] == "\n":
-                    line = line[:-1]
-                x.append(line.split())
-                y.append(0)
-
-        x, y = sklearn.utils.shuffle(x, y)
-        dev_idx = len(x) // 10 * 8
-        test_idx = len(x) // 10 * 9
-
-        words = sorted(list(set([w for sent in x for w in sent])))
-        # print(len(words))
-        self.vocab = {w: i for i, w in enumerate(words)}
-        data.vocab = {w: i for i, w in enumerate(words)}
-
-        if data_split == 'train':
-            self.sentences = x[:dev_idx]
-            self.targets = y[:dev_idx]
-        elif data_split == 'dev':
-            self.sentences = x[dev_idx:test_idx]
-            self.targets = y[dev_idx:test_idx]
-        elif data_split == 'test':
-            self.sentences = x[test_idx:]
-            self.targets = y[test_idx:]
-
+    def __init__(self, datapart):
+        self.sentences, self.targets = datapart
+        self.vocab = data.vocab
         self.length = len(self.sentences)
-
 
     def shuffle(self):
         self.sentences, self.targets = sklearn.utils.shuffle(self.sentences, self.targets)
@@ -224,7 +221,7 @@ class MRDataset(torch.utils.data.Dataset):
         sentence = self.sentences[index]
         target = self.targets[index]
         tokens = [self.vocab[word] for word in sentence]
-        padding = (59 - len(sentence)) * [len(self.vocab)]
+        padding = (59 - len(sentence)) * [len(self.vocab) + 1]
         tokens_padded = tokens + padding
         return tokens_padded, target
 
@@ -272,7 +269,7 @@ class ActiveDataset(torch.utils.data.Dataset):
 def collate_fn_mr(data):
     sentences, targets = zip(*data)
     sentences, targets = list(sentences), list(targets)
-    sentences = torch.stack(torch.LongTensor(sentences))
+    sentences = torch.LongTensor(sentences)
     targets = torch.LongTensor(targets)
     return sentences, targets
 
@@ -333,11 +330,10 @@ def get_loader_single(data_name, split, root, json, vocab, transform,
     return data_loader
 
 
-def get_mr_loader(data_path, data_split, vocab, opt, batch_size=100,
+def get_mr_loader(data_path, data_split, vocab, datapart, batch_size=100,
                        shuffle=True, num_workers=2, data_length=100):
     """Returns torch.utils.data.DataLoader for custom coco dataset."""
-    dset = MRDataset(data_path, data_split)
-
+    dset = MRDataset(datapart)
     data_loader = torch.utils.data.DataLoader(dataset=dset,
                                               batch_size=batch_size,
                                               shuffle=shuffle,
@@ -431,15 +427,16 @@ def get_loaders(data_name, vocab, crop_size, batch_size, workers, opt):
                                            collate_fn=collate_fn)
 
     else:
-        train_loader = get_mr_loader(opt.data_path, 'train', vocab, opt,
+        train_data, dev_data, test_data = read_MR(opt.data_path)
+        train_loader = get_mr_loader(opt.data_path, 'train', vocab, train_data,
                                           batch_size, True, workers)
-        val_loader = get_mr_loader(opt.data_path, 'dev', vocab, opt,
+        val_loader = get_mr_loader(opt.data_path, 'dev', vocab, dev_data,
                                         batch_size, False, workers)
-        val_tot_loader = get_mr_loader(opt.data_path, 'dev', vocab, opt,
+        val_tot_loader = get_mr_loader(opt.data_path, 'dev', vocab, test_data,
                                         batch_size, False, workers)
 
 
-    return active_loader, train_loader, val_loader, val_tot_loader
+    return active_loader, train_loader, val_loader, val_loader
 
 
 def get_test_loader(split_name, data_name, vocab, crop_size, batch_size,
