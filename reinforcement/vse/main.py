@@ -27,7 +27,7 @@ def main():
                         help="Size of hidden layer in deep RL")
     parser.add_argument("--learning_rate_rl", default=0.1,
                         type=float, help="learning rate")
-    parser.add_argument('--data_path', default='/data/stud/jorgebjorn/data/',
+    parser.add_argument('--data_path', default='/data/stud/jorgebjorn/data',
                         help='path to datasets')
     parser.add_argument('--data_name', default='f8k_precomp',
                         help='{coco,f8k,f30k,10crop}_precomp|coco|f8k|f30k')
@@ -37,7 +37,7 @@ def main():
                         help='Rank loss margin.')
     parser.add_argument('--num_epochs', default=50, type=int,
                         help='Number of training epochs.')
-    parser.add_argument('--init_samples', default=10, type=int,
+    parser.add_argument('--init_samples', default=320, type=int,
                         help='number of random inital training data')
     parser.add_argument('--batch_size', default=128, type=int,
                         help='Size of a training mini-batch.')
@@ -107,66 +107,16 @@ def main():
     parser.add_argument("--gamma", default=0, type=float, help="Discount factor")
     parser.add_argument("--reward_threshold", default=1.0, type=float, help="Reward threshold")
 
-    # import model, data, from './datasets/{}'.format(opt.dataset)'
-
     params = parser.parse_args()
     params.actions = 2
 
     params.logger_name = '{}_{}_{}_{}_{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), str(uuid.uuid4())[:4], params.agent, params.c)
-    # print(params.logger_name)
     params.external_log_url = 'http://logserver.duckdns.org:5000'
-
-    # from datasets.dataset import get_loaders
 
     if torch.cuda.is_available():
         torch.cuda.set_device(params.device)
     params.cuda = (not params.no_cuda) and torch.cuda.is_available()
-
-    container = importlib.import_module('datasets.{}'.format(params.dataset))
-    model = container.model
-    load_data = container.load_data
-
-    train_data, dev_data, test_data = load_data()
-
-    data["train"] = train_data
-    data["dev"] = dev_data
-    data["test"] = test_data
-
-
-    # print(container.model)
-    # print(model)
-    # print(load_data)
-    # dataset = __import__('datasets')
-    # print(dataset.digit.load_data)
-
-    # model = __import__('datasets.{}.model'.format(params.dataset))
-
-
-
-
-
-    # vocab = {}
-    # vocab = pickle.load(open(os.path.join(params.vocab_path, '%s_vocab.pkl' % params.data_name), 'rb'))
-    # params.vocab = vocab
-    # params.vocab_size = len(vocab)
-    #
-    # active_loader, train_loader, val_loader, val_tot_loader = get_loaders(
-    #     params.data_name, vocab, params.crop_size, params.batch_size, params.workers, params)
-    #
-    # loaders["active_loader"] = active_loader
-    # loaders["train_loader"] = train_loader
-    # loaders["val_loader"] = val_loader          #limited val dataset
-    # loaders["val_tot_loader"] = val_tot_loader  #Total val dataset for validation each episode
-
-    # TODO Check if this is correct order
-
-    # print(loaders["active_loader"])
-    # print(loaders["train_loader"])
-    # print(loaders["val_loader"])
-    # print(loaders["val_tot_loader"])
-    # quit()
     # params.state_size = params.topk + params.topk_image + 1 if params.image_distance else params.topk + params.topk_image
-    params.state_size = 10
 
     for arg in vars(params):
         opt[arg] = vars(params)[arg]
@@ -190,7 +140,15 @@ def main():
     else:
         global_logger["lg"] = no_logger()
 
-    # Import here to make opt include all our parameters
+
+    container = importlib.import_module('datasets.{}'.format(params.dataset))
+    model = container.model
+    load_data = container.load_data
+    train_data, dev_data, test_data = load_data()
+    data["train"] = train_data
+    data["dev"] = dev_data
+    data["test"] = test_data
+
     from train import train
     train(model)
 

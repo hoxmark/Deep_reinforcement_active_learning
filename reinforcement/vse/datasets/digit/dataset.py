@@ -1,5 +1,7 @@
 from sklearn import datasets, svm, metrics
 import sklearn
+
+from config import opt
 def load_data():
         # The digits dataset
         digits = datasets.load_digits()
@@ -15,4 +17,5 @@ def load_data():
         train_data = (x[:dev_idx], y[:dev_idx])
         dev_data = (x[dev_idx:test_idx], y[dev_idx:test_idx])
         test_data = (x[test_idx:], y[test_idx:])
+        opt.state_size = 10
         return train_data, dev_data, test_data

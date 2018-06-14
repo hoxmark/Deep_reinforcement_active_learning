@@ -21,7 +21,7 @@ class SimpleClassifier(nn.Module):
         self.fc3 = nn.Linear(self.hidden_size, self.output_size)
 
     def forward(self, inp):
-        inp = Variable(torch.FloatTensor(inp))
+        inp = Variable(inp)
         if opt.cuda:
             inp = inp.cuda()
         output = self.fc1(inp)
@@ -82,7 +82,7 @@ class SimpleClassifier(nn.Module):
             for i, (features, targets) in enumerate(batchify(data)):
                 # feature, target = data
 
-                feature = Variable(torch.FloatTensor(features))
+                features = Variable(torch.FloatTensor(features))
                 targets = Variable(torch.LongTensor(targets))
 
                 if opt.cuda:
@@ -118,7 +118,7 @@ class SimpleClassifier(nn.Module):
         images = []
         # for i, (features, targets) in enumerate(loaders["train_loader"]):
         for i, (features, targets) in enumerate(batchify(data["train"])):
-            feature = Variable(torch.FloatTensor(features))
+            features = Variable(torch.FloatTensor(features))
             targets = Variable(torch.LongTensor(targets))
 
             preds = self.predict_prob(features)
@@ -140,17 +140,14 @@ class SimpleClassifier(nn.Module):
         return avg
 
     def query(self, index):
-        self.encode_episode_data()
         current_state = data["all_predictions"][index].view(1, -1)
         all_states = data["all_predictions"]
         current_all_dist = pairwise_distances(current_state, all_states)
         similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
 
-        for index in similar_indices.data[0].cpu().numpy():
-            # image = loaders["train_loader"].dataset[index][0]
-            # caption = loaders["train_loader"].dataset[index][1]
-            image = data["train"][0][index]
-            caption = data["train"][1][index]
+        for idx in similar_indices.data[0].cpu().numpy():
+            image = data["train"][0][idx]
+            caption = data["train"][1][idx]
             # There are 5 captions for every image
             # loaders["active_loader"].dataset.add_single(image, caption)
             data["active"][0].append(image)

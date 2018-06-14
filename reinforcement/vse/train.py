@@ -7,10 +7,7 @@ from models.vse import VSE
 from utils import save_model, timer, load_external_model, average_vector, save_VSE_model,get_full_VSE_model
 
 # from models.simple_classifier import SimpleClassifier
-from datasets.digit.model import SimpleClassifier
-
-from models.cnn import CNN
-from models.svm import SVM
+# from datasets.digit.model import SimpleClassifier
 
 
 def train(classifier):
@@ -61,6 +58,8 @@ def train(classifier):
 
     for episode in range(start_episode, opt.episodes):
         model = classifier()
+        if opt.cuda:
+            model = model.cuda()
         game.reboot(model)
         print('##>>>>>>> Episode {} of {} <<<<<<<<<##'.format(episode, opt.episodes))
         terminal = False
@@ -83,6 +82,8 @@ def train(classifier):
                 # print(state)
                 # Reset the model every time we add to train set
                 model = classifier()   #SHould this be done? # Yes I think so
+                if opt.cuda:
+                    model = model.cuda()
             else:
                 num_of_zero += 1
             state = next_state
