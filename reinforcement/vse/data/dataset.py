@@ -204,7 +204,7 @@ class MRDataset(torch.utils.data.Dataset):
         # print(len(words))
         self.vocab = {w: i for i, w in enumerate(words)}
         data.vocab = {w: i for i, w in enumerate(words)}
-        
+
         if data_split == 'train':
             self.sentences = x[:dev_idx]
             self.targets = y[:dev_idx]
@@ -238,16 +238,16 @@ class MRDataset(torch.utils.data.Dataset):
 
 class DigitDataset(torch.utils.data.Dataset):
     def __init__(self, data_path, data_split):
-                
+
         # The digits dataset
         digits = datasets.load_digits()
         n_samples = len(digits.images)
         data = digits.images.reshape((n_samples, -1))
         target = digits.target
-        
+
         data, target = sklearn.utils.shuffle(data, target)
-        
-        dev_idx = n_samples // 4 #TODO correct? 
+
+        dev_idx = n_samples // 4 #TODO correct?
         test_idx = n_samples // 2
 
         if data_split == 'train':
@@ -269,7 +269,7 @@ class DigitDataset(torch.utils.data.Dataset):
     def __getitem__(self, index):
         image = self.images[index]
         target = self.targets[index]
-        # tokens = [self.vocab[word] for word in image] #OK? 
+        # tokens = [self.vocab[word] for word in image] #OK?
         # padding = (59 - len(image)) * [len(self.vocab)]
         # tokens_padded = tokens + padding
         return image, target
@@ -321,12 +321,12 @@ def collate_fn_mr(data):
     targets = torch.LongTensor(targets)
     return sentences, targets
 
-#TODO why is this here? 
+#TODO why is this here?
 def collate_fn_digit(data):
     images, targets = zip(*data)
     images, targets = list(images), list(targets)
-    # images = torch.stack(torch.LongTensor(images))
-    # targets = torch.LongTensor(targets)
+    images = torch.FloatTensor(images)
+    targets = torch.LongTensor(targets)
     return images, targets
 
 
@@ -430,7 +430,7 @@ def get_active_loader(batch_size=100, shuffle=True, num_workers=2):
                                               batch_size=batch_size,
                                               shuffle=shuffle,
                                               pin_memory=torch.cuda.is_available(),
-                                              collate_fn=collate_fn_mr)
+                                              collate_fn=collate_fn_digit)
     return data_loader
 
 # def get_episode_loader(vocab, batch_size=100, shuffle=True, num_workers=2):
