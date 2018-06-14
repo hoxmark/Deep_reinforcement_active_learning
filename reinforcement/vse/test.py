@@ -9,7 +9,7 @@ import getpass
 import sklearn
 import datetime
 
-from data.utils import visdom_logger, no_logger
+from utils import visdom_logger, no_logger
 
 # agent = DQNTargetAgent()
 
@@ -85,7 +85,8 @@ def generate_data(n_classes, num_data, val_idx):
     return train_x, train_y, val_x, val_y
     # max = np.sum(sorted(rewards, reverse=True)[0:budget])
 
-def batch(iterable, iterable2, n=1):
+def batch(d, n=1):
+    iterable, iterable2 = d
     l = len(iterable)
     for ndx in range(0, l, n):
         yield (iterable[ndx:min(ndx + n, l)], iterable2[ndx:min(ndx + n, l)])

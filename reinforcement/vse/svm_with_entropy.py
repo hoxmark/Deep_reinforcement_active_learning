@@ -3,7 +3,7 @@ import matplotlib.pyplot as plt
 import math
 import random
 import numpy as np
-from data.utils import test_local_logger
+from utils import test_local_logger
 
 
 entropy = True

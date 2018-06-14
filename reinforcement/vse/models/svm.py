@@ -8,7 +8,7 @@ import numpy as np
 from gensim.models.keyedvectors import KeyedVectors
 from config import opt, data
 
-from data.utils import timer
+from utils import timer
 from sklearn import datasets, svm, metrics
 
 

@@ -2,12 +2,13 @@ import torch
 import argparse
 import datetime
 import getpass
+import importlib
 # from data.vocab import Vocabulary  # NOQAimport logging
 import os
 import tensorboard_logger as tb_logger
 import pickle
 from config import opt, data, loaders, global_logger
-from data.utils import external_logger, visdom_logger, local_logger, no_logger, load_word2vec
+from utils import external_logger, visdom_logger, local_logger, no_logger, load_word2vec
 import uuid
 
 
@@ -22,7 +23,7 @@ def main():
                         help="Name of the model to load from external server")
     parser.add_argument("--episodes", default=10000, type=int,
                         help="number of episodes")
-    parser.add_argument("--hidden_size", default=2, type=int,
+    parser.add_argument("--hidden_size", default=4, type=int,
                         help="Size of hidden layer in deep RL")
     parser.add_argument("--learning_rate_rl", default=0.1,
                         type=float, help="learning rate")
@@ -40,7 +41,7 @@ def main():
                         help='number of random inital training data')
     parser.add_argument('--batch_size', default=128, type=int,
                         help='Size of a training mini-batch.')
-    parser.add_argument('--batch_size_rl', default=64, type=int,
+    parser.add_argument('--batch_size_rl', default=32, type=int,
                         help='Size of a training mini-batch.')
     parser.add_argument('--budget', default=30, type=int,
                         help='Our labeling budget')
@@ -103,6 +104,10 @@ def main():
     parser.add_argument('--w2v', action='store_true', help='Use w2v embeddings')
     parser.add_argument('--c', default='', help='comment')
     parser.add_argument('--reward', default=2, help='minusreward')
+    parser.add_argument("--gamma", default=0, type=float, help="Discount factor")
+    parser.add_argument("--reward_threshold", default=1.0, type=float, help="Reward threshold")
+
+    # import model, data, from './datasets/{}'.format(opt.dataset)'
 
     params = parser.parse_args()
     params.actions = 2
@@ -111,25 +116,48 @@ def main():
     # print(params.logger_name)
     params.external_log_url = 'http://logserver.duckdns.org:5000'
 
-    from data.dataset import get_loaders
+    # from datasets.dataset import get_loaders
 
     if torch.cuda.is_available():
         torch.cuda.set_device(params.device)
     params.cuda = (not params.no_cuda) and torch.cuda.is_available()
 
+    container = importlib.import_module('datasets.{}'.format(params.dataset))
+    model = container.model
+    load_data = container.load_data
 
-    vocab = {}
+    train_data, dev_data, test_data = load_data()
+
+    data["train"] = train_data
+    data["dev"] = dev_data
+    data["test"] = test_data
+
+
+    # print(container.model)
+    # print(model)
+    # print(load_data)
+    # dataset = __import__('datasets')
+    # print(dataset.digit.load_data)
+
+    # model = __import__('datasets.{}.model'.format(params.dataset))
+
+
+
+
+
+    # vocab = {}
     # vocab = pickle.load(open(os.path.join(params.vocab_path, '%s_vocab.pkl' % params.data_name), 'rb'))
     # params.vocab = vocab
     # params.vocab_size = len(vocab)
+    #
+    # active_loader, train_loader, val_loader, val_tot_loader = get_loaders(
+    #     params.data_name, vocab, params.crop_size, params.batch_size, params.workers, params)
+    #
+    # loaders["active_loader"] = active_loader
+    # loaders["train_loader"] = train_loader
+    # loaders["val_loader"] = val_loader          #limited val dataset
+    # loaders["val_tot_loader"] = val_tot_loader  #Total val dataset for validation each episode
 
-    active_loader, train_loader, val_loader, val_tot_loader = get_loaders(
-        params.data_name, vocab, params.crop_size, params.batch_size, params.workers, params)
-
-    loaders["active_loader"] = active_loader
-    loaders["train_loader"] = train_loader
-    loaders["val_loader"] = val_loader          #limited val dataset
-    loaders["val_tot_loader"] = val_tot_loader  #Total val dataset for validation each episode
     # TODO Check if this is correct order
 
     # print(loaders["active_loader"])
@@ -164,7 +192,7 @@ def main():
 
     # Import here to make opt include all our parameters
     from train import train
-    train()
+    train(model)
 
 if __name__ == "__main__":
     main()

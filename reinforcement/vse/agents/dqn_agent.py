@@ -48,18 +48,12 @@ class DQNAgent:
 
         batch_state, batch_action, batch_reward, batch_next_state, batch_terminal = zip(*minibatch)
         batch_state = torch.cat(batch_state)
-        if not batch_state.requires_grad:
-            batch_state = Variable(batch_state.data)
-
-        with torch.no_grad():
-            batch_next_state = torch.cat(batch_next_state)
-        # batch_next_state.volatile = True
+        batch_next_state = torch.cat(batch_next_state)
 
         batch_action = Variable(torch.LongTensor(list(batch_action)).unsqueeze(1))
         batch_reward = Variable(torch.FloatTensor(list(batch_reward)))
 
         if opt.cuda:
-            batch_state = batch_state.cuda()
             batch_action = batch_action.cuda()
             batch_reward = batch_reward.cuda()
             batch_next_state = batch_next_state.cuda()
@@ -69,8 +63,6 @@ class DQNAgent:
             max_next_q_values = self.policynetwork(batch_next_state).max(1)[0]
 
         expected_q_values = batch_reward + (GAMMA * max_next_q_values)
-        # Undo volatility introduced above
-        expected_q_values = Variable(expected_q_values.data)
 
         if opt.cuda:
             expected_q_values = expected_q_values.cuda()

@@ -9,7 +9,7 @@ import json
 import copy
 import shutil
 import os
-import datetime 
+import datetime
 
 import numpy as np
 import plotly.graph_objs as go
@@ -19,8 +19,17 @@ from scipy import spatial
 from plotly.graph_objs import Scatter, Layout
 from gensim.models.keyedvectors import KeyedVectors
 
-from data.logger import LocalLogger, ExternalLogger, NoLogger, VisdomLogger
+from logger import LocalLogger, ExternalLogger, NoLogger, VisdomLogger
 from config import opt, data, w2v
+
+
+def batchify(d, n=None):
+    if not n:
+        n = opt.batch_size
+    iterable, iterable2 = d
+    l = len(iterable)
+    for ndx in range(0, l, n):
+        yield (iterable[ndx:min(ndx + n, l)], iterable2[ndx:min(ndx + n, l)])
 
 
 def timer(func, args):
@@ -85,7 +94,7 @@ def local_logger():
 
 def test_local_logger(inp):
     """function that return an logger-object to saving tensorboard logs locally"""
-    logger_name = '{}'.format(datetime.now().strftime("%d-%m-%y_%H:%M"))    
+    logger_name = '{}'.format(datetime.now().strftime("%d-%m-%y_%H:%M"))
     basename = "./logs/test/"
     lg = LocalLogger('{}{}_{}'.format(
         basename,

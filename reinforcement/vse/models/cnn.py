@@ -8,7 +8,7 @@ import numpy as np
 from gensim.models.keyedvectors import KeyedVectors
 from config import opt, data
 
-from data.utils import timer
+from utils import timer
 
 
 class CNN(nn.Module):
@@ -18,17 +18,18 @@ class CNN(nn.Module):
         self.BATCH_SIZE = 32
         self.MAX_SENT_LEN = 59
         self.WORD_DIM = 300
-        self.VOCAB_SIZE = 21425
+        # self.VOCAB_SIZE = 21425
         self.CLASS_SIZE = 2
         self.FILTERS = [3, 4, 5]
         self.FILTER_NUM = [100, 100, 100]
-        self.DROPOUT_EMBED_PROB = 0.2
-        self.DROPOUT_MODEL_PROB = 0.4
+        self.DROPOUT_EMBED_PROB = 0.3
+        self.DROPOUT_MODEL_PROB = 0.5
         self.IN_CHANNEL = 1
+        self.VOCAB_SIZE = len(data.vocab)
 
         # one for UNK and one for zero padding
         # self.NUM_EMBEDDINGS = self.VOCAB_SIZE + 2
-        self.NUM_EMBEDDINGS = 21427
+        self.NUM_EMBEDDINGS = len(data.vocab) + 2
         assert (len(self.FILTERS) == len(self.FILTER_NUM))
         self.init_model()
 
@@ -36,9 +37,10 @@ class CNN(nn.Module):
         return getattr(self, 'conv_{}'.format(i))
 
     def init_model(self):
-        self.embed = nn.Embedding(self.NUM_EMBEDDINGS, self.WORD_DIM, padding_idx=21425)
+        self.embed = nn.Embedding(self.NUM_EMBEDDINGS, self.WORD_DIM, padding_idx=self.VOCAB_SIZE + 1)
 
         if opt.w2v:
+            print("copying w2v")
             self.embed.weight.data.copy_(torch.from_numpy(data["w2v"]))
 
         for i in range(len(self.FILTERS)):
@@ -64,14 +66,9 @@ class CNN(nn.Module):
             F.max_pool1d(F.relu(self.get_conv(i)(x)),
                          self.MAX_SENT_LEN - self.FILTERS[i] + 1).view(-1, self.FILTER_NUM[i])
             for i in range(len(self.FILTERS))]
-        # Take a max for each filter - each filter result is 25 x 100 x 57
-
-        # Each conv_result is (25 x 100)  - one max value for each application of each filter type, across each sentence
         x = torch.cat(conv_results, 1)
-        # x = (25 x 300) - concatenate all the filter results
         x = self.dropout(x)
         x = self.fc(x)
-        # x = self.softmax(x)
 
         return x
 
@@ -95,11 +92,9 @@ class CNN(nn.Module):
     def train_model(self, loader, epochs):
         parameters = filter(lambda p: p.requires_grad, self.parameters())
         optimizer = optim.Adadelta(parameters, 0.1)
-        # criterion = nn.NLLLoss()
         criterion = nn.CrossEntropyLoss()
 
         size = len(loader.dataset)
-
         if size > 0:
             self.train()
             for e in range(epochs):
@@ -120,7 +115,7 @@ class CNN(nn.Module):
                     loss = criterion(pred, targets)
                     loss.backward()
                     optimizer.step()
-                    avg_loss += loss.data[0]
+                    avg_loss += loss.data.item()
                     corrects += (torch.max(pred, 1)
                                  [1].view(targets.size()).data == targets.data).sum()
                 avg_loss = avg_loss * 32 / size
@@ -136,38 +131,39 @@ class CNN(nn.Module):
                         # "dev", dev_loss, dev_accuracy, dev_corrects, dev_size)
                     # output_lines[0] = s1
 
-    def validate(self, loader):
-        self.eval()
-        corrects, avg_loss = 0, 0
-        for i, data in enumerate(loader):
-            feature, target = data
+    def validate(self, dataset):
+        with torch.no_grad():
+            self.eval()
+            corrects, avg_loss = 0, 0
+            for i, data in enumerate(dataset):
+                feature, target = data
 
-            feature = Variable(torch.LongTensor(feature))
-            target = Variable(torch.LongTensor(target))
-            feature.volatile = True
+                feature = Variable(torch.LongTensor(feature))
+                target = Variable(torch.LongTensor(target))
 
-            if opt.cuda:
-                feature = feature.cuda()
-                target = target.cuda()
+                if opt.cuda:
+                    feature = feature.cuda()
+                    target = target.cuda()
 
-            logit = self.forward(feature)
-            # loss = torch.nn.functional.nll_loss(logit, target, size_average=False)
-            loss = torch.nn.functional.cross_entropy(logit, target, size_average=False)
-            avg_loss += loss.data[0]
-            corrects += (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
+                logit = self.forward(feature)
+                # loss = torch.nn.functional.nll_loss(logit, target, size_average=False)
+                loss = torch.nn.functional.cross_entropy(logit, target, size_average=False)
+                avg_loss += loss.data.item()
+                corrects += (torch.max(logit, 1)[1].view(target.size()).data == target.data).sum()
 
-        size = len(loader.dataset)
-        avg_loss = avg_loss / size
-        accuracy = 100.0 * corrects / size
-
-        metrics = {
-            'accuracy': accuracy,
-            'avg_loss': avg_loss,
-            'performance': accuracy
-        }
-
-        return metrics
+            size = len(dataset) * opt.batch_size
+            avg_loss = avg_loss / size
+            accuracy = 100.0 * corrects / size
 
 
-    def performance_validate(self, loader):
-        return self.validate(loader)
+            metrics = {
+                'accuracy': accuracy.item(),
+                'avg_loss': avg_loss,
+                'performance': accuracy.item()
+            }
+
+            return metrics
+
+
+    def performance_validate(self, dataset):
+        return self.validate(dataset)

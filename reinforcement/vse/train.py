@@ -4,16 +4,16 @@ from game import Game
 from agents import DQNAgent, DQNTargetAgent, PolicyAgent, ActorCriticAgent, RandomAgent
 from config import data, opt, loaders, global_logger
 from models.vse import VSE
-from data.utils import save_model, timer, load_external_model, average_vector, save_VSE_model,get_full_VSE_model
+from utils import save_model, timer, load_external_model, average_vector, save_VSE_model,get_full_VSE_model
 
-from models.simple_classifier import SimpleClassifier
+# from models.simple_classifier import SimpleClassifier
+from datasets.digit.model import SimpleClassifier
 
 from models.cnn import CNN
 from models.svm import SVM
-from sklearn import datasets, svm, metrics
 
 
-def train():
+def train(classifier):
     lg = global_logger["lg"]
 
     if opt.agent == 'policy':
@@ -42,7 +42,7 @@ def train():
     # classifier = VSE
     # classifier = CNN
     # classifier = SVM
-    classifier = SimpleClassifier
+    # classifier = model
 
 
     # if opt.embedding == 'static' and opt.dataset == 'vse':
@@ -75,9 +75,10 @@ def train():
                 agent.finish_episode(episode)
                 break
             agent.update(state, action, reward, next_state, terminal)
-            # print("\n")
+            del state
+            state = next_state
             if (action == 1):
-                print(state)
+                # print(state)
                 lg.scalar_summary("last_episode_performance", game.performance, game.queried_times)
                 # print(state)
                 # Reset the model every time we add to train set
@@ -92,10 +93,10 @@ def train():
         model = classifier()
         # print("len:")
         # print(len(loaders["active_loader"].dataset))
-        print(timer(model.train_model, (loaders["active_loader"], 100)))
+        print(timer(model.train_model, (data["active"], 100)))
 
         # model.train_model(loaders["active_loader"], 100)
-        metrics = timer(model.performance_validate, (loaders["val_loader"],))
+        metrics = timer(model.performance_validate, (data["dev"],))
         # metrics = model.performance_validate(loaders["val_loader"])
         # print(len(loaders["val_loader"].dataset))
 
