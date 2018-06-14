@@ -3,12 +3,7 @@ import random
 from game import Game
 from agents import DQNAgent, DQNTargetAgent, PolicyAgent, ActorCriticAgent, RandomAgent
 from config import data, opt, loaders, global_logger
-from models.vse import VSE
 from utils import save_model, timer, load_external_model, average_vector, save_VSE_model,get_full_VSE_model
-
-# from models.simple_classifier import SimpleClassifier
-# from datasets.digit.model import SimpleClassifier
-
 
 def train(classifier):
     lg = global_logger["lg"]
@@ -36,11 +31,6 @@ def train(classifier):
         agent.load_policynetwork(old_model)
 
     game = Game()
-    # classifier = VSE
-    # classifier = CNN
-    # classifier = SVM
-    # classifier = model
-
 
     # if opt.embedding == 'static' and opt.dataset == 'vse':
     #     path_to_full_model ="{}/fullModel.pth.tar".format(opt.data_path)

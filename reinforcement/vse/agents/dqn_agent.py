@@ -1,10 +1,11 @@
 import numpy as np
 import random
 from collections import deque
-from models.dqn import DQN
+
 from torch import optim
 import torch
 from torch.autograd import Variable
+import torch.nn as nn
 import torch.nn.functional as F
 from config import opt
 
@@ -21,6 +22,27 @@ FINAL_EPSILON = 0.0001  # final value of epsilon
 INITIAL_EPSILON = 0.1  # starting value of epsilon
 UPDATE_TIME = 100
 EXPLORE = 100000.  # frames over which to anneal epsilon
+
+class DQN(nn.Module):
+    def __init__(self):
+        super(DQN, self).__init__()
+        self.IN_SIZE = opt.state_size
+        self.HIDDEN_SIZE = opt.hidden_size
+        self.OUT_SIZE = opt.actions
+
+        self.fc1 = nn.Linear(self.IN_SIZE, self.HIDDEN_SIZE)
+        self.fc2 = nn.Linear(self.HIDDEN_SIZE, self.OUT_SIZE)
+        self.activation = nn.Tanh() if opt.reward_clip else nn.ReLU()
+
+        self.fc1.weight.data.normal_(0, 0.1)   # initialization
+        self.fc1.weight.data.normal_(0, 0.1)   # initialization
+
+
+    def forward(self, inp):
+        x = self.activation(self.fc1(inp))
+        x = self.fc2(x)
+        return x
+
 
 
 class DQNAgent:

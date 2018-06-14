@@ -1,6 +1,5 @@
-from argparse import Namespace
 
-# Global config imported elsewhere.
+# Global config imported and set elsewhere.
 
 class Dict(dict):
     def __getattr__(self, name):
@@ -9,7 +8,6 @@ class Dict(dict):
     def __setattr__(self, name, value):
         self[name] = value
 
-# opt = Namespace()
 opt = Dict()
 data = Dict()
 w2v = {}
