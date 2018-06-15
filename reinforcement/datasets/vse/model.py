@@ -1,121 +1,3 @@
-    # def encode_episode_data(self, model, loader):
-    #     img_embs, cap_embs = timer(model.encode_data, (loader,))
-    #     captions = torch.FloatTensor(cap_embs)
-    #     images = []
-    #
-    #     # TODO dynamic im_div
-    #     for i in range(0, len(img_embs), 5):
-    #         images.append(img_embs[i])
-    #     images = torch.FloatTensor(images)
-    #
-    #     image_caption_distances = pairwise_distances(images, captions)
-    #     image_caption_distances_topk = torch.topk(image_caption_distances, opt.topk, 1, largest=False)[0]
-    #
-    #     data["images_embed_all"] = images
-    #     data["captions_embed_all"] = captions
-    #     data["image_caption_distances_topk"] = image_caption_distances_topk
-    #     # data["img_embs_avg"] = average_vector(data["images_embed_all"])
-    #     # data["cap_embs_avg"] = average_vector(data["captions_embed_all"])
-
-
-    # def construct_distance_state(self, index):
-    #     # Distances to topk closest captions
-    #     image_topk = data["image_caption_distances_topk"][index].view(1, -1)
-    #     state = image_topk
-    #
-    #     # Distances to topk closest images
-    #     if opt.topk_image > 0:
-    #         current_image = data["images_embed_all"][index].view(1 ,-1)
-    #         all_images = data["images_embed_all"]
-    #         image_image_dist = pairwise_distances(current_image, all_images)
-    #         image_image_dist_topk = torch.topk(image_image_dist, opt.topk_image, 1, largest=False)[0]
-    #
-    #         state = torch.cat((state, image_image_dist_topk), 1)
-    #
-    #     # Distance from average image vector
-    #     if opt.image_distance:
-    #         current_image = data["images_embed_all"][index].view(1 ,-1)
-    #         img_distance = get_distance(current_image, data["img_embs_avg"].view(1, -1))
-    #         image_dist_tensor = torch.FloatTensor([img_distance]).view(1, -1)
-    #         state = torch.cat((state, image_dist_tensor), 1)
-    #
-    #     observation = torch.autograd.Variable(state)
-    #     if opt.cuda:
-    #         observation = observation.cuda()
-    #     return observation
-
-
-
-# def query():
-#     current_state = data["all_predictions"][current]
-#     all_states = data["all_predictions"]
-#     current_state = torch.from_numpy(current_state).view(1,-1)
-#     all_states = torch.from_numpy(all_states)
-#     current_all_dist = pairwise_distances(current_state, all_states)
-#     similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
-
-    # for index in similar_indices[0]:
-    #     image = loaders["train_loader"].dataset[5 * index][0]
-    #     # There are 5 captions for every image
-    #     for cap in range(5):
-    #         caption = loaders["train_loader"].dataset[5 * index + cap][1]
-    #         loaders["active_loader"].dataset.add_single(image, caption)
-    #     # Only count images as an actual request.
-    #     # Reuslt is that we have 5 times as many training points as requests.
-    #     self.queried_times += 1
-
-
-
-    #         current = self.order[self.current_state]
-    #         image = loaders["train_loader"].dataset[current][0]
-    #         self.entropy = entropy(loaders["train_loader"].dataset[current][0][0])
-    #
-    #         caption = loaders["train_loader"].dataset[current][1]
-    #
-    #         # There are 5 captions for every image
-    #         loaders["active_loader"].dataset.add_single(image, caption)
-    #
-    #         self.queried_times += 1
-    #
-    #         return False
-        # def query(self, model):
-        #     self.construct_all_predictions(model)
-        #     if (len(self.order) == self.current_state):
-        #         return True
-        #     current = self.order[self.current_state]
-        #     # construct_state = self.construct_entropy_state
-        #     #
-        #     # current_state = construct_state(model, current)
-        #     # all_states = torch.cat([construct_state(model, index) for index in range(len(self.order))])
-
-
-
-        #     for index in similar_indices.cpu().numpy():
-        #         image = loaders["train_loader"].dataset[index][0]
-
-        #         self.entropy = entropy(loaders["train_loader"].dataset[index][0][0])
-        #         caption = loaders["train_loader"].dataset[index][1]
-        #         # There are 5 captions for every image
-        #         loaders["active_loader"].dataset.add_single(image[0], caption[0])
-
-        #         # Only count images as an actual request.
-        #         # Reuslt is that we have 5 times as many training points as requests.
-        #         self.queried_times += 1
-
-#
-# def adjust_learning_rate(self, optimizer, epoch):
-#     """Sets the learning rate to the initial LR
-#        decayed by 10 every 30 epochs"""
-#     lr = opt.learning_rate_vse * (0.1 ** (epoch // opt.lr_update))
-#     for param_group in optimizer.param_groups:
-#         param_group['lr'] = lr
-
-
-
-
-
-
-
 import torch
 import torch.nn as nn
 import torch.nn.init
@@ -123,10 +5,12 @@ import torchvision.models as models
 from torch.autograd import Variable
 from torch.nn.utils.rnn import pack_padded_sequence, pad_packed_sequence
 import torch.backends.cudnn as cudnn
-from torch.nn.utils.clip_grad import clip_grad_norm
+from torch.nn.utils import clip_grad_norm_
 import numpy as np
+import sklearn
 from collections import OrderedDict
-from config import opt
+from config import opt, data
+from utils import batchify, pairwise_distances, timer
 
 
 def l2norm(X):
@@ -317,6 +201,7 @@ class EncoderText(nn.Module):
 
         # caption embedding
         self.rnn = nn.GRU(word_dim, embed_size, num_layers, batch_first=True)
+        nn.GRU
 
         self.init_weights()
 
@@ -487,15 +372,20 @@ class VSE(nn.Module):
         """Compute the image and caption embeddings
         """
         # Set mini-batch dataset
-        images = Variable(images, volatile=volatile)
-        captions = Variable(captions, volatile=volatile)
+        images = Variable(torch.FloatTensor(images))
+        captions = Variable(torch.LongTensor(captions))
         if torch.cuda.is_available():
             images = images.cuda()
             captions = captions.cuda()
 
-        # Forward
-        img_emb = self.img_enc(images)
-        cap_emb = self.txt_enc(captions, lengths)
+        if volatile:
+            with torch.no_grad():
+                # Forward
+                img_emb = self.img_enc(images)
+                cap_emb = self.txt_enc(captions, lengths)
+        else:
+            img_emb = self.img_enc(images)
+            cap_emb = self.txt_enc(captions, lengths)
         return img_emb, cap_emb
 
     def forward_loss(self, img_emb, cap_emb, **kwargs):
@@ -522,72 +412,163 @@ class VSE(nn.Module):
         # compute gradient and do SGD step
         loss.backward()
         if self.grad_clip > 0:
-            clip_grad_norm(self.params, self.grad_clip)
+            clip_grad_norm_(self.params, self.grad_clip)
         self.optimizer.step()
         # return loss
 
-    def encode_data(self, data_loader, log_step=10, logging=print):
-        """Encode all images and captions loadable by `data_loader`"""
-        # switch to evaluate mode
-        self.val_start()
-        # numpy array to keep all the embeddings
-        img_embs = None
-        cap_embs = None
-        for i, (images, captions, lengths, ids) in enumerate(data_loader):
-            # compute the embeddings
-            img_emb, cap_emb = self.forward_emb(images, captions, lengths,
-                                                 volatile=True)
+    def query(self, index):
+        current_dist_vector = data["image_caption_distances_topk"][index].view(1, -1)
+        all_dist_vectors = data["image_caption_distances_topk"]
+        current_all_dist = pairwise_distances(current_dist_vector, all_dist_vectors)
+        similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
 
-            # initialize the numpy arrays given the size of the embeddings
-            if img_embs is None:
-                img_embs = np.zeros((len(data_loader.dataset), img_emb.size(1)))
-                cap_embs = np.zeros((len(data_loader.dataset), cap_emb.size(1)))
+        for idx in similar_indices[0]:
+            image = data["train"][0][5 * idx]
+            # There are 5 captions for every image
+            for cap in range(5):
+                caption = data["train"][1][5 * idx + cap]
+                length = data["train"][2][5 * idx + cap]
+                data["active"][0].append(image)
+                data["active"][1].append(caption)
+                data["active"][2].append(length)
 
-            # preserve the embeddings by copying from gpu and converting to numpy
-            img_embs[ids] = img_emb.data.cpu().numpy().copy()
-            cap_embs[ids] = cap_emb.data.cpu().numpy().copy()
+    def encode_data(self, dataset):
+        """Encode all images and captions loadable by `data_loader`
+        """
+        with torch.no_grad():
+            self.val_start()
+            img_embs = []
+            cap_embs = []
+            for i, (images, captions, lengths) in enumerate(batchify(dataset)):
+                # compute the embeddings
+                img_emb, cap_emb = self.forward_emb(images, captions, lengths, volatile=True)
+                img_embs.append(img_emb.cpu())
+                cap_embs.append(cap_emb.cpu())
+                del img_emb, cap_emb
+                del images, captions
+            img_embs = torch.cat(img_embs)
+            cap_embs = torch.cat(cap_embs)
+            return img_embs, cap_embs
 
-            # measure accuracy and record loss
-            self.forward_loss(img_emb, cap_emb)
-            del images, captions
-
-        return img_embs, cap_embs
-
-    def train_model(self, train_loader, epochs):
+    def train_model(self, train_data, epochs):
         if opt.train_shuffle:
-            train_loader.dataset.shuffle()
+            train_data = sklearn.utils.shuffle(*train_data)
 
         self.train_start()
-        if len(train_loader) > 0:
+        if len(train_data[0]) > 0:
             for epoch in range(epochs):
                 self.adjust_learning_rate(self.optimizer, epoch)
-                for i, train_data in enumerate(train_loader):
-                    self.train_start()
-                    self.train_emb(*train_data)
+                for i, minibatch in enumerate(batchify(train_data, sort=True)):
+                    if(len(minibatch[2]) > 0):
+                        self.train_start()
+                        self.train_emb(*minibatch)
 
-
-    def validate_loss(self, loader):
+    def validate(self, dataset):
         total_loss = 0
         self.val_start()
-        for i, (images, captions, lengths, ids) in enumerate(loader):
+        # for i, (images, captions, lengths, ids) in enumerate(loader):
+        for i, (images, captions, lengths) in enumerate(batchify(dataset)):
             img_emb, cap_emb = self.forward_emb(images, captions, lengths, volatile=True)
             loss = self.forward_loss(img_emb, cap_emb)
-            total_loss += loss.data[0]
-        return total_loss
+            total_loss += loss.data.item()
+        total_loss = total_loss / len(dataset[0])
 
-    def performance_validate(self):
+        metrics = {
+            "performance": -1 * total_loss
+        }
+        return metrics
+
+    def performance_validate(self, dataset):
         """returns the performance messure with recall at 1, 5, 10
         for both image -> caption and cap -> img, and the sum of them all added together"""
         # compute the encoding for all the validation images and captions
-        val_loader = loaders["val_tot_loader"]
-        img_embs, cap_embs = self.encode_data(val_loader)
+        # val_loader = loaders["val_tot_loader"]
+        img_embs, cap_embs = self.encode_data(dataset)
         # caption retrieval
         (r1, r5, r10, medr, meanr) = i2t(img_embs, cap_embs, measure=opt.measure)
         # image retrieval
         (r1i, r5i, r10i, medri, meanr) = t2i(img_embs, cap_embs, measure=opt.measure)
 
         performance = r1 + r5 + r10 + r1i + r5i + r10i
-        return (performance, r1, r5, r10, r1i, r5i, r10i)
+        metrics = {
+            "sum": performance,
+            "r1": r1,
+            "r5": r5,
+            "r10": r10,
+            "r1i": r1i,
+            "r5i": r5i,
+            "r10i": r10i
+        }
+        return metrics
+
+    def encode_episode_data(self):
+        """ Encodes data from loaders["type_loader"] to use in the episode calculations """
+        dataset = data["train"]
+        img_embs, cap_embs = timer(self.encode_data, (dataset,))
+        images = []
+
+        # TODO dynamic im_div
+        for i in range(0, len(img_embs), 5):
+            images.append(img_embs[i].view(1, -1))
+        images = torch.cat(images)
+
+        image_caption_distances = pairwise_distances(images, cap_embs)
+        topk = torch.topk(image_caption_distances, opt.topk, 1, largest=False)
+        image_caption_distances_topk = topk[0]
+        image_caption_distances_topk_idx = topk[1]
+
+        data["images_embed_all"] = images.data
+        data["captions_embed_all"] = cap_embs.data
+        data["image_caption_distances_topk"] = image_caption_distances_topk.data
+        data["image_caption_distances_topk_idx"] = image_caption_distances_topk_idx.data
+        # data["img_embs_avg"] = average_vector(data["images_embed_all"])
+        # data["cap_embs_avg"] = average_vector(data["captions_embed_all"])
+
+    def get_state(self, index):
+        # Distances to topk closest captions
+        state = data["image_caption_distances_topk"][index].view(1, -1)
+        # The distances themselves are very small. Scale them to increase the
+        # differences
+        state = state * 15
+        # Softmin to make it general
+        state = torch.nn.functional.softmin(state, dim=1)
+
+        # Calculate intra-distance between closest captions
+        if opt.intra_caption:
+            closest_idx = data["image_caption_distances_topk_idx"][index]
+            closest_captions = torch.index_select(data["captions_embed_all"], 0, closest_idx)
+            closest_captions_distances = pairwise_distances(closest_captions, closest_captions)
+            closest_captions_intra_distance = closest_captions_distances.mean(dim=1).view(1, -1)
+            state = torch.cat((state, closest_captions_intra_distance), dim=1)
+
+        # Distances to topk closest images
+        if opt.topk_image > 0:
+            current_image = data["images_embed_all"][index].view(1 ,-1)
+            all_images = data["images_embed_all"]
+            image_image_dist = pairwise_distances(current_image, all_images)
+            image_image_dist_topk = torch.topk(image_image_dist, opt.topk_image, 1, largest=False)[0]
+
+            state = torch.cat((state, image_image_dist_topk), 1)
+
+        # Distance from average image vector
+        if opt.image_distance:
+            current_image = data["images_embed_all"][index].view(1 ,-1)
+            img_distance = get_distance(current_image, data["img_embs_avg"].view(1, -1))
+            image_dist_tensor = torch.FloatTensor([img_distance]).view(1, -1)
+            state = torch.cat((state, image_dist_tensor), 1)
+
+        state = torch.autograd.Variable(state)
+        if opt.cuda:
+            state = state.cuda()
+        return state
+
+
+    def adjust_learning_rate(self, optimizer, epoch):
+        """Sets the learning rate to the initial LR
+           decayed by 10 every 30 epochs"""
+        lr = opt.learning_rate_vse * (0.1 ** (epoch // opt.lr_update))
+        for param_group in optimizer.param_groups:
+            param_group['lr'] = lr
 
 
 def i2t(images, captions, npts=None, measure='cosine', return_ranks=False):
@@ -596,6 +577,8 @@ def i2t(images, captions, npts=None, measure='cosine', return_ranks=False):
     Images: (5N, K) matrix of images
     Captions: (5N, K) matrix of captions
     """
+    images = images.cpu().numpy()
+    captions = captions.cpu().numpy()
     if npts is None:
         npts = images.shape[0] / 5
     index_list = []
@@ -654,6 +637,8 @@ def t2i(images, captions, npts=None, measure='cosine', return_ranks=False):
     Images: (5N, K) matrix of images
     Captions: (5N, K) matrix of captions
     """
+    images = images.cpu().numpy()
+    captions = captions.cpu().numpy()
     if npts is None:
         npts = images.shape[0] / 5
 

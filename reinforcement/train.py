@@ -58,14 +58,9 @@ def train(classifier):
         state = game.get_state(model)
         while not terminal:
             action = agent.get_action(state)
-            # action = random.randint(0,1)
             reward, next_state, terminal = game.feedback(action, model)
-            if terminal:
-                agent.finish_episode(episode)
-                break
             agent.update(state, action, reward, next_state, terminal)
-            del state
-            state = next_state
+
             if (action == 1):
                 # print(state)
                 lg.scalar_summary("last_episode_performance", game.performance, game.queried_times)
@@ -76,15 +71,18 @@ def train(classifier):
                     model = model.cuda()
             else:
                 num_of_zero += 1
+
+            if terminal:
+                agent.finish_episode(episode)
+                break
+            del state
             state = next_state
-
-
 
         # Reset model
         model = classifier()
         # print("len:")
         # print(len(loaders["active_loader"].dataset))
-        print(timer(model.train_model, (data["active"], 100)))
+        print(timer(model.train_model, (data["active"], opt.full_epochs)))
 
         # model.train_model(loaders["active_loader"], 100)
         metrics = timer(model.performance_validate, (data["dev"],))

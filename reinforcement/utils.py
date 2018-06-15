@@ -23,13 +23,18 @@ from logger import LocalLogger, ExternalLogger, NoLogger, VisdomLogger
 from config import opt, data, w2v
 
 
-def batchify(d, n=None):
+def batchify(d, n=None, sort=False):
     if not n:
         n = opt.batch_size
-    iterable, iterable2 = d
-    l = len(iterable)
+    l = len(d[0])
     for ndx in range(0, l, n):
-        yield (iterable[ndx:min(ndx + n, l)], iterable2[ndx:min(ndx + n, l)])
+        if sort:
+            sort_idx = np.argsort(-1 * np.array(d[2]))
+            data0 = np.array(d[0])[sort_idx]
+            data1 = np.array(d[1])[sort_idx]
+            data2 = np.array(d[2])[sort_idx]
+            d = (data0, data1, data2)
+        yield tuple((iterable[ndx:min(ndx + n, l)] for iterable in d))
 
 
 def timer(func, args):
@@ -40,7 +45,6 @@ def timer(func, args):
     ms = (time2 - time1) * 1000.0
     print("{}() in {:.2f} ms".format(func.__name__, ms))
     return ret
-
 
 def save_model(name, model):
     print("Saving model")

@@ -12,14 +12,12 @@ from utils import timer
 class Game:
     def reboot(self, model):
         """resets the Game Object, to make it ready for the next episode """
-        data_len = len(data["train"][0])
-        data["active"] = ([], [])
+        data["active"] = tuple(([] for i in range(len(data["train"]))))
 
-        self.order = random.sample(list(range(0, data_len)), data_len)
+        self.order = random.sample(list(range(0, opt.data_len)), opt.data_len)
         self.budget = opt.budget
         self.queried_times = 0
         self.current_state = 0
-
         self.init_train_k_random(model, opt.init_samples)
         model.encode_episode_data()
         # self.avg_entropy_in_train_loader = self.get_avg_entropy_in_train_loader(loaders["train_loader"])
@@ -29,10 +27,9 @@ class Game:
     def init_train_k_random(self, model, num_samples):
         for i in range(0, num_samples):
             current = self.order[(-1*(i + 1))]
-            image = data["train"][0][current]
-            caption = data["train"][1][current]
-            data["active"][0].append(image)
-            data["active"][1].append(caption)
+            for i in range(len(data["train"])):
+                d = data["train"][i][current]
+                data["active"][i].append(d)
         # TODO: delete used init samples (?)
         timer(model.train_model, (data["active"], opt.num_epochs))
 
@@ -58,18 +55,15 @@ class Game:
             reward = new_performance - self.performance - opt.reward_threshold
             # if opt.reward_clip:
                 # reward = np.tanh(reward / 100)
-            reward = new_performance - self.performance - 1
             self.performance = new_performance
         else:
             reward = 0.
 
-        print("> State {:2} Action {:2} - reward {:.4f} - accuracy {:.4f}".format(
+        print("> State {:2} Action {:2} - reward {:.4f} - performance {:.4f}".format(
             self.current_state, action, reward, self.performance))
-        next_observation = self.get_state(model)
-
+        next_observation = timer(self.get_state, (model,))
         if self.queried_times >= self.budget or self.current_state >= len(self.order):
-            # Return terminal
-            return reward, next_observation, True
+            is_terminal = True
 
         return reward, next_observation, is_terminal
 
@@ -80,7 +74,7 @@ class Game:
 
     def get_performance(self, model):
         timer(model.train_model, (data["active"], opt.num_epochs))
-        metrics = model.validate(data["dev"])
+        metrics = timer(model.validate, (data["dev"],))
         performance = metrics["performance"]
         model.encode_episode_data()
         return performance

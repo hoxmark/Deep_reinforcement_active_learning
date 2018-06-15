@@ -3,7 +3,7 @@ import argparse
 import datetime
 import getpass
 import importlib
-# from data.vocab import Vocabulary  # NOQAimport logging
+from datasets.vse import Vocabulary
 import os
 import tensorboard_logger as tb_logger
 import pickle
@@ -23,7 +23,7 @@ def main():
                         help="Name of the model to load from external server")
     parser.add_argument("--episodes", default=10000, type=int,
                         help="number of episodes")
-    parser.add_argument("--hidden_size", default=4, type=int,
+    parser.add_argument("--hidden_size", default=320, type=int,
                         help="Size of hidden layer in deep RL")
     parser.add_argument("--learning_rate_rl", default=0.1,
                         type=float, help="learning rate")
@@ -35,15 +35,17 @@ def main():
                         help='Path to saved vocabulary pickle files.')
     parser.add_argument('--margin', default=0.2, type=float,
                         help='Rank loss margin.')
-    parser.add_argument('--num_epochs', default=50, type=int,
+    parser.add_argument('--num_epochs', default=15, type=int,
                         help='Number of training epochs.')
-    parser.add_argument('--init_samples', default=320, type=int,
+    parser.add_argument('--full_epochs', default=15, type=int,
+                        help='Number of training epochs.')
+    parser.add_argument('--init_samples', default=480, type=int,
                         help='number of random inital training data')
-    parser.add_argument('--batch_size', default=128, type=int,
+    parser.add_argument('--batch_size', default=5, type=int,
                         help='Size of a training mini-batch.')
     parser.add_argument('--batch_size_rl', default=32, type=int,
                         help='Size of a training mini-batch.')
-    parser.add_argument('--budget', default=30, type=int,
+    parser.add_argument('--budget', default=224, type=int,
                         help='Our labeling budget')
     parser.add_argument('--embed_size', default=1024, type=int,
                         help='Dimensionality of the joint embedding.')
@@ -92,10 +94,9 @@ def main():
     parser.add_argument('--no_cuda', action='store_true',
                         default=False, help='Disable cuda')
     parser.add_argument('--agent', default='dqn', help='Type of reinforcement agent. (dqn | policy, actor_critic)')
-    parser.add_argument('--selection_radius', default=1, type=int, help='Selection radius')
-    parser.add_argument('--topk', default=300, type=int, help='Topk similarity to use for state')
+    parser.add_argument('--selection_radius', default=32, type=int, help='Selection radius')
+    parser.add_argument('--topk', default=20, type=int, help='Topk similarity to use for state')
     parser.add_argument('--topk_image', default=0, type=int, help='Topk similarity images to use for state')
-    parser.add_argument('--embedding', default='static', help='whether to pre-train a model and use its static embeddings or not. (static | train)')
     parser.add_argument('--image_distance', action='store_true', help='Include image distance in the state ')
     parser.add_argument('--reward_clip', action='store_true', help='Clip rewards using tanh')
     parser.add_argument('--val_size', default=500, type=int, help='Number of validation set size to use for reward')
@@ -105,7 +106,8 @@ def main():
     parser.add_argument('--c', default='', help='comment')
     parser.add_argument('--reward', default=2, help='minusreward')
     parser.add_argument("--gamma", default=0, type=float, help="Discount factor")
-    parser.add_argument("--reward_threshold", default=1.0, type=float, help="Reward threshold")
+    parser.add_argument("--reward_threshold", default=0, type=float, help="Reward threshold")
+    parser.add_argument('--intra_caption', action='store_true', help='Include closest captions intra distance in state')
 
     params = parser.parse_args()
     params.actions = 2
@@ -116,7 +118,10 @@ def main():
     if torch.cuda.is_available():
         torch.cuda.set_device(params.device)
     params.cuda = (not params.no_cuda) and torch.cuda.is_available()
-    # params.state_size = params.topk + params.topk_image + 1 if params.image_distance else params.topk + params.topk_image
+
+    vocab = pickle.load(open(os.path.join(params.vocab_path, '%s_vocab.pkl' % params.data_name), 'rb'))
+    params.vocab = vocab
+    params.vocab_size = len(vocab)
 
     for arg in vars(params):
         opt[arg] = vars(params)[arg]
@@ -139,7 +144,6 @@ def main():
     # no logging at all, for testing purposes.
     else:
         global_logger["lg"] = no_logger()
-
 
     container = importlib.import_module('datasets.{}'.format(params.dataset))
     model = container.model

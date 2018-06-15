@@ -86,8 +86,8 @@ class DQNAgent:
 
         expected_q_values = batch_reward + (GAMMA * max_next_q_values)
 
-        if opt.cuda:
-            expected_q_values = expected_q_values.cuda()
+        # if opt.cuda:
+            # expected_q_values = expected_q_values.cuda()
         loss = F.mse_loss(current_q_values, expected_q_values.view(-1, 1))
 
         self.optimizer.zero_grad()
