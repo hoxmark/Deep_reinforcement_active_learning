@@ -146,27 +146,10 @@ class SimpleClassifier(nn.Module):
         similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
 
         for idx in similar_indices.data[0].cpu().numpy():
-            image = data["train"][0][idx]
-            caption = data["train"][1][idx]
-            # There are 5 captions for every image
-            # loaders["active_loader"].dataset.add_single(image, caption)
-            data["active"][0].append(image)
-            data["active"][1].append(caption)
-            # Only count images as an actual request.
-            # Reuslt is that we have 5 times as many training points as requests.
-            # self.queried_times += 1
-    #
-    # def get_avg_entropy_in_train_loader(self,loader):
-    #     images = []
-    #     total = 0
-    #
-    #     # np.set_printoptions(threshold=np.inf)
-    #     length = len(loader.dataset)
-    #     for i, train_data in enumerate(loader.dataset):
-    #         total += entropy(train_data[0])
-    #
-    #     return total/length
+            self.add_index(idx)
 
-
-
-        # print("Validation after training on random data: {}".format(model.validate(loaders["val_loader"])))
+    def add_index(self, index):
+        image = data["train"][0][index]
+        caption = data["train"][1][index]
+        data["active"][0].append(image)
+        data["active"][1].append(caption)

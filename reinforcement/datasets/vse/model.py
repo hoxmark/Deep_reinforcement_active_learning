@@ -79,11 +79,11 @@ class EncoderImageFull(nn.Module):
 
         if arch.startswith('alexnet') or arch.startswith('vgg'):
             model.features = nn.DataParallel(model.features)
-            if torch.cuda.is_available():
+            if opt.cuda:
                 model.cuda()
         else:
             model = nn.DataParallel(model)
-            if torch.cuda.is_available():
+            if opt.cuda:
                 model.cuda()
 
         return model
@@ -222,7 +222,7 @@ class EncoderText(nn.Module):
         padded = pad_packed_sequence(out, batch_first=True)
         I = torch.LongTensor(lengths).view(-1, 1, 1)
         I = Variable(I.expand(x.size(0), 1, self.embed_size)-1)
-        if torch.cuda.is_available():
+        if opt.cuda:
             I = I.cuda()
         out = torch.gather(padded[0], 1, I).squeeze(1)
 
@@ -283,7 +283,7 @@ class ContrastiveLoss(nn.Module):
         # clear diagonals
         mask = torch.eye(scores.size(0)) > .5
         I = Variable(mask)
-        if torch.cuda.is_available():
+        if opt.cuda:
             I = I.cuda()
         cost_s = cost_s.masked_fill_(I, 0)
         cost_im = cost_im.masked_fill_(I, 0)
@@ -313,7 +313,7 @@ class VSE(nn.Module):
         self.txt_enc = EncoderText(opt.vocab_size, opt.word_dim,
                                    opt.embed_size, opt.num_layers,
                                    use_abs=opt.use_abs)
-        if torch.cuda.is_available():
+        if opt.cuda:
             self.img_enc.cuda()
             self.txt_enc.cuda()
             cudnn.benchmark = True
@@ -356,14 +356,14 @@ class VSE(nn.Module):
 
     def forward_img(self, images, volatile=True):
         images = Variable(images, volatile=volatile)
-        if torch.cuda.is_available():
+        if opt.cuda:
             images = images.cuda()
         img_emb = self.img_enc(images)
         return img_emb
 
     def forward_cap(self, captions, lengths, volatile=True):
         captions = Variable(captions, volatile=volatile)
-        if torch.cuda.is_available():
+        if opt.cuda:
             captions = captions.cuda()
         cap_emb = self.txt_enc(captions, lengths)
         return cap_emb
@@ -374,7 +374,7 @@ class VSE(nn.Module):
         # Set mini-batch dataset
         images = Variable(torch.FloatTensor(images))
         captions = Variable(torch.LongTensor(captions))
-        if torch.cuda.is_available():
+        if opt.cuda:
             images = images.cuda()
             captions = captions.cuda()
 
@@ -423,14 +423,18 @@ class VSE(nn.Module):
         similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
 
         for idx in similar_indices[0]:
-            image = data["train"][0][5 * idx]
-            # There are 5 captions for every image
-            for cap in range(5):
-                caption = data["train"][1][5 * idx + cap]
-                length = data["train"][2][5 * idx + cap]
-                data["active"][0].append(image)
-                data["active"][1].append(caption)
-                data["active"][2].append(length)
+            self.add_index(idx)
+
+    def add_index(self, index):
+        image = data["train"][0][5 * index]
+        # There are 5 captions for every image
+        for cap in range(5):
+            caption = data["train"][1][5 * index + cap]
+            length = data["train"][2][5 * index + cap]
+            data["active"][0].append(image)
+            data["active"][1].append(caption)
+            data["active"][2].append(length)
+
 
     def encode_data(self, dataset):
         """Encode all images and captions loadable by `data_loader`
@@ -600,7 +604,7 @@ def i2t(images, captions, npts=None, measure='cosine', return_ranks=False):
                 im2 = images[5 * index:mx:5]
                 a = torch.Tensor(im2)
                 b = torch.Tensor(captions)
-                if torch.cuda.is_available():
+                if opt.cuda:
                     a, b = a.cuda(), b.cuda()
                 d2 = order_sim(a,b)
                 d2 = d2.cpu().numpy()
@@ -662,7 +666,7 @@ def t2i(images, captions, npts=None, measure='cosine', return_ranks=False):
 
                 a = torch.Tensor(ims)
                 b = torch.Tensor(q2)
-                if torch.cuda.is_available():
+                if opt.cuda:
                     a, b = a.cuda(), b.cuda()
                 d2 = order_sim(a, b)
                 d2 = d2.cpu().numpy()

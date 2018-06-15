@@ -199,9 +199,12 @@ class CNN(nn.Module):
         all_states = data["all_predictions"]
         current_all_dist = pairwise_distances(current_state, all_states)
         similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
-
+        
         for idx in similar_indices.data[0].cpu().numpy():
-            image = data["train"][0][idx]
-            caption = data["train"][1][idx]
-            data["active"][0].append(image)
-            data["active"][1].append(caption)
+            self.add_index(idx)
+
+    def add_index(self, index):
+        image = data["train"][0][index]
+        caption = data["train"][1][index]
+        data["active"][0].append(image)
+        data["active"][1].append(caption)
