@@ -27,9 +27,7 @@ class Game:
     def init_train_k_random(self, model, num_samples):
         for i in range(0, num_samples):
             current = self.order[(-1*(i + 1))]
-            for i in range(len(data["train"])):
-                d = data["train"][i][current]
-                data["active"][i].append(d)
+            model.add_index(current)
         # TODO: delete used init samples (?)
         timer(model.train_model, (data["active"], opt.num_epochs))
 
