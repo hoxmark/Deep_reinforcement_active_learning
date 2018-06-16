@@ -60,6 +60,9 @@ class PolicyAgent:
         if opt.cuda:
             rewards = rewards.cuda()
         rewards = (rewards - rewards.mean()) / (rewards.std() + np.finfo(np.float32).eps.item())
+        # print(rewards)
+        if opt.cuda: 
+            rewards = rewards.cuda()
         for log_prob, reward in zip(self.policynetwork.saved_log_probs, rewards):
             policy_loss.append(-log_prob * reward)
         self.optimizer.zero_grad()
