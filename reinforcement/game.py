@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import torch
+from pprint import pprint
 import torch.optim as optim
 import torch.nn as nn
 from torch.autograd import Variable
@@ -58,8 +59,6 @@ class Game:
         else:
             reward = 0.
 
-        print("> State {:2} Action {:2} - reward {:.4f} - performance {:.4f}".format(
-            self.current_state, action, reward, self.performance))
         next_observation = timer(self.get_state, (model,))
         if self.queried_times >= self.budget or self.current_state >= len(self.order):
             is_terminal = True

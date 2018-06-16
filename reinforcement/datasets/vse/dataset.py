@@ -4,7 +4,6 @@ import torch
 
 from config import opt
 def load_data():
-    # Captions
     train_captions = []
     dev_captions = []
     test_captions = []

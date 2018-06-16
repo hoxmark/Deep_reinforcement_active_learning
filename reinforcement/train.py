@@ -32,20 +32,6 @@ def train(classifier):
 
     game = Game()
 
-    # if opt.embedding == 'static' and opt.dataset == 'vse':
-    #     path_to_full_model ="{}/fullModel.pth.tar".format(opt.data_path)
-    #     full_model = classifier()
-
-    #     if os.path.isfile(path_to_full_model):
-    #         get_full_VSE_model(full_model,path_to_full_model)
-    #         game.encode_episode_data(full_model, loaders["train_loader"])
-    #     else:
-    #         print("No old model found, training a new one")
-    #         print("Please wait... ")
-    #         game.train_model(full_model, loaders["train_loader"], epochs=30)
-    #         game.encode_episode_data(full_model, loaders["train_loader"])
-    #         save_VSE_model(full_model.state_dict(), path=opt.data_path)
-
     for episode in range(start_episode, opt.episodes):
         model = classifier()
         if opt.cuda:
@@ -62,9 +48,8 @@ def train(classifier):
             agent.update(state, action, reward, next_state, terminal)
 
             if (action == 1):
-                # print(state)
+                print("> State {:2} Action {:2} - reward {:.4f} - performance {:.4f}".format(game.current_state, action, reward, game.performance))
                 lg.scalar_summary("last_episode_performance", game.performance, game.queried_times)
-                # print(state)
                 # Reset the model every time we add to train set
                 model = classifier()   #SHould this be done? # Yes I think so
                 if opt.cuda:
@@ -81,14 +66,8 @@ def train(classifier):
 
         # Reset model
         model = classifier()
-        # print("len:")
-        # print(len(loaders["active_loader"].dataset))
-        print(timer(model.train_model, (data["active"], opt.full_epochs)))
-
-        # model.train_model(loaders["active_loader"], 100)
+        timer(model.train_model, (data["active"], opt.full_epochs))
         metrics = timer(model.performance_validate, (data["dev"],))
-        # metrics = model.performance_validate(loaders["val_loader"])
-        # print(len(loaders["val_loader"].dataset))
 
         lg.dict_scalar_summary('episode-validation', metrics, episode)
         lg.scalar_summary('episode-validation/performance', game.performance, episode)

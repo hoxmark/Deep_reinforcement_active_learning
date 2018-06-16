@@ -41,7 +41,7 @@ def main():
                         help='Number of training epochs.')
     parser.add_argument('--init_samples', default=480, type=int,
                         help='number of random inital training data')
-    parser.add_argument('--batch_size', default=5, type=int,
+    parser.add_argument('--batch_size', default=128, type=int,
                         help='Size of a training mini-batch.')
     parser.add_argument('--batch_size_rl', default=32, type=int,
                         help='Size of a training mini-batch.')

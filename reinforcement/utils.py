@@ -37,13 +37,14 @@ def batchify(d, n=None, sort=False):
         yield tuple((iterable[ndx:min(ndx + n, l)] for iterable in d))
 
 
-def timer(func, args):
+def timer(func, args, name=None):
     """Timer function to time the duration of a spesific function func """
     time1 = time.time()
     ret = func(*args)
     time2 = time.time()
     ms = (time2 - time1) * 1000.0
-    print("{}() in {:.2f} ms".format(func.__name__, ms))
+    name = func.__name__ if name == None else name
+    print("{}() in {:.2f} ms".format(name, ms))
     return ret
 
 def save_model(name, model):
