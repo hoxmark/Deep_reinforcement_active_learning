@@ -69,6 +69,7 @@ def train(classifier):
                 model = classifier()   #SHould this be done? # Yes I think so
                 if opt.cuda:
                     model = model.cuda()
+                print(state)
             else:
                 num_of_zero += 1
 
@@ -90,7 +91,7 @@ def train(classifier):
         # print(len(loaders["val_loader"].dataset))
 
         lg.dict_scalar_summary('episode-validation', metrics, episode)
-        # lg.scalar_summary('episode-validation', metrics, episode)
+        lg.scalar_summary('episode-validation/performance', game.performance, episode)
         lg.scalar_summary('number-of-0-actions', num_of_zero, episode)
 
         # save_VSE_model(model.state_dict(), path=opt.data_path)

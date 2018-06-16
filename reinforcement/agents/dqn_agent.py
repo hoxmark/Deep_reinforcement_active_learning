@@ -90,9 +90,13 @@ class DQNAgent:
             # expected_q_values = expected_q_values.cuda()
         loss = F.mse_loss(current_q_values, expected_q_values.view(-1, 1))
 
+
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
+
+        del batch_state, batch_action, batch_next_state, batch_reward, current_q_values, max_next_q_values, expected_q_values
+
 
 
     def update(self, current_state, action, reward, next_state, terminal):
@@ -107,17 +111,18 @@ class DQNAgent:
         self.time_step += 1
 
     def get_action(self, state):
-        action = 0
-        if random.random() <= self.epsilon:
-            action = random.randrange(self.actions)
-        else:
-            qvalue = self.policynetwork(state)
-            action = np.argmax(qvalue.data[0])
-        # change epsilon
-        if self.epsilon > FINAL_EPSILON and self.time_step > OBSERVE:
-            self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
+        with torch.no_grad():
+            action = 0
+            if random.random() <= self.epsilon:
+                action = random.randrange(self.actions)
+            else:
+                qvalue = self.policynetwork(state)
+                action = np.argmax(qvalue.data[0])
+            # change epsilon
+            if self.epsilon > FINAL_EPSILON and self.time_step > OBSERVE:
+                self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
 
-        return action
+            return action
 
     def finish_episode(self, episode):
         pass

@@ -201,7 +201,6 @@ class EncoderText(nn.Module):
 
         # caption embedding
         self.rnn = nn.GRU(word_dim, embed_size, num_layers, batch_first=True)
-        nn.GRU
 
         self.init_weights()
 
@@ -316,7 +315,7 @@ class VSE(nn.Module):
         if opt.cuda:
             self.img_enc.cuda()
             self.txt_enc.cuda()
-            cudnn.benchmark = True
+            # cudnn.benchmark = True
 
         # Loss and Optimizer
         self.criterion = ContrastiveLoss(margin=opt.margin,
@@ -386,6 +385,7 @@ class VSE(nn.Module):
         else:
             img_emb = self.img_enc(images)
             cap_emb = self.txt_enc(captions, lengths)
+        del images, captions
         return img_emb, cap_emb
 
     def forward_loss(self, img_emb, cap_emb, **kwargs):
@@ -398,7 +398,7 @@ class VSE(nn.Module):
     def train_emb(self, images, captions, lengths, ids=None, *args):
         """One training step given images and captions.
         """
-        self.Eiters += 1
+        # self.Eiters += 1
         # self.logger.update('Eit', self.Eiters)
         # self.logger.update('lr', self.optimizer.param_groups[0]['lr'])
 
@@ -414,7 +414,8 @@ class VSE(nn.Module):
         if self.grad_clip > 0:
             clip_grad_norm_(self.params, self.grad_clip)
         self.optimizer.step()
-        # return loss
+        del img_emb, cap_emb
+        return loss
 
     def query(self, index):
         current_dist_vector = data["image_caption_distances_topk"][index].view(1, -1)
@@ -426,14 +427,18 @@ class VSE(nn.Module):
             self.add_index(idx)
 
     def add_index(self, index):
-        image = data["train"][0][5 * index]
-        # There are 5 captions for every image
-        for cap in range(5):
-            caption = data["train"][1][5 * index + cap]
-            length = data["train"][2][5 * index + cap]
-            data["active"][0].append(image)
-            data["active"][1].append(caption)
-            data["active"][2].append(length)
+        # image = data["train"][0][5 * index]
+        # # There are 5 captions for every image
+        # for cap in range(5):
+        #     caption = data["train"][1][5 * index + cap]
+        #     length = data["train"][2][5 * index + cap]
+
+        image = data["train"][0][index]
+        caption = data["train"][1][index]
+        length = data["train"][2][index]
+        data["active"][0].append(image)
+        data["active"][1].append(caption)
+        data["active"][2].append(length)
 
 
     def encode_data(self, dataset):
@@ -466,6 +471,8 @@ class VSE(nn.Module):
                     if(len(minibatch[2]) > 0):
                         self.train_start()
                         self.train_emb(*minibatch)
+                        # del minibatch
+        return 13
 
     def validate(self, dataset):
         total_loss = 0
@@ -489,9 +496,10 @@ class VSE(nn.Module):
         # val_loader = loaders["val_tot_loader"]
         img_embs, cap_embs = self.encode_data(dataset)
         # caption retrieval
-        (r1, r5, r10, medr, meanr) = i2t(img_embs, cap_embs, measure=opt.measure)
+        # (r1, r5, r10, , meanr) = i2t(img_embs, cap_embs, measure=opt.measure)
         # image retrieval
-        (r1i, r5i, r10i, medri, meanr) = t2i(img_embs, cap_embs, measure=opt.measure)
+        # (r1i, r5i, r10i, medri, meanr) = t2i(img_embs, cap_embs, measure=opt.measure)
+        (r1, r5, r10, r1i, r5i, r10i) = t2i2t(img_embs, cap_embs)
 
         performance = r1 + r5 + r10 + r1i + r5i + r10i
         metrics = {
@@ -507,64 +515,68 @@ class VSE(nn.Module):
 
     def encode_episode_data(self):
         """ Encodes data from loaders["type_loader"] to use in the episode calculations """
-        dataset = data["train"]
-        img_embs, cap_embs = timer(self.encode_data, (dataset,))
-        images = []
+        with torch.no_grad():
+            dataset = data["train"]
+            img_embs, cap_embs = timer(self.encode_data, (dataset,))
+            if opt.cuda:
+                img_embs, cap_embs = img_embs.cuda(), cap_embs.cuda()
+            image_caption_distances = pairwise_distances(img_embs, cap_embs)
+            img_embs = img_embs.cpu()
+            cap_embs = cap_embs.cpu()
 
-        # TODO dynamic im_div
-        for i in range(0, len(img_embs), 5):
-            images.append(img_embs[i].view(1, -1))
-        images = torch.cat(images)
+            # image_caption_distances = img_embs.mm(cap_embs.t())
+            topk = torch.topk(image_caption_distances, opt.topk, 1, largest=False)
+            image_caption_distances_topk = topk[0]
+            image_caption_distances_topk_idx = topk[1]
+            data["images_embed_all"] = img_embs.data
+            data["captions_embed_all"] = cap_embs.data
+            data["image_caption_distances_topk"] = image_caption_distances_topk.data
+            data["image_caption_distances_topk_idx"] = image_caption_distances_topk_idx.data
 
-        image_caption_distances = pairwise_distances(images, cap_embs)
-        topk = torch.topk(image_caption_distances, opt.topk, 1, largest=False)
-        image_caption_distances_topk = topk[0]
-        image_caption_distances_topk_idx = topk[1]
-
-        data["images_embed_all"] = images.data
-        data["captions_embed_all"] = cap_embs.data
-        data["image_caption_distances_topk"] = image_caption_distances_topk.data
-        data["image_caption_distances_topk_idx"] = image_caption_distances_topk_idx.data
-        # data["img_embs_avg"] = average_vector(data["images_embed_all"])
-        # data["cap_embs_avg"] = average_vector(data["captions_embed_all"])
+            del img_embs
+            del cap_embs
+            # data["img_embs_avg"] = average_vector(data["images_embed_all"])
+            # data["cap_embs_avg"] = average_vector(data["captions_embed_all"])
 
     def get_state(self, index):
-        # Distances to topk closest captions
-        state = data["image_caption_distances_topk"][index].view(1, -1)
-        # The distances themselves are very small. Scale them to increase the
-        # differences
-        state = state * 15
-        # Softmin to make it general
-        state = torch.nn.functional.softmin(state, dim=1)
+        # index = index * 5
+        with torch.no_grad():
+            # Distances to topk closest captions
+            state = data["image_caption_distances_topk"][index].view(1, -1)
+            # The distances themselves are very small. Scale them to increase the
+            # differences
+            state = state * 15
+            # Softmin to make it general
+            state = torch.nn.functional.softmin(state, dim=1)
 
-        # Calculate intra-distance between closest captions
-        if opt.intra_caption:
-            closest_idx = data["image_caption_distances_topk_idx"][index]
-            closest_captions = torch.index_select(data["captions_embed_all"], 0, closest_idx)
-            closest_captions_distances = pairwise_distances(closest_captions, closest_captions)
-            closest_captions_intra_distance = closest_captions_distances.mean(dim=1).view(1, -1)
-            state = torch.cat((state, closest_captions_intra_distance), dim=1)
+            # Calculate intra-distance between closest captions
+            if opt.intra_caption:
+                closest_idx = data["image_caption_distances_topk_idx"][index]
+                closest_captions = torch.index_select(data["captions_embed_all"], 0, closest_idx)
+                closest_captions_distances = pairwise_distances(closest_captions, closest_captions)
+                closest_captions_intra_distance = closest_captions_distances.mean(dim=1).view(1, -1)
+                state = torch.cat((state, closest_captions_intra_distance), dim=1)
 
-        # Distances to topk closest images
-        if opt.topk_image > 0:
-            current_image = data["images_embed_all"][index].view(1 ,-1)
-            all_images = data["images_embed_all"]
-            image_image_dist = pairwise_distances(current_image, all_images)
-            image_image_dist_topk = torch.topk(image_image_dist, opt.topk_image, 1, largest=False)[0]
+            # Distances to topk closest images
+            if opt.topk_image > 0:
+                current_image = data["images_embed_all"][index].view(1 ,-1)
+                all_images = data["images_embed_all"]
+                image_image_dist = pairwise_distances(current_image, all_images)
+                image_image_dist_topk = torch.topk(image_image_dist, opt.topk_image, 1, largest=False)[0]
 
-            state = torch.cat((state, image_image_dist_topk), 1)
+                state = torch.cat((state, image_image_dist_topk), 1)
 
-        # Distance from average image vector
-        if opt.image_distance:
-            current_image = data["images_embed_all"][index].view(1 ,-1)
-            img_distance = get_distance(current_image, data["img_embs_avg"].view(1, -1))
-            image_dist_tensor = torch.FloatTensor([img_distance]).view(1, -1)
-            state = torch.cat((state, image_dist_tensor), 1)
+            # Distance from average image vector
+            if opt.image_distance:
+                current_image = data["images_embed_all"][index].view(1 ,-1)
+                img_distance = get_distance(current_image, data["img_embs_avg"].view(1, -1))
+                image_dist_tensor = torch.FloatTensor([img_distance]).view(1, -1)
+                state = torch.cat((state, image_dist_tensor), 1)
 
-        state = torch.autograd.Variable(state)
-        if opt.cuda:
-            state = state.cuda()
-        return state
+            state = torch.autograd.Variable(state)
+            if opt.cuda:
+                state = state.cuda()
+            return state
 
 
     def adjust_learning_rate(self, optimizer, epoch):
@@ -635,58 +647,85 @@ def i2t(images, captions, npts=None, measure='cosine', return_ranks=False):
         return (r1, r5, r10, medr, meanr)
 
 
-def t2i(images, captions, npts=None, measure='cosine', return_ranks=False):
-    """
-    Text->Images (Image Search)
-    Images: (5N, K) matrix of images
-    Captions: (5N, K) matrix of captions
-    """
-    images = images.cpu().numpy()
-    captions = captions.cpu().numpy()
-    if npts is None:
-        npts = images.shape[0] / 5
+def t2i2t(images, captions):
+    image_caption_distances = pairwise_distances(images, captions)
+    topk_idx = torch.topk(image_caption_distances, 10 , 1, largest=False)[1]
+    ranks = []
+    for i, row in enumerate(topk_idx):
+        rank = np.where(row.cpu().numpy() == i)
+        ranks.append(rank)
 
-    # TODO check if ok
-    npts = int(npts)
-    ims = np.array([images[i] for i in range(0, len(images), 5)])
-
-    ranks = np.zeros(5 * npts)
-    top1 = np.zeros(5 * npts)
-    for index in range(npts):
-
-        # Get query captions
-        queries = captions[5 * index:5 * index + 5]
-
-        # Compute scores
-        if measure == 'order':
-            bs = 100
-            if 5 * index % bs == 0:
-                mx = min(captions.shape[0], 5 * index + bs)
-                q2 = captions[5 * index:mx]
-
-                a = torch.Tensor(ims)
-                b = torch.Tensor(q2)
-                if opt.cuda:
-                    a, b = a.cuda(), b.cuda()
-                d2 = order_sim(a, b)
-                d2 = d2.cpu().numpy()
-
-            d = d2[:, (5 * index) % bs:(5 * index) % bs + 5].T
-        else:
-            d = np.dot(queries, ims.T)
-        inds = np.zeros(d.shape)
-        for i in range(len(inds)):
-            inds[i] = np.argsort(d[i])[::-1]
-            ranks[5 * index + i] = np.where(inds[i] == index)[0][0]
-            top1[5 * index + i] = inds[i][0]
-
-    # Compute metrics
+    ranks = np.array(ranks)
     r1 = 100.0 * len(np.where(ranks < 1)[0]) / len(ranks)
     r5 = 100.0 * len(np.where(ranks < 5)[0]) / len(ranks)
     r10 = 100.0 * len(np.where(ranks < 10)[0]) / len(ranks)
-    medr = np.floor(np.median(ranks)) + 1
-    meanr = ranks.mean() + 1
-    if return_ranks:
-        return (r1, r5, r10, medr, meanr), (ranks, top1)
-    else:
-        return (r1, r5, r10, medr, meanr)
+
+    image_caption_distances = image_caption_distances.t()
+    topk_idx = torch.topk(image_caption_distances, 10 , 1, largest=False)[1]
+    ranks = []
+    for i, row in enumerate(topk_idx):
+        rank = np.where(row.cpu().numpy() == i)
+        ranks.append(rank)
+
+    ranks = np.array(ranks)
+    r1i = 100.0 * len(np.where(ranks < 1)[0]) / len(ranks)
+    r5i = 100.0 * len(np.where(ranks < 5)[0]) / len(ranks)
+    r10i = 100.0 * len(np.where(ranks < 10)[0]) / len(ranks)
+    # print((r1, r5, r10, r1i, r5i, r10i))
+    return (r1, r5, r10, r1i, r5i, r10i)
+
+# def t2i(images, captions, npts=None, measure='cosine', return_ranks=False):
+#     """
+#     Text->Images (Image Search)
+#     Images: (5N, K) matrix of images
+#     Captions: (5N, K)q matrix of captions
+#     """
+#     images = images.cpu().numpy()
+#     captions = captions.cpu().numpy()
+#     if npts is None:
+#         npts = images.shape[0] / 5
+#
+#     # TODO check if ok
+#     npts = int(npts)
+#     ims = np.array([images[i] for i in range(0, len(images), 5)])
+#
+#     ranks = np.zeros(5 * npts)
+#     top1 = np.zeros(5 * npts)
+#     for index in range(npts):
+#
+#         # Get query captions
+#         queries = captions[5 * index:5 * index + 5]
+#
+#         # Compute scores
+#         if measure == 'order':
+#             bs = 100
+#             if 5 * index % bs == 0:
+#                 mx = min(captions.shape[0], 5 * index + bs)
+#                 q2 = captions[5 * index:mx]
+#
+#                 a = torch.Tensor(ims)
+#                 b = torch.Tensor(q2)
+#                 if opt.cuda:
+#                     a, b = a.cuda(), b.cuda()
+#                 d2 = order_sim(a, b)
+#                 d2 = d2.cpu().numpy()
+#
+#             d = d2[:, (5 * index) % bs:(5 * index) % bs + 5].T
+#         else:
+#             d = np.dot(queries, ims.T)
+#         inds = np.zeros(d.shape)
+#         for i in range(len(inds)):
+#             inds[i] = np.argsort(d[i])[::-1]
+#             ranks[5 * index + i] = np.where(inds[i] == index)[0][0]
+#             top1[5 * index + i] = inds[i][0]
+#
+#     # Compute metrics
+#     r1 = 100.0 * len(np.where(ranks < 1)[0]) / len(ranks)
+#     r5 = 100.0 * len(np.where(ranks < 5)[0]) / len(ranks)
+#     r10 = 100.0 * len(np.where(ranks < 10)[0]) / len(ranks)
+#     medr = np.floor(np.median(ranks)) + 1
+#     meanr = ranks.mean() + 1
+#     if return_ranks:
+#         return (r1, r5, r10, medr, meanr), (ranks, top1)
+#     else:
+#         return (r1, r5, r10, medr, meanr)

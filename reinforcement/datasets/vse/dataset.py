@@ -82,13 +82,12 @@ def load_data():
     test_images = np.array(test_images)[sort_idx]
     test_tokens = np.array(test_tokens)[sort_idx]
 
-
     train_data = (train_images, pad(train_tokens, train_cap_lengths), train_cap_lengths)
     dev_data = (dev_images, pad(dev_tokens, dev_cap_lengths), dev_cap_lengths)
     test_data = (test_images, pad(test_tokens, test_cap_lengths), test_cap_lengths)
 
     state_size = 2 * opt.topk + opt.topk_image if opt.intra_caption else opt.topk + opt.topk_image
     opt.state_size = state_size
-    opt.data_len = len(train_images) // 5
+    opt.data_len = len(train_images)
 
     return (train_data, dev_data, test_data)

@@ -5,6 +5,7 @@ import torch.optim as optim
 import torch.nn as nn
 from torch.autograd import Variable
 
+import time
 from config import opt, data
 from utils import timer
 
@@ -20,7 +21,6 @@ class Game:
         self.current_state = 0
         self.init_train_k_random(model, opt.init_samples)
         model.encode_episode_data()
-        # self.avg_entropy_in_train_loader = self.get_avg_entropy_in_train_loader(loaders["train_loader"])
         metrics = model.validate(data["dev"])
         self.performance = metrics["performance"]
 
@@ -33,16 +33,17 @@ class Game:
 
 
     def get_state(self, model):
-        current_idx = self.order[self.current_state]
-        state = model.get_state(current_idx)
-        # state = Variable(torch.FloatTensor(state).view(1, -1))
-        state = Variable(state).view(1, -1)
-        state = state.sort(descending=True)[0]
-        if opt.cuda:
-            state = state.cuda()
+        with torch.no_grad():
+            current_idx = self.order[self.current_state]
+            state = model.get_state(current_idx)
+            # state = Variable(torch.FloatTensor(state).view(1, -1))
+            state = Variable(state).view(1, -1)
+            state = state.sort(descending=True)[0]
+            if opt.cuda:
+                state = state.cuda()
 
-        self.current_state += 1
-        return state
+            self.current_state += 1
+            return state
 
     def feedback(self, action, model):
         reward = 0.
@@ -74,5 +75,5 @@ class Game:
         timer(model.train_model, (data["active"], opt.num_epochs))
         metrics = timer(model.validate, (data["dev"],))
         performance = metrics["performance"]
-        model.encode_episode_data()
+        timer(model.encode_episode_data, ())
         return performance

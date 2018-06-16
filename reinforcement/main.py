@@ -123,6 +123,8 @@ def main():
     params.vocab = vocab
     params.vocab_size = len(vocab)
 
+    params.pid = os.getpid()
+
     for arg in vars(params):
         opt[arg] = vars(params)[arg]
 

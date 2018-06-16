@@ -57,6 +57,8 @@ class PolicyAgent:
             R = r + self.gamma * R
             rewards.insert(0, R)
         rewards = torch.Tensor(rewards)
+        if opt.cuda:
+            rewards = rewards.cuda()
         rewards = (rewards - rewards.mean()) / (rewards.std() + np.finfo(np.float32).eps.item())
         for log_prob, reward in zip(self.policynetwork.saved_log_probs, rewards):
             policy_loss.append(-log_prob * reward)
