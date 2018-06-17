@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
+import time
 
 from utils import pairwise_distances, batchify
 from config import opt, data, loaders
@@ -17,8 +18,15 @@ class SimpleClassifier(nn.Module):
 
         self.relu = nn.ReLU()
         self.fc1 = nn.Linear(self.input_size, self.hidden_size)
-        self.fc2 = nn.Linear(self.hidden_size, self.hidden_size)
         self.fc3 = nn.Linear(self.hidden_size, self.output_size)
+        self.reset()
+
+        if opt.cuda:
+            self.cuda()
+
+    def reset(self):
+        torch.nn.init.xavier_normal_(self.fc1.weight)
+        torch.nn.init.xavier_normal_(self.fc3.weight)
 
     def forward(self, inp):
         inp = Variable(inp)
@@ -26,11 +34,8 @@ class SimpleClassifier(nn.Module):
             inp = inp.cuda()
         output = self.fc1(inp)
         output = self.relu(output)
-        output = self.fc2(output)
-        output = self.relu(output)
         output = self.fc3(output)
         return output
-
 
     def train_model(self, data, epochs):
         optimizer = optim.Adadelta(self.parameters(), 0.1)
@@ -42,12 +47,9 @@ class SimpleClassifier(nn.Module):
         for e in range(epochs):
             avg_loss = 0
             corrects = 0
-            # for i, (features, targets) in enumerate(loader):
             for i, (features, targets) in enumerate(batchify(data)):
                 features = Variable(torch.FloatTensor(features))
                 targets = Variable(torch.LongTensor(targets))
-                # print(features.size())
-                # print(targets.size())
 
                 if opt.cuda:
                     features, targets = features.cuda(), targets.cuda()
@@ -61,13 +63,10 @@ class SimpleClassifier(nn.Module):
                 corrects += (torch.max(output, 1)
                              [1].view(targets.size()).data == targets.data).sum()
             avg_loss = avg_loss / opt.batch_size
-            # if ((e + 1) % 10) == 0:
-            #     accuracy = 100.0 * corrects / size
-            #     # dev_accuracy, dev_loss, dev_corrects, dev_size = evaluate(model, e, mode="dev")
-            #
-            #     s1 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format(
-            #         "train", avg_loss, accuracy, corrects, size)
-            #     print(s1, end='\r')
+            accuracy = 100.0 * corrects / size
+
+            # s1 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format("train", avg_loss, accuracy, corrects, size)
+            # print(s1, end='\r')
 
 
     def predict_prob(self, inp):
@@ -80,8 +79,6 @@ class SimpleClassifier(nn.Module):
         corrects, avg_loss = 0, 0
         with torch.no_grad():
             for i, (features, targets) in enumerate(batchify(data)):
-                # feature, target = data
-
                 features = Variable(torch.FloatTensor(features))
                 targets = Variable(torch.LongTensor(targets))
 
@@ -117,7 +114,7 @@ class SimpleClassifier(nn.Module):
     def encode_episode_data(self):
         images = []
         # for i, (features, targets) in enumerate(loaders["train_loader"]):
-        for i, (features, targets) in enumerate(batchify(data["train"])):
+        for i, (features, targets) in enumerate(batchify(data["train_deleted"])):
             features = Variable(torch.FloatTensor(features))
             targets = Variable(torch.LongTensor(targets))
 
@@ -144,12 +141,13 @@ class SimpleClassifier(nn.Module):
         all_states = data["all_predictions"]
         current_all_dist = pairwise_distances(current_state, all_states)
         similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
-
-        for idx in similar_indices.data[0].cpu().numpy():
+        similar_indices = similar_indices.data[0].cpu().numpy()
+        for idx in similar_indices:
             self.add_index(idx)
+        return similar_indices
 
     def add_index(self, index):
-        image = data["train"][0][index]
-        caption = data["train"][1][index]
+        image = data["train_deleted"][0][index]
+        caption = data["train_deleted"][1][index]
         data["active"][0].append(image)
         data["active"][1].append(caption)

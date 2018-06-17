@@ -112,7 +112,7 @@ def main():
     params = parser.parse_args()
     params.actions = 2
 
-    params.logger_name = '{}_{}_{}_{}_{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), str(uuid.uuid4())[:4], params.agent, params.c)
+    params.logger_name = '{}_{}_{}_{}_{}_{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), str(uuid.uuid4())[:4], params.dataset, params.agent, params.c)
     params.external_log_url = 'http://logserver.duckdns.org:5000'
 
     if torch.cuda.is_available():

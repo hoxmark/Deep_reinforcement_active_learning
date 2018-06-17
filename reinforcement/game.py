@@ -1,6 +1,7 @@
 import numpy as np
 import random
 import torch
+import copy
 from pprint import pprint
 import torch.optim as optim
 import torch.nn as nn
@@ -20,6 +21,7 @@ class Game:
         self.budget = opt.budget
         self.queried_times = 0
         self.current_state = 0
+        data["train_deleted"] = copy.deepcopy(data["train"])
         self.init_train_k_random(model, opt.init_samples)
         timer(model.encode_episode_data, ())
         metrics = model.validate(data["dev"])
@@ -66,8 +68,16 @@ class Game:
 
     def query(self, model):
         current = self.order[self.current_state]
-        model.query(current)
+        similar_indices = model.query(current)
+        new_data = [*data["train_deleted"]]
+        for id in reversed(sorted(similar_indices)):
+            for i, d in enumerate(new_data):
+                new_data[i] = np.delete(new_data[i], id, axis=0)
+            self.order.remove(id)
+        data["train_deleted"] = new_data
+
         self.queried_times += opt.selection_radius
+        self.order = list(map(lambda x: x - np.where(np.array([x]) > similar_indices)[0].shape[0], self.order))
 
     def get_performance(self, model):
         timer(model.train_model, (data["active"], opt.num_epochs))

@@ -31,11 +31,9 @@ def train(classifier):
         agent.load_policynetwork(old_model)
 
     game = Game()
-
+    model = classifier()
     for episode in range(start_episode, opt.episodes):
-        model = classifier()
-        if opt.cuda:
-            model = model.cuda()
+        model.reset()
         game.reboot(model)
         print('##>>>>>>> Episode {} of {} <<<<<<<<<##'.format(episode, opt.episodes))
         terminal = False
@@ -51,26 +49,23 @@ def train(classifier):
                 print("> State {:2} Action {:2} - reward {:.4f} - performance {:.4f}".format(game.current_state, action, reward, game.performance))
                 lg.scalar_summary("last_episode_performance", game.performance, game.queried_times)
                 # Reset the model every time we add to train set
-                model = classifier()   #SHould this be done? # Yes I think so
-                if opt.cuda:
-                    model = model.cuda()
-                print(state)
+                model.reset()
             else:
                 num_of_zero += 1
 
+            del state
+            state = next_state
             if terminal:
                 agent.finish_episode(episode)
                 break
-            del state
-            state = next_state
 
         # Reset model
-        model = classifier()
+        model.reset()
         timer(model.train_model, (data["active"], opt.full_epochs))
         metrics = timer(model.performance_validate, (data["dev"],))
 
         lg.dict_scalar_summary('episode-validation', metrics, episode)
-        lg.scalar_summary('episode-validation/performance', game.performance, episode)
+        lg.scalar_summary('performance', game.performance, episode)
         lg.scalar_summary('number-of-0-actions', num_of_zero, episode)
 
         # save_VSE_model(model.state_dict(), path=opt.data_path)
