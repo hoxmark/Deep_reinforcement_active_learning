@@ -480,6 +480,7 @@ class VSE(nn.Module):
                     if(len(minibatch[2]) > 0):
                         self.train_start()
                         self.train_emb(*minibatch)
+                        del minibatch
         return 13
 
     def validate(self, dataset):
@@ -518,28 +519,39 @@ class VSE(nn.Module):
 
     def encode_episode_data(self):
         """ Encodes data from data["train"] to use in the episode calculations """
+
         with torch.no_grad():
             dataset = data["train"]
             img_embs, cap_embs = timer(self.encode_data, (dataset,))
+            img_embs = img_embs.detach()
+            cap_embs = cap_embs.detach()
+            image_caption_distances = []
+
             if opt.cuda:
-                img_embs, cap_embs = img_embs.cuda(), cap_embs.cuda()
-            image_caption_distances = pairwise_distances(img_embs, cap_embs)
+                img_embs = img_embs.cuda()
+
+            # Minibatching to reduce memory usage.
+            for (caption_batch,) in batchify([cap_embs]):
+                if opt.cuda:
+                    caption_batch = caption_batch.cuda()
+                    image_caption_distances.append(pairwise_distances(img_embs, caption_batch))
+                    del caption_batch
+
+            image_caption_distances = torch.cat(image_caption_distances, dim=1)
             img_embs = img_embs.cpu()
             cap_embs = cap_embs.cpu()
 
-            # image_caption_distances = img_embs.mm(cap_embs.t())
             topk = torch.topk(image_caption_distances, opt.topk, 1, largest=False)
-            image_caption_distances_topk = topk[0]
-            image_caption_distances_topk_idx = topk[1]
+            image_caption_distances_topk = topk[0].cpu()
+            image_caption_distances_topk_idx = topk[1].cpu()
             data["images_embed_all"] = img_embs.data
             data["captions_embed_all"] = cap_embs.data
             data["image_caption_distances_topk"] = image_caption_distances_topk.data
             data["image_caption_distances_topk_idx"] = image_caption_distances_topk_idx.data
-
+            del image_caption_distances
             del img_embs
             del cap_embs
-            # data["img_embs_avg"] = average_vector(data["images_embed_all"])
-            # data["cap_embs_avg"] = average_vector(data["captions_embed_all"])
+            del topk
 
     def get_state(self, index):
         # index = index * 5

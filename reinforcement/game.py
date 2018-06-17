@@ -21,7 +21,7 @@ class Game:
         self.queried_times = 0
         self.current_state = 0
         self.init_train_k_random(model, opt.init_samples)
-        model.encode_episode_data()
+        timer(model.encode_episode_data, ())
         metrics = model.validate(data["dev"])
         self.performance = metrics["performance"]
 
@@ -37,7 +37,6 @@ class Game:
         with torch.no_grad():
             current_idx = self.order[self.current_state]
             state = model.get_state(current_idx)
-            # state = Variable(torch.FloatTensor(state).view(1, -1))
             state = Variable(state).view(1, -1)
             state = state.sort(descending=True)[0]
             if opt.cuda:
