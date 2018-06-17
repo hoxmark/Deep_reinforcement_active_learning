@@ -32,12 +32,16 @@ class CNN(nn.Module):
         # self.NUM_EMBEDDINGS = self.VOCAB_SIZE + 2
         self.NUM_EMBEDDINGS = len(data.vocab) + 2
         assert (len(self.FILTERS) == len(self.FILTER_NUM))
-        self.init_model()
+
+        if opt.cuda:
+            self.cuda()
+
+        self.reset()
 
     def get_conv(self, i):
         return getattr(self, 'conv_{}'.format(i))
 
-    def init_model(self):
+    def reset(self):
         self.embed = nn.Embedding(self.NUM_EMBEDDINGS, self.WORD_DIM, padding_idx=self.VOCAB_SIZE + 1)
 
         if opt.w2v:
@@ -170,7 +174,7 @@ class CNN(nn.Module):
         with torch.no_grad():
             all_predictions = None
 
-            for i, (sentences, targets) in enumerate(batchify(data["train"])):
+            for i, (sentences, targets) in enumerate(batchify(data["train_deleted"])):
                 # print(sentences)
                 sentences = Variable(torch.LongTensor(sentences))
                 targets = Variable(torch.LongTensor(targets))
@@ -199,12 +203,14 @@ class CNN(nn.Module):
         all_states = data["all_predictions"]
         current_all_dist = pairwise_distances(current_state, all_states)
         similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
-        
-        for idx in similar_indices.data[0].cpu().numpy():
+
+        similar_indices = similar_indices.data[0].cpu().numpy()
+        for idx in similar_indices:
             self.add_index(idx)
+        return similar_indices
 
     def add_index(self, index):
-        image = data["train"][0][index]
-        caption = data["train"][1][index]
+        image = data["train_deleted"][0][index]
+        caption = data["train_deleted"][1][index]
         data["active"][0].append(image)
         data["active"][1].append(caption)

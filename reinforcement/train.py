@@ -43,10 +43,12 @@ def train(classifier):
         while not terminal:
             action = agent.get_action(state)
             reward, next_state, terminal = game.feedback(action, model)
-            agent.update(state, action, reward, next_state, terminal)
+            if not terminal:
+                agent.update(state, action, reward, next_state, terminal)
 
             if (action == 1):
                 print("> State {:2} Action {:2} - reward {:.4f} - performance {:.4f}".format(game.current_state, action, reward, game.performance))
+                print(state)
                 lg.scalar_summary("last_episode_performance", game.performance, game.queried_times)
                 # Reset the model every time we add to train set
                 model.reset()

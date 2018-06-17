@@ -34,7 +34,6 @@ class Game:
         # TODO: delete used init samples (?)
         timer(model.train_model, (data["active"], opt.num_epochs))
 
-
     def get_state(self, model):
         with torch.no_grad():
             current_idx = self.order[self.current_state]
@@ -60,9 +59,11 @@ class Game:
         else:
             reward = 0.
 
-        next_observation = timer(self.get_state, (model,))
         if self.queried_times >= self.budget or self.current_state >= len(self.order):
-            is_terminal = True
+            return reward, None, True
+
+        next_observation = timer(self.get_state, (model,))
+
 
         return reward, next_observation, is_terminal
 

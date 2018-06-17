@@ -95,7 +95,7 @@ class SimpleClassifier(nn.Module):
             size = len(data[0])
             avg_loss = avg_loss / size
             accuracy = 100.0 * float(corrects) / float(size)
-
+            
             metrics = {
                 'accuracy': accuracy,
                 'avg_loss': avg_loss,
