@@ -128,8 +128,6 @@ def main():
     for arg in vars(params):
         opt[arg] = vars(params)[arg]
 
-    if params.w2v:
-        load_word2vec()
 
     # sending tensorboard logs to external server
     if params.log == "external":
@@ -154,6 +152,9 @@ def main():
     data["train"] = train_data
     data["dev"] = dev_data
     data["test"] = test_data
+
+    if params.w2v:
+        load_word2vec()
 
     from train import train
     train(model)
