@@ -98,3 +98,19 @@ for k, v in enumerate(total):
     print(k)
     print(total[v])
     lg.scalar_summary('avg', total[v]/num_of_iterations, k)
+
+
+# def get_entropy_sorted_query(self, best):        
+#         probs = data["all_predictions"]
+#         out = list(map(entropy, probs))
+#         order = np.argsort(out)
+#         if best: 
+#             # Good:
+#             similar_indices = order[len(order)-opt.selection_radius:]
+#         else:                         
+#             # bad
+#             similar_indices = order[:opt.selection_radius]
+        
+#         for idx in similar_indices:
+#             self.add_index(idx)
+#         return similar_indices
