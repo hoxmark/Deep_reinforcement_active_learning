@@ -10,6 +10,5 @@ class Dict(dict):
 
 opt = Dict()
 data = Dict()
-w2v = {}
 loaders = {}
 global_logger = {}
