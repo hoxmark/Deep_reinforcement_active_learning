@@ -52,6 +52,7 @@ class Game:
                 # reward = np.tanh(reward / 100)
             self.performance = new_performance
             self.delete_data(added_indices)
+            timer(model.encode_episode_data, ())
             self.queried_times += opt.selection_radius
         else:
             reward = 0.
@@ -83,5 +84,4 @@ class Game:
         timer(model.train_model, (data["active"], opt.num_epochs))
         metrics = timer(model.validate, (data["dev"],))
         performance = metrics["performance"]
-        timer(model.encode_episode_data, ())
         return performance
