@@ -39,11 +39,6 @@ class Game:
             current_idx = self.order[self.current_state]
             state = model.get_state(current_idx)
             state = Variable(state).view(1, -1)
-            state = state.sort(descending=True)[0]
-            if opt.cuda:
-                state = state.cuda()
-
-            self.current_state += 1
             return state
 
     def feedback(self, action, model):
@@ -62,18 +57,18 @@ class Game:
         if self.queried_times >= self.budget or self.current_state >= len(self.order):
             return reward, None, True
 
+        self.current_state += 1
         next_observation = timer(self.get_state, (model,))
-
-
         return reward, next_observation, is_terminal
 
     def query(self, model):
         current = self.order[self.current_state]
         similar_indices = model.query(current)
         new_data = [*data["train_deleted"]]
+
+        for i, d in enumerate(new_data):
+            new_data[i] = np.delete(new_data[i], similar_indices, axis=0)
         for id in reversed(sorted(similar_indices)):
-            for i, d in enumerate(new_data):
-                new_data[i] = np.delete(new_data[i], id, axis=0)
             self.order.remove(id)
         data["train_deleted"] = new_data
 

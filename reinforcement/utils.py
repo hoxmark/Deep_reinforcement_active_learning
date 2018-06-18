@@ -20,7 +20,7 @@ from plotly.graph_objs import Scatter, Layout
 from gensim.models.keyedvectors import KeyedVectors
 
 from logger import LocalLogger, ExternalLogger, NoLogger, VisdomLogger
-from config import opt, data, w2v
+from config import opt, data
 
 
 def batchify(d, n=None, sort=False):

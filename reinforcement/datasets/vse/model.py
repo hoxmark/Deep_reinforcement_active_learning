@@ -424,24 +424,19 @@ class VSE(nn.Module):
         all_dist_vectors = data["image_caption_distances_topk"]
         current_all_dist = pairwise_distances(current_dist_vector, all_dist_vectors)
         similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
-
-        for idx in similar_indices[0]:
+        similar_indices = similar_indices.data[0].cpu().numpy()
+        for idx in similar_indices:
             self.add_index(idx)
+        # print(similar_indices)
+        return similar_indices
 
     def add_index(self, index):
-        # image = data["train"][0][5 * index]
-        # # There are 5 captions for every image
-        # for cap in range(5):
-        #     caption = data["train"][1][5 * index + cap]
-        #     length = data["train"][2][5 * index + cap]
-
-        image = data["train"][0][index]
-        caption = data["train"][1][index]
-        length = data["train"][2][index]
+        image = data["train_deleted"][0][index]
+        caption = data["train_deleted"][1][index]
+        length = data["train_deleted"][2][index]
         data["active"][0].append(image)
         data["active"][1].append(caption)
         data["active"][2].append(length)
-
 
     def encode_data(self, dataset):
         """Encode all images and captions loadable by `data_loader`
@@ -453,8 +448,8 @@ class VSE(nn.Module):
             for i, (images, captions, lengths) in enumerate(batchify(dataset)):
                 # compute the embeddings
                 img_emb, cap_emb = self.forward_emb(images, captions, lengths, volatile=True)
-                img_embs.append(img_emb.cpu())
-                cap_embs.append(cap_emb.cpu())
+                img_embs.append(img_emb)
+                cap_embs.append(cap_emb)
                 del img_emb, cap_emb
                 del images, captions
             img_embs = torch.cat(img_embs)
@@ -521,7 +516,7 @@ class VSE(nn.Module):
         """ Encodes data from data["train"] to use in the episode calculations """
 
         with torch.no_grad():
-            dataset = data["train"]
+            dataset = data["train_deleted"]
             img_embs, cap_embs = timer(self.encode_data, (dataset,))
             img_embs = img_embs.detach()
             cap_embs = cap_embs.detach()
@@ -529,13 +524,15 @@ class VSE(nn.Module):
 
             if opt.cuda:
                 img_embs = img_embs.cuda()
+                cap_embs = cap_embs.cuda()
 
             # Minibatching to reduce memory usage.
-            for (caption_batch,) in batchify([cap_embs]):
-                if opt.cuda:
-                    caption_batch = caption_batch.cuda()
-                    image_caption_distances.append(pairwise_distances(img_embs, caption_batch))
-                    del caption_batch
+            # for (caption_batch,) in batchify([cap_embs]):
+            #     if opt.cuda:
+            #         caption_batch = caption_batch.cuda()
+            #         image_caption_distances.append(pairwise_distances(img_embs, caption_batch))
+            #         del caption_batch
+            image_caption_distances.append(pairwise_distances(img_embs, cap_embs))
 
             image_caption_distances = torch.cat(image_caption_distances, dim=1)
             img_embs = img_embs.cpu()

@@ -95,7 +95,7 @@ class SimpleClassifier(nn.Module):
             size = len(data[0])
             avg_loss = avg_loss / size
             accuracy = 100.0 * float(corrects) / float(size)
-            
+
             metrics = {
                 'accuracy': accuracy,
                 'avg_loss': avg_loss,
@@ -108,7 +108,10 @@ class SimpleClassifier(nn.Module):
         return self.validate(data)
 
     def get_state(self, index):
-        state = data["all_predictions"][index]
+        state = data["all_predictions"][index].view(1, -1)
+        state = state.sort()[0]
+        if opt.cuda:
+            state = state.cuda()
         return state
 
     def encode_episode_data(self):
@@ -117,7 +120,6 @@ class SimpleClassifier(nn.Module):
         for i, (features, targets) in enumerate(batchify(data["train_deleted"])):
             features = Variable(torch.FloatTensor(features))
             targets = Variable(torch.LongTensor(targets))
-
             preds = self.predict_prob(features)
             images.append(preds)
 
