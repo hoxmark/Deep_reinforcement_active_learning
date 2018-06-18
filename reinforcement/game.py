@@ -57,7 +57,7 @@ class Game:
         else:
             reward = 0.
 
-        if self.queried_times >= self.budget or self.current_state >= len(self.order):
+        if self.queried_times >= self.budget or (self.current_state+1) >= len(self.order):
             return reward, None, True
 
         self.current_state += 1
