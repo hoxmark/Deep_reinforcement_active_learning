@@ -57,10 +57,11 @@ class Game:
         else:
             reward = 0.
 
-        if self.queried_times >= self.budget or (self.current_state+1) >= len(self.order):
+        self.current_state += 1
+        
+        if self.queried_times >= self.budget or self.current_state >= len(self.order):
             return reward, None, True
 
-        self.current_state += 1
         next_observation = self.get_state(model)
         return reward, next_observation, is_terminal
 
