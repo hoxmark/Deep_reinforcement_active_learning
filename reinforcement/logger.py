@@ -107,6 +107,7 @@ class NoLogger(object):
 class VisdomLogger(object):
     def __init__(self):
         self.vis = Visdom('http://logserver.duckdns.org', port=5010)
+        # self.vis = Visdom('http://localhost', port=8097)
 
 
     def dict_scalar_summary(self, prefix, values, step):

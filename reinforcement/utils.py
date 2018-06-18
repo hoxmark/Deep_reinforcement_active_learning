@@ -22,6 +22,11 @@ from gensim.models.keyedvectors import KeyedVectors
 from logger import LocalLogger, ExternalLogger, NoLogger, VisdomLogger
 from config import opt, data
 
+def entropy(inp):
+    output = torch.mul(inp, torch.log(inp))
+    output = torch.sum(output, dim=1)
+    output = output * -1
+    return output
 
 def batchify(d, n=None, sort=False):
     if not n:

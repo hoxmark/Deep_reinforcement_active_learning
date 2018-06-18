@@ -330,7 +330,25 @@ class VSE(nn.Module):
 
         self.optimizer = torch.optim.Adam(params, lr=opt.learning_rate_vse)
 
-        self.Eiters = 0
+    def reset(self):
+        self.img_enc = EncoderImage(opt.data_name, opt.img_dim, opt.embed_size,
+                                    opt.finetune, opt.cnn_type,
+                                    use_abs=opt.use_abs,
+                                    no_imgnorm=opt.no_imgnorm)
+        self.txt_enc = EncoderText(opt.vocab_size, opt.word_dim,
+                                   opt.embed_size, opt.num_layers,
+                                   use_abs=opt.use_abs)
+        if opt.cuda:
+            self.img_enc.cuda()
+            self.txt_enc.cuda()
+
+        params = list(self.txt_enc.parameters())
+        params += list(self.img_enc.fc.parameters())
+        if opt.finetune:
+            params += list(self.img_enc.cnn.parameters())
+        self.params = params
+        self.optimizer = torch.optim.Adam(params, lr=opt.learning_rate_vse)
+
 
     def state_dict(self):
         state_dict = [self.img_enc.state_dict(), self.txt_enc.state_dict()]
@@ -399,10 +417,6 @@ class VSE(nn.Module):
     def train_emb(self, images, captions, lengths, ids=None, *args):
         """One training step given images and captions.
         """
-        # self.Eiters += 1
-        # self.logger.update('Eit', self.Eiters)
-        # self.logger.update('lr', self.optimizer.param_groups[0]['lr'])
-
         # compute the embeddings
         img_emb, cap_emb = self.forward_emb(images, captions, lengths)
 

@@ -8,7 +8,7 @@ def load_data():
     softmax_scale_factor = 10
     x = []
     y = []
-    opt.state_size = 10
+    opt.state_size = 2
 
     max_reward = torch.Tensor([1/opt.state_size for i in range(0, opt.state_size)])
     max_reward = torch.mul(max_reward, torch.log(max_reward))
@@ -20,7 +20,7 @@ def load_data():
         probs = torch.Tensor(probs)
         probs = torch.nn.functional.softmax(probs, dim=0)
         probs = probs.sort()[0]
-        x.append(probs.view(1, -1))
+        x.append(probs.cpu().numpy())
 
         # Calculate entropy
         reward = torch.mul(probs, torch.log(probs))
@@ -28,8 +28,8 @@ def load_data():
         reward = reward * -1
 
         # Scale with max reward to get it in range [0, 1]
-        reward = reward / max_reward
-        y.append(reward)
+        reward = (reward / max_reward) - 0.6
+        y.append(reward.data.item())
 
     dev_idx = len(x) // 10 * 8
     test_idx = len(x) // 10 * 9

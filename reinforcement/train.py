@@ -48,8 +48,8 @@ def train(classifier):
 
             if (action == 1):
                 print("> State {:2} Action {:2} - reward {:.4f} - performance {:.4f}".format(game.current_state, action, reward, game.performance))
-                print(state)
-                lg.scalar_summary("last_episode_performance", game.performance, game.queried_times)
+                # print(state)
+                timer(lg.scalar_summary, ("last_episode_performance", game.performance, game.queried_times))
                 # Reset the model every time we add to train set
                 model.reset()
             else:

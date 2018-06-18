@@ -1,3 +1,5 @@
+import sys
+sys.path.append('../')
 import random
 
 from agents import PolicyAgent, DQNTargetAgent, DQNAgent

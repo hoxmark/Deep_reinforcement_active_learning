@@ -45,12 +45,14 @@ class Game:
         reward = 0.
         is_terminal = False
         if action == 1:
-            timer(self.query, (model,))
+            added_indices = timer(self.query, (model,))
             new_performance = self.get_performance(model)
             reward = new_performance - self.performance - opt.reward_threshold
             # if opt.reward_clip:
                 # reward = np.tanh(reward / 100)
             self.performance = new_performance
+            self.delete_data(added_indices)
+            self.queried_times += opt.selection_radius
         else:
             reward = 0.
 
@@ -58,22 +60,24 @@ class Game:
             return reward, None, True
 
         self.current_state += 1
-        next_observation = timer(self.get_state, (model,))
+        next_observation = self.get_state(model)
         return reward, next_observation, is_terminal
 
     def query(self, model):
         current = self.order[self.current_state]
-        similar_indices = model.query(current)
-        new_data = [*data["train_deleted"]]
+        added_indices = model.query(current)
+        return added_indices
 
+
+    def delete_data(self, added_indices):
+        new_data = [*data["train_deleted"]]
         for i, d in enumerate(new_data):
-            new_data[i] = np.delete(new_data[i], similar_indices, axis=0)
-        for id in reversed(sorted(similar_indices)):
+            new_data[i] = np.delete(new_data[i], added_indices, axis=0)
+        for id in reversed(sorted(added_indices)):
             self.order.remove(id)
         data["train_deleted"] = new_data
 
-        self.queried_times += opt.selection_radius
-        self.order = list(map(lambda x: x - np.where(np.array([x]) > similar_indices)[0].shape[0], self.order))
+        self.order = list(map(lambda x: x - np.where(np.array([x]) > added_indices)[0].shape[0], self.order))
 
     def get_performance(self, model):
         timer(model.train_model, (data["active"], opt.num_epochs))
