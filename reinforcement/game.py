@@ -24,7 +24,8 @@ class Game:
         data["train_deleted"] = copy.deepcopy(data["train"])
         self.init_train_k_random(model, opt.init_samples)
         timer(model.encode_episode_data, ())
-        metrics = model.validate(data["dev"])
+        # metrics = model.validate(data["dev"])
+        metrics = model.performance_validate(data["dev"])
         self.performance = metrics["performance"]
 
     def init_train_k_random(self, model, num_samples):
@@ -61,7 +62,7 @@ class Game:
             return reward, None, True
 
         self.current_state += 1
-        next_observation = self.get_state(model)
+        next_observation = timer(self.get_state, (model,))
         return reward, next_observation, is_terminal
 
     def query(self, model):
@@ -81,7 +82,9 @@ class Game:
         self.order = list(map(lambda x: x - np.where(np.array([x]) > added_indices)[0].shape[0], self.order))
 
     def get_performance(self, model):
+        # Reset the model before train
+        model.reset()
         timer(model.train_model, (data["active"], opt.num_epochs))
-        metrics = timer(model.validate, (data["dev"],))
+        metrics = timer(model.performance_validate, (data["dev"],))
         performance = metrics["performance"]
         return performance

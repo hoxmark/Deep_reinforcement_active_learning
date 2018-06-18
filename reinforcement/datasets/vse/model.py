@@ -515,6 +515,7 @@ class VSE(nn.Module):
         (r1, r5, r10, r1i, r5i, r10i) = t2i2t(img_embs, cap_embs)
         performance = r1 + r5 + r10 + r1i + r5i + r10i
         metrics = {
+            "performance": performance,
             "sum": performance,
             "r1": r1,
             "r5": r5,
