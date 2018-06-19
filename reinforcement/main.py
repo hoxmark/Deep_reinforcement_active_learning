@@ -1,16 +1,14 @@
+from datasets.vse.vocab import Vocabulary
 import torch
 import argparse
 import datetime
 import getpass
 import importlib
-from datasets.vse import Vocabulary
 import os
 import tensorboard_logger as tb_logger
-import pickle
 from config import opt, data, loaders, global_logger
 from utils import external_logger, visdom_logger, local_logger, no_logger, load_word2vec
 import uuid
-
 
 
 def main():
@@ -112,22 +110,16 @@ def main():
     params = parser.parse_args()
     params.actions = 2
 
-    params.logger_name = '{}_{}_{}_{}_{}_{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), str(uuid.uuid4())[:4], params.dataset, params.agent, params.c)
+    params.logger_name = '{}_{}_{}_{}_{}_{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), params.dataset, params.agent, params.c, str(uuid.uuid4())[:4])
     params.external_log_url = 'http://logserver.duckdns.org:5000'
 
     if torch.cuda.is_available():
         torch.cuda.set_device(params.device)
     params.cuda = (not params.no_cuda) and torch.cuda.is_available()
-
-    vocab = pickle.load(open(os.path.join(params.vocab_path, '%s_vocab.pkl' % params.data_name), 'rb'))
-    params.vocab = vocab
-    params.vocab_size = len(vocab)
-
     params.pid = os.getpid()
 
     for arg in vars(params):
         opt[arg] = vars(params)[arg]
-
 
     # sending tensorboard logs to external server
     if params.log == "external":

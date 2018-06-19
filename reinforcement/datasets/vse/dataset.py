@@ -1,9 +1,16 @@
+from datasets.vse.vocab import Vocabulary
+import os
 import numpy as np
 import nltk
 import torch
+import pickle
 
 from config import opt
 def load_data():
+    vocab = pickle.load(open(os.path.join(opt.vocab_path, '%s_vocab.pkl' % opt.data_name), 'rb'))
+    opt.vocab = vocab
+    opt.vocab_size = len(vocab)
+
     train_captions = []
     dev_captions = []
     test_captions = []
@@ -88,5 +95,6 @@ def load_data():
     state_size = 2 * opt.topk + opt.topk_image if opt.intra_caption else opt.topk + opt.topk_image
     opt.state_size = state_size
     opt.data_len = len(train_images)
+
 
     return (train_data, dev_data, test_data)

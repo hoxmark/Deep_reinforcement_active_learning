@@ -437,7 +437,7 @@ class VSE(nn.Module):
         current_dist_vector = data["image_caption_distances_topk"][index].view(1, -1)
         all_dist_vectors = data["image_caption_distances_topk"]
         current_all_dist = pairwise_distances(current_dist_vector, all_dist_vectors)
-        similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
+        similar_indices = torch.topk(current_all_dist, opt.selection_radius * 5, 1, largest=False)[1]
         similar_indices = similar_indices.data[0].cpu().numpy()
         for idx in similar_indices:
             self.add_index(idx)
@@ -493,19 +493,20 @@ class VSE(nn.Module):
         return 13
 
     def validate(self, dataset):
-        total_loss = 0
-        self.val_start()
-        # for i, (images, captions, lengths, ids) in enumerate(loader):
-        for i, (images, captions, lengths) in enumerate(batchify(dataset)):
-            img_emb, cap_emb = self.forward_emb(images, captions, lengths, volatile=True)
-            loss = self.forward_loss(img_emb, cap_emb)
-            total_loss += loss.data.item()
-        total_loss = total_loss / len(dataset[0])
-
-        metrics = {
-            "performance": -1 * total_loss
-        }
-        return metrics
+        # total_loss = 0
+        # self.val_start()
+        # # for i, (images, captions, lengths, ids) in enumerate(loader):
+        # for i, (images, captions, lengths) in enumerate(batchify(dataset)):
+        #     img_emb, cap_emb = self.forward_emb(images, captions, lengths, volatile=True)
+        #     loss = self.forward_loss(img_emb, cap_emb)
+        #     total_loss += loss.data.item()
+        # total_loss = total_loss / len(dataset[0])
+        #
+        # metrics = {
+        #     "performance": -1 * total_loss
+        # }
+        # return metrics
+        return self.performance_validate(dataset)
 
     def performance_validate(self, dataset):
         """returns the performance messure with recall at 1, 5, 10

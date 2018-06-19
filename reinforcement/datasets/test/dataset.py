@@ -28,7 +28,7 @@ def load_data():
         reward = reward * -1
 
         # Scale with max reward to get it in range [0, 1]
-        reward = (reward / max_reward) - 0.6
+        reward = (reward / max_reward)
         y.append(reward.data.item())
 
     dev_idx = len(x) // 10 * 8

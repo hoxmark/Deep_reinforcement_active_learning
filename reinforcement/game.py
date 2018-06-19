@@ -24,8 +24,8 @@ class Game:
         data["train_deleted"] = copy.deepcopy(data["train"])
         self.init_train_k_random(model, opt.init_samples)
         timer(model.encode_episode_data, ())
-        # metrics = model.validate(data["dev"])
-        metrics = model.performance_validate(data["dev"])
+        metrics = model.validate(data["dev"])
+        pprint(metrics)
         self.performance = metrics["performance"]
 
     def init_train_k_random(self, model, num_samples):
@@ -85,6 +85,6 @@ class Game:
         # Reset the model before train
         model.reset()
         timer(model.train_model, (data["active"], opt.num_epochs))
-        metrics = timer(model.performance_validate, (data["dev"],))
+        metrics = timer(model.validate, (data["dev"],))
         performance = metrics["performance"]
         return performance
