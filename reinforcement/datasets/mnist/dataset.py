@@ -12,26 +12,6 @@ def load_data():
         train_set = dset.MNIST(root=opt.data_path, train=True, transform=trans, download=True)
         test_set = dset.MNIST(root=opt.data_path , train=False, transform=trans, download=True)
 
-        # The digits dataset
-        # print("HELLO")
-        # print(len(train_set))
-        # print(test_set.)
-        # print(test_set[1])
-        # quit()
-        # for (x, target) in enumerate(test_set):
-        #         print(x)
-        #         print(target)
-        # quit()
-        # digits = datasets.load_digits()
-        # n_samples = len(digits.images)
-        # x = digits.images.reshape((n_samples, -1))
-        # y = digits.target
-
-        # x, y = sklearn.utils.shuffle(x, y)
-
-        # dev_idx = n_samples // 10 * 5
-        # test_idx = n_samples // 10 * 7
-
         split = len(test_set)
         x = []
         y = []
@@ -54,9 +34,4 @@ def load_data():
         test_data = (x_test, y_test)
         opt.state_size = len(set(y))
         opt.data_len = len(x)
-        # print("hey")
-        # print(train_data[1][0])
-        # quit()
-        # quit()
-        print(len(set(y)))
         return train_data, dev_data, test_data
