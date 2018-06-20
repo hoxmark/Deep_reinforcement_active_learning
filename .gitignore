@@ -1,3 +1,5 @@
+*.csv
+results
 .ftpconfig
 snapshot
 rt-polaritydata
