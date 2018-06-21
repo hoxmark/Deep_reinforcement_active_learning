@@ -24,16 +24,16 @@ class SVM():
         pass
 
     def cuda(self):
-        return self 
+        return self
 
     def get_state(self, index):
-        state = Variable(torch.FloatTensor(data["all_predictions"][index]))
+        state = torch.FloatTensor(data["all_predictions"][index])
         return state
 
     def train_model(self, d, epochs):
         images = []
-        targets = []    
-        for i, (feat, tar) in enumerate(batchify(d)):    
+        targets = []
+        for i, (feat, tar) in enumerate(batchify(d)):
             images.extend(feat)
             targets.extend(tar)
         self.classifier.fit(images, targets)
@@ -41,7 +41,7 @@ class SVM():
     def validate(self, loader):
         images = []
         targets = []
-        for i, (feat, tar) in enumerate(batchify(loader)):    
+        for i, (feat, tar) in enumerate(batchify(loader)):
             images.extend(feat)
             targets.extend(tar)
 
@@ -55,7 +55,7 @@ class SVM():
                 'accuracy': accuracy,
                 'performance': accuracy
             }
-        
+
 
     def performance_validate(self, loader):
         return self.validate(loader)
@@ -63,16 +63,16 @@ class SVM():
     def encode_episode_data(self):
         images = []
         targets = []
-        for i, (feat, tar) in enumerate(batchify(data["train"])):    
+        for i, (feat, tar) in enumerate(batchify(data["train"])):
             images.extend(feat)
             targets.extend(tar)
 
-        
+
         preds = self.predict_prob(images)
 
         data["all_predictions"] = preds
 
-        
+
 
     def predict_proba_ordered(self, probs, classes_, all_classes):
         """

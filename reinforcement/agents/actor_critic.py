@@ -64,7 +64,7 @@ class ActorCriticAgent:
         for (log_prob, state_value), r in zip(saved_actions, rewards):
             reward = r - state_value
             policy_losses.append(-log_prob * reward)
-            r = Variable(torch.Tensor([r]))
+            r = torch.Tensor([r])
             if opt.cuda:
                 r = r.cuda()
             value_losses.append(F.smooth_l1_loss(state_value, r))

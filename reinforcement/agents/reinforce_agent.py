@@ -36,7 +36,7 @@ class PolicyAgent:
             self.policynetwork.cuda()
 
     def get_action(self, state):
-        state = Variable(state.data)
+        state = state.data
         probs = self.policynetwork(state)
         m = Categorical(probs)
         action = m.sample()
@@ -61,7 +61,7 @@ class PolicyAgent:
             rewards = rewards.cuda()
         rewards = (rewards - rewards.mean()) / (rewards.std() + np.finfo(np.float32).eps.item())
         # print(rewards)
-        if opt.cuda: 
+        if opt.cuda:
             rewards = rewards.cuda()
         for log_prob, reward in zip(self.policynetwork.saved_log_probs, rewards):
             policy_loss.append(-log_prob * reward)

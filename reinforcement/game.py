@@ -39,7 +39,7 @@ class Game:
         with torch.no_grad():
             current_idx = self.order[self.current_state]
             state = model.get_state(current_idx)
-            state = Variable(state).view(1, -1)
+            state = state.view(1, -1)
             return state
 
     def feedback(self, action, model):
@@ -48,7 +48,10 @@ class Game:
         if action == 1:
             added_indices = timer(self.query, (model,))
             new_performance = self.get_performance(model)
-            reward = new_performance - self.performance - opt.reward_threshold
+            diff = new_performance - self.performance
+            print(diff)
+            diff -= opt.reward_threshold
+            reward = 1 if diff > 0 else -1 if diff < 0 else 0
             # if opt.reward_clip:
                 # reward = np.tanh(reward / 100)
             self.performance = new_performance
