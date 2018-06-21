@@ -4,7 +4,6 @@ from collections import deque
 
 from torch import optim
 import torch
-from torch.autograd import Variable
 import torch.nn as nn
 import torch.nn.functional as F
 from config import opt
@@ -72,8 +71,8 @@ class DQNAgent:
         batch_state = torch.cat(batch_state)
         batch_next_state = torch.cat(batch_next_state)
 
-        batch_action = Variable(torch.LongTensor(list(batch_action)).unsqueeze(1))
-        batch_reward = Variable(torch.FloatTensor(list(batch_reward)))
+        batch_action = torch.LongTensor(list(batch_action)).unsqueeze(1)
+        batch_reward = torch.FloatTensor(list(batch_reward))
 
         if opt.cuda:
             batch_action = batch_action.cuda()

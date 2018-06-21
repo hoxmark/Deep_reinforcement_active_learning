@@ -115,12 +115,12 @@ class DQNTargetAgent():
         batch_state, batch_action, batch_reward, batch_next_state, batch_terminal = zip(*minibatch)
         batch_state = torch.cat(batch_state)
         if not batch_state.requires_grad:
-            batch_state = Variable(batch_state.data)
+            batch_state = batch_state.data
         batch_next_state = torch.cat(batch_next_state)
         batch_next_state.volatile = True
 
-        batch_action = Variable(torch.LongTensor(list(batch_action)).unsqueeze(1))
-        batch_reward = Variable(torch.FloatTensor(list(batch_reward)))
+        batch_action = torch.LongTensor(list(batch_action)).unsqueeze(1)
+        batch_reward = torch.FloatTensor(list(batch_reward))
 
         if opt.cuda:
             batch_state = batch_state.cuda()
@@ -132,7 +132,7 @@ class DQNTargetAgent():
         max_next_q_values = self.targetnetwork(batch_next_state).max(1)[0]
         expected_q_values = batch_reward + (self.discount_factor * max_next_q_values)
         # Undo volatility introduced above
-        expected_q_values = Variable(expected_q_values.data).unsqueeze(1)
+        expected_q_values = expected_q_values.unsqueeze(1)
 
         if opt.cuda:
             expected_q_values = expected_q_values.cuda()
