@@ -68,6 +68,10 @@ class Game:
     def query(self, model):
         current = self.order[self.current_state]
         added_indices = model.query(current)
+        print(self.current_state)
+        if self.current_state>1:
+            model.visualize(added_indices, data["train_deleted"],self.current_state)            
+            quit()
         return added_indices
 
 

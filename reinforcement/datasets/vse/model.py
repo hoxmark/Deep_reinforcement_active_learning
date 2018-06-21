@@ -12,6 +12,7 @@ from collections import OrderedDict
 from config import opt, data
 from utils import batchify, pairwise_distances, timer
 
+from tensorboardX import SummaryWriter
 
 import time
 def l2norm(X):
@@ -330,6 +331,8 @@ class VSE(nn.Module):
 
         self.optimizer = torch.optim.Adam(params, lr=opt.learning_rate_vse)
 
+        self.writer = SummaryWriter(comment='mnist_embedding_training')
+
     def reset(self):
         self.img_enc = EncoderImage(opt.data_name, opt.img_dim, opt.embed_size,
                                     opt.finetune, opt.cnn_type,
@@ -443,6 +446,20 @@ class VSE(nn.Module):
             self.add_index(idx)
         # print(similar_indices)
         return similar_indices
+
+    def visualize(self, added_indices, data, g_step):
+        
+        all_data = torch.LongTensor(data[0])
+        labels = torch.zeros(len(data[0]))
+        labels[added_indices] = 1
+        print(labels.size())
+        print(all_data.size())
+        print(len(added_indices))
+        print(added_indices)
+        self.writer.add_embedding(all_data.data, metadata=labels.data, global_step=g_step)
+        quit()  
+
+        self.writer.close()
 
     def add_index(self, index):
         image = data["train_deleted"][0][index]
