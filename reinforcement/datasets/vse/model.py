@@ -446,7 +446,7 @@ class VSE(nn.Module):
         current_dist_vector = data["all_states"][index].view(1, -1)
         all_dist_vectors = data["all_states"]
         current_all_dist = pairwise_distances(current_dist_vector, all_dist_vectors)
-        similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
+        similar_indices = torch.topk(current_all_dist, opt.selection_radius * 5, 1, largest=False)[1]
         similar_indices = similar_indices.data[0].cpu().numpy()
         for idx in similar_indices:
             self.add_index(idx)

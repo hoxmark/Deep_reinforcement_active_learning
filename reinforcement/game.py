@@ -57,7 +57,7 @@ class Game:
             self.performance = new_performance
             self.delete_data(added_indices)
             timer(model.encode_episode_data, ())
-            self.queried_times += opt.selection_radius
+            self.queried_times += len(added_indices)
         else:
             reward = 0.
 

@@ -3,6 +3,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 from torch.autograd import Variable
+from pprint import pprint
 import time
 
 from utils import pairwise_distances, batchify
@@ -37,19 +38,19 @@ class SimpleClassifier(nn.Module):
         output = self.fc3(output)
         return output
 
-    def train_model(self, data, epochs):
+    def train_model(self, train_data, epochs):
         optimizer = optim.Adadelta(self.parameters(), 0.1)
         criterion = nn.CrossEntropyLoss()
 
         self.train()
-        size = len(data[0])
+        size = len(train_data[0])
 
         for e in range(epochs):
             avg_loss = 0
             corrects = 0
-            for i, (features, targets) in enumerate(batchify(data)):
-                features = Variable(torch.FloatTensor(features))
-                targets = Variable(torch.LongTensor(targets))
+            for i, (features, targets) in enumerate(batchify(train_data)):
+                features = torch.FloatTensor(features)
+                targets = torch.LongTensor(targets)
 
                 if opt.cuda:
                     features, targets = features.cuda(), targets.cuda()
@@ -59,12 +60,11 @@ class SimpleClassifier(nn.Module):
                 loss = criterion(output, targets)
                 loss.backward()
                 optimizer.step()
-                avg_loss += loss.data.item()
+                avg_loss += loss.item()
                 corrects += (torch.max(output, 1)
-                             [1].view(targets.size()).data == targets.data).sum()
+                             [1].view(targets.size()) == targets).sum()
             avg_loss = avg_loss / opt.batch_size
             accuracy = 100.0 * corrects / size
-
             # s1 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format("train", avg_loss, accuracy, corrects, size)
             # print(s1, end='\r')
 
@@ -79,18 +79,17 @@ class SimpleClassifier(nn.Module):
         corrects, avg_loss = 0, 0
         with torch.no_grad():
             for i, (features, targets) in enumerate(batchify(data)):
-                features = Variable(torch.FloatTensor(features))
-                targets = Variable(torch.LongTensor(targets))
+                features = torch.FloatTensor(features)
+                targets = torch.LongTensor(targets)
 
                 if opt.cuda:
                     features = features.cuda()
                     targets = targets.cuda()
 
                 logit = self.forward(features)
-                # loss = torch.nn.functional.nll_loss(logit, targets, size_average=False)
                 loss = torch.nn.functional.cross_entropy(logit, targets, size_average=False)
-                avg_loss += loss.data.item()
-                corrects += (torch.max(logit, 1)[1].view(targets.size()).data == targets.data).sum()
+                avg_loss += loss.item()
+                corrects += (torch.max(logit, 1)[1].view(targets.size()) == targets).sum()
 
             size = len(data[0])
             avg_loss = avg_loss / size

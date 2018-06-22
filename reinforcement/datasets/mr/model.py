@@ -3,7 +3,6 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torch.optim as optim
 import sklearn
-from torch.autograd import Variable
 import numpy as np
 
 from gensim.models.keyedvectors import KeyedVectors
@@ -77,23 +76,6 @@ class CNN(nn.Module):
 
         return x
 
-    def get_sentence_representation(self, inp):
-        x = self.embed(inp).view(-1, 1, self.WORD_DIM * self.MAX_SENT_LEN)
-        x = self.dropout_embed(x)
-        # x = (25 x 1 x 17700) - mini_batch_size x embedding_for_each_sentence
-
-        conv_results = [
-            F.max_pool1d(F.relu(self.get_conv(i)(x)),
-                         self.MAX_SENT_LEN - self.FILTERS[i] + 1).view(-1, self.FILTER_NUM[i])
-            for i in range(len(self.FILTERS))]
-        # Take a max for each filter - each filter result is 25 x 100 x 57
-
-        # Each conv_result is (25 x 100)  - one max value for each application of each filter type, across each sentence
-        x = torch.cat(conv_results, 1)
-        # x = (25 x 300) - concatenate all the filter results
-        # print(x)
-        return x
-
     def get_state(self, index):
         state = data["all_predictions"][index]
         return state
@@ -111,8 +93,8 @@ class CNN(nn.Module):
                 avg_loss = 0
                 corrects = 0
                 for i, (sentences, targets) in enumerate(batchify(train_data)):
-                    sentences = Variable(torch.LongTensor(sentences))
-                    targets = Variable(torch.LongTensor(targets))
+                    sentences = torch.LongTensor(sentences)
+                    targets = torch.LongTensor(targets)
 
                     if opt.cuda:
                         sentences, targets = sentences.cuda(), targets.cuda()
@@ -122,29 +104,23 @@ class CNN(nn.Module):
                     loss = criterion(pred, targets)
                     loss.backward()
                     optimizer.step()
-                    avg_loss += loss.data.item()
+                    avg_loss += loss.item()
                     corrects += (torch.max(pred, 1)
-                                 [1].view(targets.size()).data == targets.data).sum()
+                                 [1].view(targets.size()) == targets).sum()
                 avg_loss = avg_loss * 32 / size
 
                 if ((e + 1) % 10) == 0:
                     accuracy = 100.0 * corrects / size
-                    # dev_accuracy, dev_loss, dev_corrects, dev_size = evaluate(model, e, mode="dev")
-
-                    s1 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format(
-                        "train", avg_loss, accuracy, corrects, size)
+                    s1 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format("train", avg_loss, accuracy, corrects, size)
                     print(s1, end='\r')
-                    # s2 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format(
-                        # "dev", dev_loss, dev_accuracy, dev_corrects, dev_size)
-                    # output_lines[0] = s1
 
     def validate(self, val_data):
         with torch.no_grad():
             self.eval()
             corrects, avg_loss = 0, 0
             for i, (sentences, targets) in enumerate(batchify(val_data)):
-                sentences = Variable(torch.LongTensor(sentences))
-                targets = Variable(torch.LongTensor(targets))
+                sentences = torch.LongTensor(sentences)
+                targets = torch.LongTensor(targets)
 
                 if opt.cuda:
                     sentences = sentences.cuda()
@@ -152,8 +128,8 @@ class CNN(nn.Module):
 
                 logit = self.forward(sentences)
                 loss = torch.nn.functional.cross_entropy(logit, targets, size_average=False)
-                avg_loss += loss.data.item()
-                corrects += (torch.max(logit, 1)[1].view(targets.size()).data == targets.data).sum()
+                avg_loss += loss.item()
+                corrects += (torch.max(logit, 1)[1].view(targets.size()) == targets).sum()
 
             size = len(val_data[0])
             avg_loss = avg_loss / size
@@ -176,8 +152,8 @@ class CNN(nn.Module):
 
             for i, (sentences, targets) in enumerate(batchify(data["train_deleted"])):
                 # print(sentences)
-                sentences = Variable(torch.LongTensor(sentences))
-                targets = Variable(torch.LongTensor(targets))
+                sentences = torch.LongTensor(sentences)
+                targets = torch.LongTensor(targets)
 
                 if opt.cuda:
                     sentences = sentences.cuda()
@@ -203,8 +179,8 @@ class CNN(nn.Module):
         all_states = data["all_predictions"]
         current_all_dist = pairwise_distances(current_state, all_states)
         similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
-
         similar_indices = similar_indices.data[0].cpu().numpy()
+
         for idx in similar_indices:
             self.add_index(idx)
         return similar_indices

@@ -1,3 +1,4 @@
+*.svg
 *.csv
 results
 .ftpconfig

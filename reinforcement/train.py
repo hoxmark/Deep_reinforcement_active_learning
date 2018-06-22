@@ -40,6 +40,7 @@ def train(classifier):
         num_of_zero = 0
 
         state = game.get_state(model)
+        first_log = True
         while not terminal:
             action = agent.get_action(state)
             reward, next_state, terminal = game.feedback(action, model)
@@ -49,7 +50,9 @@ def train(classifier):
             if (action == 1):
                 print("> State {:2} Action {:2} - reward {:.4f} - performance {:.4f}".format(game.current_state, action, reward, game.performance))
                 # print(state)
-                timer(lg.scalar_summary, ("last_episode_performance", game.performance, game.queried_times))
+                step = 0 if first_log else game.queried_times
+                timer(lg.scalar_summary, ("last_episode_performance", game.performance, step))
+                first_log = False
             else:
                 num_of_zero += 1
 

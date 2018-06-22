@@ -21,12 +21,12 @@ def load_data():
     dev_idx = len(x) // 10 * 8
     test_idx = len(x) // 10 * 9
 
-    words = sorted(list(set([w for sent in x for w in sent])))
-    data.vocab = {w: i for i, w in enumerate(words)}
+    data.vocab = sorted(list(set([w for sent in x for w in sent])))
+    data.word_to_idx = {w: i for i, w in enumerate(data.vocab)}
 
     x_pad = []
     for sentence in x:
-        tokens = [data.vocab[word] for word in sentence]
+        tokens = [data.word_to_idx[word] for word in sentence]
         padding = (59 - len(sentence)) * [len(data.vocab) + 1]
         tokens_padded = tokens + padding
         x_pad.append(tokens_padded)
