@@ -133,7 +133,7 @@ class CNN(nn.Module):
 
             size = len(val_data[0])
             avg_loss = avg_loss / size
-            accuracy = 100.0 * corrects / size
+            accuracy = 100.0 * corrects.double() / size
 
             metrics = {
                 'accuracy': accuracy.item(),
