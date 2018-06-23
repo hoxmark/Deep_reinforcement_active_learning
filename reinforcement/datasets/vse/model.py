@@ -208,6 +208,9 @@ class EncoderText(nn.Module):
 
     def init_weights(self):
         self.embed.weight.data.uniform_(-0.1, 0.1)
+        if opt.w2v:
+            print("copying w2v")
+            self.embed.weight.data.copy_(torch.from_numpy(data.w2v))
 
     def forward(self, x, lengths):
         """Handles variable size captions
@@ -273,13 +276,15 @@ class ContrastiveLoss(nn.Module):
         diagonal = scores.diag().view(im.size(0), 1)
         d1 = diagonal.expand_as(scores)
         d2 = diagonal.t().expand_as(scores)
-
+        # print(scores)
+        # print(d1)
         # compare every diagonal score to scores in its column
         # caption retrieval
         cost_s = (self.margin + scores - d1).clamp(min=0)
         # compare every diagonal score to scores in its row
         # image retrieval
         cost_im = (self.margin + scores - d2).clamp(min=0)
+        print(cost_s)
 
         # clear diagonals
         mask = torch.eye(scores.size(0)) > .5
@@ -526,7 +531,8 @@ class VSE(nn.Module):
         img_embs, cap_embs = self.encode_data(dataset)
         (r1, r5, r10, r1i, r5i, r10i) = t2i2t(img_embs, cap_embs)
 
-        performance = r1 + r5 + r10 + r1i + r5i + r10i
+        # performance = r1 + r5 + r10 + r1i + r5i + r10i
+        performance = r1 + r5 + r10
         metrics = {
             "performance": performance,
             "sum": performance,
@@ -549,23 +555,11 @@ class VSE(nn.Module):
         if opt.cuda:
             img_embs = img_embs.cuda()
             cap_embs = cap_embs.cuda()
-
-        # Minibatching to reduce memory usage.
-        # for (caption_batch,) in batchify([cap_embs]):
-        #     if opt.cuda:
-        #         caption_batch = caption_batch.cuda()
-        #         image_caption_distances.append(pairwise_distances(img_embs, caption_batch))
-        #         del caption_batch
-
-        all_states = torch.Tensor()
-
-
         image_caption_distances = timer(pairwise_distances, (img_embs, cap_embs))
         topk = torch.topk(image_caption_distances, opt.topk, 1, largest=False)
-        image_caption_distances_topk = topk[0]
-        image_caption_distances_topk_idx = topk[1]
-        data["image_caption_distances_topk"] = image_caption_distances_topk.data
-        data["image_caption_distances_topk_idx"] = image_caption_distances_topk_idx.data
+        (image_caption_distances_topk, image_caption_distances_topk_idx) = (topk[0], topk[1])
+        data["image_caption_distances_topk"] = image_caption_distances_topk
+        data["image_caption_distances_topk_idx"] = image_caption_distances_topk_idx
         del topk
         del image_caption_distances
         intra_cap_distance = timer(pairwise_distances, (cap_embs, cap_embs))
@@ -581,9 +575,12 @@ class VSE(nn.Module):
         all_dist = intra_cap_distance[select_indices_row, select_indices_col]
         all_dist = all_dist.view(len(data["train_deleted"][0]), opt.topk, opt.topk -1)
         all_dist = all_dist.mean(dim=2)
-        data["images_embed_all"] = img_embs.data.cpu()
-        data["captions_embed_all"] = cap_embs.data.cpu()
-        data["all_states"] = all_dist.cpu()
+        data["all_states"] = torch.cat((img_embs, data["image_caption_distances_topk"], all_dist), 1).cpu()
+        # data["images_embed_all"] = img_embs.data.cpu()
+        # data["captions_embed_all"] = cap_embs.data.cpu()
+        # all_dist = all_dist.cpu()
+        # data["all_states"] = all_dist.cpu()
+        # print(data["all_states"].size())
 
         # Testing for fixed index to see if it works
         # test_idx = 1337
