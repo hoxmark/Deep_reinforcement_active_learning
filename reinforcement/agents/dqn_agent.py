@@ -48,7 +48,7 @@ class DQNAgent:
         self.explore = 100000.
 
         self.actions = opt.actions
-        self.epsilon = INITIAL_EPSILON
+        self.epsilon = self.initial_epsilon
         self.policynetwork = DQN()
         self.targetnetwork = DQN()
 
