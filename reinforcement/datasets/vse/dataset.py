@@ -11,6 +11,7 @@ def load_data():
     opt.vocab = vocab
     opt.vocab_size = len(vocab)
 
+
     train_captions = []
     dev_captions = []
     test_captions = []
@@ -93,7 +94,7 @@ def load_data():
     test_data = (test_images, pad(test_tokens, test_cap_lengths), test_cap_lengths)
 
     state_size = 2 * opt.topk + opt.topk_image if opt.intra_caption else opt.topk + opt.topk_image
-    opt.state_size = state_size
+    opt.state_size = opt.embed_size + 2 * opt.topk
     opt.data_len = len(train_images)
 
 

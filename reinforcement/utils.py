@@ -161,16 +161,26 @@ def load_word2vec():
         "{}/GoogleNews-vectors-negative300.bin".format(opt.data_path), binary=True)
     wv_matrix = []
 
-    for word in data.vocab:
-        if word in word_vectors.vocab:
-            wv_matrix.append(word_vectors.word_vec(word))
-        else:
-            wv_matrix.append(
-                np.random.uniform(-0.01, 0.01, 300).astype("float32"))
+    if opt.dataset == 'vse':
+        for idx in sorted(dict.keys(opt.vocab.idx2word)):
+            word = opt.vocab.idx2word[idx]
+            if word in word_vectors.vocab:
+                wv_matrix.append(word_vectors.word_vec(word))
+            else:
+                wv_matrix.append(
+                    np.random.uniform(-0.01, 0.01, 300).astype("float32"))
 
-    # one for UNK and one for zero padding
-    wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32"))
-    wv_matrix.append(np.zeros(300).astype("float32"))
+    else:
+        for word in data.vocab:
+            if word in word_vectors.vocab:
+                wv_matrix.append(word_vectors.word_vec(word))
+            else:
+                wv_matrix.append(
+                    np.random.uniform(-0.01, 0.01, 300).astype("float32"))
+
+        # one for UNK and one for zero padding
+        wv_matrix.append(np.random.uniform(-0.01, 0.01, 300).astype("float32"))
+        wv_matrix.append(np.zeros(300).astype("float32"))
     wv_matrix = np.array(wv_matrix)
     data["w2v"] = wv_matrix
 
