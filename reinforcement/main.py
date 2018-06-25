@@ -21,7 +21,7 @@ def main():
     parser = argparse.ArgumentParser(description="-----[Reinforced Visual Semantic Embedding ]-----")
     if dataset == 'vse':
         # Common params, but specifying each under each dataset-if to make the default values different
-        parser.add_argument("--hidden_size",        default=320,    type=int,   help="Size of hidden layer in deep RL")
+        parser.add_argument("--hidden_size",        default=124,    type=int,   help="Size of hidden layer in deep RL")
         parser.add_argument("--episodes",           default=10000,  type=int,   help="number of episodes")
         parser.add_argument("--learning_rate_rl",   default=0.1,    type=float, help="learning rate")
         parser.add_argument('--margin',             default=0.2,    type=float, help='Rank loss margin.')
@@ -29,9 +29,8 @@ def main():
         parser.add_argument('--full_epochs',        default=15,     type=int,   help='Number of training epochs.')
         parser.add_argument('--init_samples',       default=480,    type=int,   help='number of random inital training data')
         parser.add_argument('--batch_size',         default=128,    type=int,   help='Size of a training mini-batch.')
-        parser.add_argument('--budget',             default=224,    type=int,   help='Our labeling budget')
-        parser.add_argument('--selection_radius',   default=32,     type=int,   help='Selection radius')
-        parser.add_argument('--val_size',           default=500,    type=int,   help='Number of validation set size to use for reward')
+        parser.add_argument('--budget',             default=1120,   type=int,   help='Our labeling budget')
+        parser.add_argument('--selection_radius',   default=16,     type=int,   help='Selection radius')
         parser.add_argument("--reward_threshold",   default=0,      type=float, help="Reward threshold")
         parser.add_argument('--w2v',                action='store_true',        help='Use w2v embeddings')
 
@@ -50,6 +49,8 @@ def main():
         parser.add_argument('--cnn_type',           default='vgg19',type=str,   help="""The CNN used for image encoder(e.g. vgg19, resnet152)""")
         parser.add_argument('--topk',               default=20,     type=int,   help='Topk similarity to use for state')
         parser.add_argument('--topk_image',         default=0,      type=int,   help='Topk similarity images to use for state')
+        parser.add_argument('--data_name',          default='f8k_precomp',      help='{coco,f8k,f30k,10crop}_precomp|coco|f8k|f30k')
+        parser.add_argument('--measure',            default='cosine',           help='Similarity measure used (cosine|order)')
         parser.add_argument('--intra_caption',      action='store_true',        help='Include closest captions intra distance in state')
         parser.add_argument('--max_violation',      action='store_true',        help='Use max instead of sum in the rank loss.')
         parser.add_argument('--image_distance',     action='store_true',        help='Include image distance in the state ')
@@ -70,7 +71,6 @@ def main():
         parser.add_argument('--batch_size',         default=128,    type=int,   help='Size of a training mini-batch.')
         parser.add_argument('--budget',             default=5,    type=int,   help='Our labeling budget')
         parser.add_argument('--selection_radius',   default=32,     type=int,   help='Selection radius')
-        parser.add_argument('--val_size',           default=500,    type=int,   help='Number of validation set size to use for reward')
         parser.add_argument("--reward_threshold",   default=0,      type=float, help="Reward threshold")
         parser.add_argument('--w2v',                action='store_true',        help='Use w2v embeddings')
 
@@ -85,7 +85,6 @@ def main():
         parser.add_argument('--batch_size',         default=128,    type=int,   help='Size of a training mini-batch.')
         parser.add_argument('--budget',             default=15,     type=int,   help='Our labeling budget')
         parser.add_argument('--selection_radius',   default=1,      type=int,   help='Selection radius')
-        parser.add_argument('--val_size',           default=500,    type=int,   help='Number of validation set size to use for reward')
         parser.add_argument("--reward_threshold",   default=0,      type=float, help="Reward threshold")
         parser.add_argument('--w2v',                action='store_true',        help='Use w2v embeddings')
 
@@ -100,7 +99,6 @@ def main():
         parser.add_argument('--batch_size',         default=128,    type=int,   help='Size of a training mini-batch.')
         parser.add_argument('--budget',             default=224,    type=int,   help='Our labeling budget')
         parser.add_argument('--selection_radius',   default=32,     type=int,   help='Selection radius')
-        parser.add_argument('--val_size',           default=500,    type=int,   help='Number of validation set size to use for reward')
         parser.add_argument("--reward_threshold",   default=0,      type=float, help="Reward threshold")
         parser.add_argument('--w2v',                action='store_true',        help='Use w2v embeddings')
 
@@ -117,12 +115,12 @@ def main():
 
     parser.add_argument('--reset_train',    action='store_true', help='Ensure the training is always done in train mode (Not recommended).')
     parser.add_argument('--no_cuda',        action='store_true', help='Disable cuda')
-    parser.add_argument('--reward_clip',    action='store_true', help='Clip rewards using tanh')
+    parser.add_argument('--reward_clip',    action='store_true', help='Give positive actions +1 and negative actions -1 reward')
     parser.add_argument('--train_shuffle',  action='store_true', help='Shuffle active train set every time')
 
     params = parser.parse_args(sys.argv[3:])
     params.actions = 2
-
+    params.dataset = dataset
     params.logger_name = '{}_{}_{}_{}_{}_{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), dataset, params.agent, params.c, str(uuid.uuid4())[:4])
     params.external_log_url = 'http://logserver.duckdns.org:5000'
 
