@@ -65,8 +65,7 @@ class DQNTargetAgent():
             self.policynetwork, self.targetnetwork = self.policynetwork.cuda(), self.targetnetwork.cuda()
 
 
-        self.optimizer = optim.Adam(self.policynetwork.parameters(),
-                                    lr=self.learning_rate)
+        self.optimizer = optim.RMSprop(self.policynetwork.get_params())
 
         # initialize target model
         self.update_target_model()
@@ -113,43 +112,40 @@ class DQNTargetAgent():
             self.epsilon -= self.epsilon_decay
 
         minibatch, idxs, is_weights = self.memory.sample(self.batch_size)
-        try:
-            batch_state, batch_action, batch_reward, batch_next_state, batch_terminal = zip(*minibatch)
-            batch_state = torch.cat(batch_state)
-            if not batch_state.requires_grad:
-                batch_state = batch_state.data
-            batch_next_state = torch.cat(batch_next_state)
+        batch_state, batch_action, batch_reward, batch_next_state, batch_terminal = zip(*minibatch)
+        batch_state = torch.cat(batch_state)
+        if not batch_state.requires_grad:
+            batch_state = batch_state.data
+        batch_next_state = torch.cat(batch_next_state)
 
-            batch_action = torch.LongTensor(list(batch_action)).unsqueeze(1)
-            batch_reward = torch.FloatTensor(list(batch_reward))
+        batch_action = torch.LongTensor(list(batch_action)).unsqueeze(1)
+        batch_reward = torch.FloatTensor(list(batch_reward))
 
-            if opt.cuda:
-                batch_state = batch_state.cuda()
-                batch_action = batch_action.cuda()
-                batch_reward = batch_reward.cuda()
-                batch_next_state = batch_next_state.cuda()
+        if opt.cuda:
+            batch_state = batch_state.cuda()
+            batch_action = batch_action.cuda()
+            batch_reward = batch_reward.cuda()
+            batch_next_state = batch_next_state.cuda()
 
-            current_q_values = self.policynetwork(batch_state).gather(1, batch_action)
-            max_next_q_values = self.targetnetwork(batch_next_state).max(1)[0]
-            expected_q_values = batch_reward + (self.discount_factor * max_next_q_values)
-            # Undo volatility introduced above
-            expected_q_values = expected_q_values.unsqueeze(1)
+        current_q_values = self.policynetwork(batch_state).gather(1, batch_action)
+        max_next_q_values = self.targetnetwork(batch_next_state).max(1)[0]
+        expected_q_values = batch_reward + (self.discount_factor * max_next_q_values)
+        # Undo volatility introduced above
+        expected_q_values = expected_q_values.unsqueeze(1)
 
-            if opt.cuda:
-                expected_q_values = expected_q_values.cuda()
+        if opt.cuda:
+            expected_q_values = expected_q_values.cuda()
 
-            loss = F.mse_loss(current_q_values, expected_q_values)
-            errors = torch.abs(current_q_values - expected_q_values).data.cpu().numpy()
-            # update priority
-            for i in range(self.batch_size):
-                idx = idxs[i]
-                self.memory.update(idx, errors[i])
+        loss = F.smooth_l1_loss(current_q_values, expected_q_values)
+        errors = torch.abs(current_q_values - expected_q_values).data.cpu().numpy()
+        # update priority
+        for i in range(self.batch_size):
+            idx = idxs[i]
+            self.memory.update(idx, errors[i])
 
-            self.optimizer.zero_grad()
-            loss.backward()
-            self.optimizer.step()
-        except:
-            print(minibatch)
+        self.optimizer.zero_grad()
+        loss.backward()
+        self.optimizer.step()
 
 
     def finish_episode(self, ep):

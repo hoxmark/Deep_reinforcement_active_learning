@@ -8,30 +8,16 @@ import torch.nn as nn
 import torch.nn.functional as F
 from config import opt
 
-# TODO put in params
-# Hyper Parameters:
-GAMMA = opt.gamma  # decay rate of past observations
-OBSERVE = 0  # timesteps to observe before training
-REPLAY_MEMORY_SIZE = 10000  # number of previous transitions to remember
-BATCH_SIZE = 32  # size of minibatch
-# FINAL_EPSILON = 0
-# INITIAL_EPSILON = 0.1
-# or alternative:
-FINAL_EPSILON = 0.0001  # final value of epsilon
-INITIAL_EPSILON = 0.1  # starting value of epsilon
-EXPLORE = 100000.  # frames over which to anneal epsilon
-
 class DQN(nn.Module):
     def __init__(self):
         super(DQN, self).__init__()
-        self.fcs = [nn.Linear(size, opt.hidden_size) for size in opt.data_sizes]
+        self.fcs = nn.ModuleList([nn.Linear(size, opt.hidden_size) for size in opt.data_sizes])
         self.out_fc = nn.Linear(opt.hidden_size, 2)
         self.activation = nn.ReLU()
 
         self.weights_init()
-        
+
         if opt.cuda:
-            self.fcs = [fc.cuda() for fc in self.fcs]
             self.cuda()
 
     def weights_init(self):
@@ -44,7 +30,10 @@ class DQN(nn.Module):
             inp = inp.cuda()
         inps = [inp.narrow(1, int(start), int(stop)) for (start, stop) in zip(np.cumsum(opt.data_sizes) - opt.data_sizes, opt.data_sizes)]
         forwards = [fc(d) for fc, d in zip(self.fcs, inps)]
-        forwards = self.activation(torch.add(*forwards))
+        if len(opt.data_sizes) > 1:
+            forwards = self.activation(torch.add(*forwards))
+        else:
+            forwards = self.activation(forwards[0])
         out = self.out_fc(forwards)
         return out
 
@@ -52,26 +41,29 @@ class DQNAgent:
     def __init__(self):
         self.replay_memory = deque()
         self.time_step = 0
+        self.observe = 32
+        self.replay_memory_size = 10000
+        self.final_epsilon = 0.0001
+        self.initial_epsilon = 0.1
+        self.explore = 100000.
+
         self.actions = opt.actions
         self.epsilon = INITIAL_EPSILON
         self.policynetwork = DQN()
         self.targetnetwork = DQN()
-        self.optimizer = optim.Adam(self.policynetwork.parameters(), 0.01)
 
-        # if opt.cuda:
-            # self.policynetwork = self.policynetwork.cuda()
-            # self.targetnetwork = self.targetnetwork.cuda()
+        self.update_target_network()
 
-        self.policynetwork.weights_init()
-        self.update_target_model()
+        self.optimizer = optim.RMSprop(self.policynetwork.parameters())
 
-    def update_target_model(self):
+
+    def update_target_network(self):
         self.targetnetwork.load_state_dict(self.policynetwork.state_dict())
 
     def train_policynetwork(self):
-        if len(self.replay_memory) < BATCH_SIZE:
+        if len(self.replay_memory) < opt.batch_size_rl:
             return
-        minibatch = random.sample(self.replay_memory, BATCH_SIZE)
+        minibatch = random.sample(self.replay_memory, opt.batch_size_rl)
 
         batch_state, batch_action, batch_reward, batch_next_state, batch_terminal = zip(*minibatch)
         batch_state = torch.cat(batch_state)
@@ -86,24 +78,21 @@ class DQNAgent:
             batch_next_state = batch_next_state.cuda()
 
         current_q_values = self.policynetwork(batch_state).gather(1, batch_action)
-        max_next_q_values = self.targetnetwork(batch_next_state).max(1)[0]
-        expected_q_values = batch_reward + (GAMMA * max_next_q_values)
-
-        loss = F.mse_loss(current_q_values, expected_q_values.view(-1, 1))
+        max_next_q_values = self.targetnetwork(batch_next_state).max(1)[0].detach()
+        expected_q_values = batch_reward + (opt.gamma * max_next_q_values)
+        loss = F.smooth_l1_loss(current_q_values, expected_q_values.view(-1, 1))
         self.optimizer.zero_grad()
         loss.backward()
         self.optimizer.step()
-        # print(self.policynetwork.fc1.weight.grad.nonzero())
 
         del batch_state, batch_action, batch_next_state, batch_reward, current_q_values, max_next_q_values, expected_q_values
 
     def update(self, current_state, action, reward, next_state, terminal):
         self.replay_memory.append(
             (current_state, action, reward, next_state, terminal))
-        if len(self.replay_memory) > REPLAY_MEMORY_SIZE:
+        if len(self.replay_memory) > self.replay_memory_size:
             self.replay_memory.popleft()
-        global OBSERVE
-        if self.time_step > OBSERVE:
+        if self.time_step > self.observe:
             self.train_policynetwork()
 
         self.time_step += 1
@@ -116,11 +105,11 @@ class DQNAgent:
             qvalue = self.policynetwork(state)
             action = np.argmax(qvalue.data[0]).item()
         # change epsilon
-        if self.epsilon > FINAL_EPSILON and self.time_step > OBSERVE:
-            self.epsilon -= (INITIAL_EPSILON - FINAL_EPSILON) / EXPLORE
+        if self.epsilon > self.final_epsilon and self.time_step > self.observe:
+            self.epsilon -= (self.initial_epsilon - self.final_epsilon) / self.explore
 
         return action
 
     def finish_episode(self, episode):
         if episode % 10 == 0:
-            self.update_target_model()
+            self.update_target_network()
