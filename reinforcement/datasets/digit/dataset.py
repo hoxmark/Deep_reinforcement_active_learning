@@ -37,9 +37,10 @@ def load_data():
         train_data = (x[:dev_idx], y[:dev_idx])
         dev_data = (x[dev_idx:test_idx], y[dev_idx:test_idx])
         test_data = (x[test_idx:], y[test_idx:])
-        opt.state_size = len(x[0]) + 10
-        opt.data_size = len(x[0])
-        opt.pred_size = 10
-        print(opt.state_size)
+        # opt.state_size = len(x[0]) + 10
+        # opt.data_size = len(x[0])
+        # opt.pred_size = 10
+        opt.data_sizes = [len(x[0]), 10]
+        # print(opt.state_size)
         opt.data_len = len(train_data[0])
         return train_data, dev_data, test_data

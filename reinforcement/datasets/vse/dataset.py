@@ -93,8 +93,7 @@ def load_data():
     dev_data = (dev_images, pad(dev_tokens, dev_cap_lengths), dev_cap_lengths)
     test_data = (test_images, pad(test_tokens, test_cap_lengths), test_cap_lengths)
 
-    opt.data_size = opt.topk
-    opt.pred_size = opt.topk
+    opt.data_sizes = [opt.topk, opt.topk]
     opt.data_len = len(train_images)
 
     return (train_data, dev_data, test_data)

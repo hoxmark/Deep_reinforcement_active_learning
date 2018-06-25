@@ -24,27 +24,28 @@ EXPLORE = 100000.  # frames over which to anneal epsilon
 class DQN(nn.Module):
     def __init__(self):
         super(DQN, self).__init__()
-        self.repr_fc = nn.Linear(opt.data_size, opt.hidden_size)
-        self.pred_fc = nn.Linear(opt.pred_size, opt.hidden_size)
+        self.fcs = [nn.Linear(size, opt.hidden_size) for size in opt.data_sizes]
         self.out_fc = nn.Linear(opt.hidden_size, 2)
         self.activation = nn.ReLU()
+
         self.weights_init()
+        
+        if opt.cuda:
+            self.fcs = [fc.cuda() for fc in self.fcs]
+            self.cuda()
 
     def weights_init(self):
-        torch.nn.init.xavier_normal_(self.repr_fc.weight)
-        torch.nn.init.xavier_normal_(self.pred_fc.weight)
+        for layer in self.fcs:
+            torch.nn.init.xavier_normal_(layer.weight)
         torch.nn.init.xavier_normal_(self.out_fc.weight)
 
     def forward(self, inp):
-        # img, pred = inp
-        # print(inp)
-        img = inp.narrow(1, 0, opt.data_size)
-        pred = inp.narrow(1, opt.data_size, opt.pred_size)
-        img_f = self.repr_fc(img)
-        pred_f = self.pred_fc(pred)
-        h = img_f + pred_f
-        out = self.activation(h)
-        out = self.out_fc(out)
+        if opt.cuda:
+            inp = inp.cuda()
+        inps = [inp.narrow(1, int(start), int(stop)) for (start, stop) in zip(np.cumsum(opt.data_sizes) - opt.data_sizes, opt.data_sizes)]
+        forwards = [fc(d) for fc, d in zip(self.fcs, inps)]
+        forwards = self.activation(torch.add(*forwards))
+        out = self.out_fc(forwards)
         return out
 
 class DQNAgent:
@@ -57,9 +58,9 @@ class DQNAgent:
         self.targetnetwork = DQN()
         self.optimizer = optim.Adam(self.policynetwork.parameters(), 0.01)
 
-        if opt.cuda:
-            self.policynetwork = self.policynetwork.cuda()
-            self.targetnetwork = self.targetnetwork.cuda()
+        # if opt.cuda:
+            # self.policynetwork = self.policynetwork.cuda()
+            # self.targetnetwork = self.targetnetwork.cuda()
 
         self.policynetwork.weights_init()
         self.update_target_model()
