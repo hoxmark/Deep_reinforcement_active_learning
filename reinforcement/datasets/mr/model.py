@@ -60,8 +60,10 @@ class CNN(nn.Module):
         if opt.cuda:
             self.cuda()
 
-    def forward(self, inp):
+    def forward(self, inp, include_repr=False):
         # inp = (25 x 59) - (mini_batch_size x sentence_length)
+        if opt.cuda:
+            inp = inp.cuda()
         x = self.embed(inp).view(-1, 1, self.WORD_DIM * self.MAX_SENT_LEN)
         x = self.dropout_embed(x)
         # x = (25 x 1 x 17700) - mini_batch_size x embedding_for_each_sentence
@@ -70,14 +72,21 @@ class CNN(nn.Module):
             F.max_pool1d(F.relu(self.get_conv(i)(x)),
                          self.MAX_SENT_LEN - self.FILTERS[i] + 1).view(-1, self.FILTER_NUM[i])
             for i in range(len(self.FILTERS))]
-        x = torch.cat(conv_results, 1)
-        x = self.dropout(x)
+        conv_results = torch.cat(conv_results, 1)
+        x = self.dropout(conv_results)
         x = self.fc(x)
-
-        return x
+        if include_repr:
+            return x, conv_results
+        else:
+            return x
 
     def get_state(self, index):
-        state = data["all_predictions"][index]
+        # state = data["all_predictions"][index]
+        sentence = data["train"][0][index]
+        sentence = torch.LongTensor(sentence)
+        preds, repr = self.forward(sentence, include_repr=True)
+        preds = nn.functional.softmax(preds, dim=1)
+        state = torch.cat((repr, preds), dim=1)
         return state
 
     def train_model(self, train_data, epochs):
@@ -148,9 +157,13 @@ class CNN(nn.Module):
 
     def encode_episode_data(self):
         with torch.no_grad():
-            all_predictions = None
+            all_predictions = torch.Tensor()
+            all_repr = torch.Tensor()
 
-            for i, (sentences, targets) in enumerate(batchify(data["train_deleted"])):
+            if opt.cuda:
+                all_predictions, all_repr = all_predictions.cuda(), all_repr.cuda()
+
+            for i, (sentences, targets) in enumerate(batchify(data["train"])):
                 # print(sentences)
                 sentences = torch.LongTensor(sentences)
                 targets = torch.LongTensor(targets)
@@ -158,25 +171,18 @@ class CNN(nn.Module):
                 if opt.cuda:
                     sentences = sentences.cuda()
 
-                preds = self.forward(sentences)
+                preds, repr = self.forward(sentences, include_repr=True)
                 preds = nn.functional.softmax(preds, dim=1)
-                if i == 0:
-                    all_predictions = preds
-                else:
-                    all_predictions = torch.cat((all_predictions, preds), dim=0)
-                del preds
-                del sentences
-                del targets
-
-            if "all_predictions" in data:
-                del data["all_predictions"]
-
-            data["all_predictions"] = all_predictions.sort(dim=1)[0]
+                all_predictions = torch.cat((all_predictions, preds), dim=0)
+                all_repr = torch.cat((all_repr, repr), dim=0)
+            all_states = torch.cat((all_repr, all_predictions), dim=1)
+            data["all_states"] = all_states
+            print(data["all_states"].size())
 
     def query(self, index):
-        # self.encode_episode_data()
-        current_state = data["all_predictions"][index].view(1, -1)
-        all_states = data["all_predictions"]
+        self.encode_episode_data()
+        current_state = data["all_states"][index].view(1, -1)
+        all_states = data["all_states"]
         current_all_dist = pairwise_distances(current_state, all_states)
         similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
         similar_indices = similar_indices.data[0].cpu().numpy()
@@ -186,7 +192,7 @@ class CNN(nn.Module):
         return similar_indices
 
     def add_index(self, index):
-        image = data["train_deleted"][0][index]
-        caption = data["train_deleted"][1][index]
+        image = data["train"][0][index]
+        caption = data["train"][1][index]
         data["active"][0].append(image)
         data["active"][1].append(caption)

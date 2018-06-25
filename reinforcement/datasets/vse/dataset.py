@@ -93,9 +93,8 @@ def load_data():
     dev_data = (dev_images, pad(dev_tokens, dev_cap_lengths), dev_cap_lengths)
     test_data = (test_images, pad(test_tokens, test_cap_lengths), test_cap_lengths)
 
-    state_size = 2 * opt.topk + opt.topk_image if opt.intra_caption else opt.topk + opt.topk_image
-    opt.state_size = opt.embed_size + 2 * opt.topk
+    opt.data_size = opt.topk
+    opt.pred_size = opt.topk
     opt.data_len = len(train_images)
-
 
     return (train_data, dev_data, test_data)

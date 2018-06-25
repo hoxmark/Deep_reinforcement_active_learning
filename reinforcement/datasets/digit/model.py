@@ -30,7 +30,6 @@ class SimpleClassifier(nn.Module):
         torch.nn.init.xavier_normal_(self.fc3.weight)
 
     def forward(self, inp):
-        inp = Variable(inp)
         if opt.cuda:
             inp = inp.cuda()
         output = self.fc1(inp)
@@ -44,29 +43,29 @@ class SimpleClassifier(nn.Module):
 
         self.train()
         size = len(train_data[0])
+        if size > 0:
+            for e in range(epochs):
+                avg_loss = 0
+                corrects = 0
+                for i, (features, targets) in enumerate(batchify(train_data)):
+                    features = torch.FloatTensor(features)
+                    targets = torch.LongTensor(targets)
 
-        for e in range(epochs):
-            avg_loss = 0
-            corrects = 0
-            for i, (features, targets) in enumerate(batchify(train_data)):
-                features = torch.FloatTensor(features)
-                targets = torch.LongTensor(targets)
+                    if opt.cuda:
+                        features, targets = features.cuda(), targets.cuda()
 
-                if opt.cuda:
-                    features, targets = features.cuda(), targets.cuda()
-
-                output = self.forward(features)
-                optimizer.zero_grad()
-                loss = criterion(output, targets)
-                loss.backward()
-                optimizer.step()
-                avg_loss += loss.item()
-                corrects += (torch.max(output, 1)
-                             [1].view(targets.size()) == targets).sum()
-            avg_loss = avg_loss / opt.batch_size
-            accuracy = 100.0 * corrects / size
-            # s1 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format("train", avg_loss, accuracy, corrects, size)
-            # print(s1, end='\r')
+                    output = self.forward(features)
+                    optimizer.zero_grad()
+                    loss = criterion(output, targets)
+                    loss.backward()
+                    optimizer.step()
+                    avg_loss += loss.item()
+                    corrects += (torch.max(output, 1)
+                                 [1].view(targets.size()) == targets).sum()
+                avg_loss = avg_loss / opt.batch_size
+                accuracy = 100.0 * corrects / size
+                # s1 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format("train", avg_loss, accuracy, corrects, size)
+                # print(s1, end='\r')
 
 
     def predict_prob(self, inp):
@@ -107,48 +106,41 @@ class SimpleClassifier(nn.Module):
         return self.validate(data)
 
     def get_state(self, index):
-        state = data["all_predictions"][index].view(1, -1)
-        state = state.sort()[0]
+        img = torch.Tensor(data["train"][0][index])
         if opt.cuda:
-            state = state.cuda()
+            img = img.cuda()
+        preds = self.forward(img)
+        state = torch.cat((img, preds)).view(1, -1)
         return state
 
     def encode_episode_data(self):
-        images = []
-        # for i, (features, targets) in enumerate(loaders["train_loader"]):
-        for i, (features, targets) in enumerate(batchify(data["train_deleted"])):
-            features = Variable(torch.FloatTensor(features))
-            targets = Variable(torch.LongTensor(targets))
-            preds = self.predict_prob(features)
-            images.append(preds)
-
-        images = torch.cat(images, dim=0)
-        data["all_predictions"] = images
-
-
-    def find_avg_pred_entropy(self, model):
-        images = []
-        tot = 0
-        length = len(data["all_predictions"])
-
-        for i, pred in enumerate(data["all_predictions"]):
-            tot += entropy(pred)
-
-        avg = tot/length
-        return avg
+        pass
+        # images = []
+        # # for i, (features, targets) in enumerate(loaders["train_loader"]):
+        # all_states = torch.Tensor(data["train"][0])
+        # for i, (features, targets) in enumerate(batchify(data["train"])):
+        #     features = Variable(torch.FloatTensor(features))
+        #     preds = self.predict_prob(features)
+        #     images.append(preds)
+        #
+        # images = torch.cat(images, dim=0)
+        #
+        # # data["all_predictions"] = images
+        # data["all_states"] = torch.cat((all_states, images.cpu()), dim=1)
+        
 
     def query(self, index):
-        current_state = data["all_predictions"][index].view(1, -1)
-        all_states = data["all_predictions"]
-        current_all_dist = pairwise_distances(current_state, all_states)
-        similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
-        similar_indices = similar_indices.data[0].cpu().numpy()
-        for idx in similar_indices:
-            self.add_index(idx)
-        return similar_indices
+        # current_state = data["all_states"][index].view(1, -1)
+        # all_states = data["all_states"]
+        # current_all_dist = pairwise_distances(current_state, all_states)
+        # similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
+        # similar_indices = similar_indices.data[0].cpu().numpy()
+        # for idx in similar_indices:
+        self.add_index(index)
+        return [index]
 
     def add_index(self, index):
-        image = data["train_deleted"][0][index]
-        caption = data["train_deleted"][1][index]
+        image = data["train"][0][index]
+        caption = data["train"][1][index]
         data["active"][0].append(image)
         data["active"][1].append(caption)
