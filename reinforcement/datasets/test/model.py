@@ -19,7 +19,7 @@ class TestModel():
 
     def validate(self, d):
         if hasattr(self, 'state_idx'):
-            performance = data["train_deleted"][1][self.state_idx]
+            performance = data["train"][1][self.state_idx]
         else:
             performance = 0
         self.cumulative_reward += performance
@@ -33,7 +33,7 @@ class TestModel():
         return self.validate(d)
 
     def get_state(self, index):
-        state = torch.Tensor(data["train_deleted"][0][index]).view(1, -1)
+        state = torch.Tensor(data["train"][0][index]).view(1, -1)
         self.state_idx = index
         if opt.cuda:
             state = state.cuda()

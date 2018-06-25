@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import torch.optim as optim
 import sklearn
 import numpy as np
+from pprint import pprint
 
 from gensim.models.keyedvectors import KeyedVectors
 from config import opt, data
@@ -15,7 +16,7 @@ class CNN(nn.Module):
     def __init__(self):
         super(CNN, self).__init__()
 
-        self.BATCH_SIZE = 32
+        self.BATCH_SIZE = opt.batch_size
         self.MAX_SENT_LEN = 59
         self.WORD_DIM = 300
         # self.VOCAB_SIZE = 21425
@@ -180,16 +181,15 @@ class CNN(nn.Module):
             print(data["all_states"].size())
 
     def query(self, index):
-        self.encode_episode_data()
-        current_state = data["all_states"][index].view(1, -1)
-        all_states = data["all_states"]
-        current_all_dist = pairwise_distances(current_state, all_states)
-        similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
-        similar_indices = similar_indices.data[0].cpu().numpy()
+        # current_state = data["all_states"][index].view(1, -1)
+        # all_states = data["all_states"]
+        # current_all_dist = pairwise_distances(current_state, all_states)
+        # similar_indices = torch.topk(current_all_dist, opt.selection_radius, 1, largest=False)[1]
+        # similar_indices = similar_indices.data[0].cpu().numpy()
 
-        for idx in similar_indices:
-            self.add_index(idx)
-        return similar_indices
+        # for idx in similar_indices:
+        self.add_index(index)
+        return [index]
 
     def add_index(self, index):
         image = data["train"][0][index]

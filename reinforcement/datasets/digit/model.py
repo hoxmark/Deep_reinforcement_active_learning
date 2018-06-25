@@ -64,8 +64,6 @@ class SimpleClassifier(nn.Module):
                                  [1].view(targets.size()) == targets).sum()
                 avg_loss = avg_loss / opt.batch_size
                 accuracy = 100.0 * corrects / size
-                # s1 = "{:10s} loss: {:10.6f} acc: {:10.4f}%({}/{})".format("train", avg_loss, accuracy, corrects, size)
-                # print(s1, end='\r')
 
 
     def predict_prob(self, inp):
@@ -127,7 +125,7 @@ class SimpleClassifier(nn.Module):
         #
         # # data["all_predictions"] = images
         # data["all_states"] = torch.cat((all_states, images.cpu()), dim=1)
-        
+
 
     def query(self, index):
         # current_state = data["all_states"][index].view(1, -1)

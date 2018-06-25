@@ -31,7 +31,7 @@ class DQN(nn.Module):
         inps = [inp.narrow(1, int(start), int(stop)) for (start, stop) in zip(np.cumsum(opt.data_sizes) - opt.data_sizes, opt.data_sizes)]
         forwards = [fc(d) for fc, d in zip(self.fcs, inps)]
         if len(opt.data_sizes) > 1:
-            forwards = self.activation(torch.add(*forwards))
+            forwards = self.activation(sum(forwards))
         else:
             forwards = self.activation(forwards[0])
         out = self.out_fc(forwards)
