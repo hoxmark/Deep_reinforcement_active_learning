@@ -11,7 +11,7 @@ import torch
 import torch.optim as optim
 import torch.nn as nn
 
-from config import params, data, models
+from config import params, data, models, global_logger
 from models.cnn import CNN
 from models.rnn import RNN
 from models import rnnae
@@ -54,7 +54,8 @@ def active_train():
 
         lg = None
         if params["LOG"]:
-            lg = init_logger(j)
+            lg = global_logger["lg"]
+
             start_accuracy = 100 / params["CLASS_SIZE"]
             lg.scalar_summary("test-acc", start_accuracy, 0)
             lg.scalar_summary("test-acc-avg", start_accuracy, 0)
@@ -124,9 +125,8 @@ def active_train():
                     distribution[each].append(val)
 
                 # count number of positive and negativ added to labeledpool.
-                nameOfFile = '{}/distribution{}.html'.format(lg.log_dir, j)
-                utils.logAreaGraph(distribution, data["classes"], nameOfFile)
-                log_model(model, lg)
+                # nameOfFile = '{}/distribution{}.html'.format(lg.log_dir, j)
+                
 
     best_model = {}
     return best_model
