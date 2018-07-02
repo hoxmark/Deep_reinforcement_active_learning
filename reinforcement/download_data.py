@@ -15,39 +15,83 @@ def download_env(env):
 
     x_axis = []
     sum = []
+    loss = []
     num_0_actions = []
     cap_recall = []
     image_recall = []
     rsi = ['r1i', 'r5i', 'r10i']
     rs = ['r1', 'r5', 'r10']
 
+    # TODO idk. Dirty fix
+    added_cap_labels = []
     for key in d:
         try:
             x = list(d[key]["content"]["data"][0]["x"])
             y = list(d[key]["content"]["data"][0]["y"])
-            if any(r in key for r in rsi):
-                x_axis = x
-                image_recall.append(y)
-            elif any(r in key for r in rs):
-                cap_recall.append(y)
-            elif 'sum' in key:
-                sum = (x, y)
+            if "/" in key:
+                match = key.split("/")[1]
+                if match in rsi:
+                    image_recall.append((y, match))
+                    x_axis = x
+                elif match in rs:
+                    cap_recall.append((y, match))
+                elif 'sum' in key:
+                    sum = (x, y)
             elif 'actions' in key:
                 num_0_actions = (x,y)
-
+                loss = (x, y)
         except:
             pass
+    # cap_recall = sorted(cap_recall, key=lambda x: x[1])
+    # cap_recall = sorted(cap_recall, key=lambda x: x[1])
 
+    # Plot image recalls
     plt.figure(1)
     plt.subplot(111)
-    for line in image_recall:
-        plt.plot(x_axis, line)
-    plt.savefig('results/{}/image_recall.svg'.format(env))
+    handles = []
+    for (line, label) in image_recall:
+        handle, = plt.plot(x_axis, line, label=label)
+        handles.append(handle)
+    plt.legend(handles=handles)
+    plt.xlabel('Episodes')
+    plt.ylabel('Image recall')
+    plt.savefig('results/{}/image_recall.png'.format(env), dpi=600)
 
+    # Plot caption recalls
     plt.figure(2)
     plt.subplot(111)
+    handles = []
+    for (line, label) in cap_recall:
+        handle, = plt.plot(x_axis, line, label=label)
+        handles.append(handle)
+    plt.legend(handles=handles)
+    plt.xlabel('Episodes')
+    plt.ylabel('Caption recall')
+    plt.savefig('results/{}/caption_recall.png'.format(env), dpi=600)
+
+    # Plot sum
+    plt.figure(3)
+    plt.subplot(111)
     plt.plot(*sum)
-    plt.savefig('results/{}/sum.svg'.format(env))
+    plt.xlabel('Episodes')
+    plt.ylabel('Sum of recalls')
+    plt.savefig('results/{}/sum.png'.format(env), dpi=600)
+
+    # Plot loss
+    plt.figure(4)
+    plt.subplot(111)
+    plt.plot(*loss)
+    plt.xlabel('Episodes')
+    plt.ylabel('Loss')
+    plt.savefig('results/{}/loss.png'.format(env), dpi=600)
+
+    # Plot sum
+    plt.figure(5)
+    plt.subplot(111)
+    plt.plot(*num_0_actions)
+    plt.xlabel('Episodes')
+    plt.ylabel('Number of 0 actions')
+    plt.savefig('results/{}/num_0_actions.png'.format(env), dpi=600)
 
 if __name__ == "__main__":
     env = sys.argv[1]
