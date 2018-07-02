@@ -1,4 +1,5 @@
 # Code referenced from https://gist.github.com/gyglim/1f8dfb1b5c82627ae3efcfbbadb9f514
+from visdom import Visdom
 import tensorflow as tf
 import numpy as np
 import scipy.misc
@@ -71,3 +72,47 @@ class Logger(object):
         summary = tf.Summary(value=[tf.Summary.Value(tag=tag, histo=hist)])
         self.writer.add_summary(summary, step)
         self.writer.flush()
+
+class VisdomLogger(object):
+    def __init__(self, logger_name):
+        self.vis = Visdom('http://logserver.duckdns.org', port=5010)
+        # self.vis = Visdom('http://localhost', port=8097)
+        self.logger_name = logger_name
+
+    def dict_scalar_summary(self, prefix, values, step):
+        for key in values:
+            tag = "{}/{}".format(prefix, key)
+            self.scalar_summary(tag, values[key], step)
+
+    def scalar_summary(self, tag, value, step):
+        # Create a new window if tag is 0. Else update existing
+        update = 'append' if step > 0 else None
+        self.vis.line(
+            Y = np.array([value]),
+            X = np.array([step]),
+            env = self.logger_name,
+            win = tag,
+            name = "agent",
+            update = update,
+            opts = dict(
+                title = tag
+            )
+        )
+        self.vis.save([self.logger_name])
+
+    # def parameters_summary(self):
+    #     params = {i: opt[i] for i in opt if i != 'vocab'}
+    #     txt = "<h3>Parameters</h3>"
+    #     txt += "<table border=\"1\">"
+    #     for key, value in sorted(params.items()):
+    #         txt +=  "<tr>"
+    #         txt +=      "<td>{}</td>".format(key)
+    #         txt +=      "<td>{}</td>".format(value)
+    #         txt +=  "</tr>"
+    #     txt += "</table>"
+
+    #     self.vis.text(
+    #         txt,
+    #         env = opt.logger_name,
+    #     )
+    #     self.vis.save([opt.logger_name])

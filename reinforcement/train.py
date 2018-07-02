@@ -41,12 +41,14 @@ def train(classifier):
 
         state = game.get_state(model)
         first_log = True
+        cum_reward = 0
         while not terminal:
             action = agent.get_action(state)
             reward, next_state, terminal = game.feedback(action, model)
             if not terminal:
                 agent.update(state, action, reward, next_state, terminal)
-
+                
+            cum_reward += reward
             if (action == 1):
                 print("> State {:2} Action {:2} - reward {:.4f} - performance {:.4f}".format(game.current_state, action, reward, game.performance))
                 # print(state)
@@ -68,6 +70,7 @@ def train(classifier):
         metrics = timer(model.performance_validate, (data["dev"],))
 
         lg.dict_scalar_summary('episode-validation', metrics, episode)
+        lg.scalar_summary('episode-cum-reward', cum_reward, episode)
         lg.scalar_summary('performance', game.performance, episode)
         lg.scalar_summary('number-of-0-actions', num_of_zero, episode)
 

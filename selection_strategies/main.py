@@ -1,13 +1,16 @@
 import utils
-import logger
 import datetime
 import argparse
 import torch
 
 import train
-from config import params, data, models
+from config import params, data, models, global_logger
 from models import rnnae
 from models.cnn_2 import CNN2
+
+import uuid
+import getpass
+from logger import VisdomLogger
 
 
 
@@ -57,11 +60,11 @@ def main():
                         help='Number of hidden layers')
     parser.add_argument('--weight_decay', type=float, default=1e-5,
                         help='Value of weight_decay')
-    parser.add_argument('--data_path',  default='../data/',
-                        help='path to w2v binaries and datasets')
     parser.add_argument('--no-log', action='store_true',
                         default=False, help='Disable logging')
-
+    parser.add_argument('--data_path',      default='/data/stud/jorgebjorn/data',       type=str,   help='Dir path to datasets')    
+    parser.add_argument('--c',              default='',                                 type=str,   help='Comment to run ')    
+ 
     options = parser.parse_args()
 
     params["DATA_PATH"] = options.data_path #TODO rewrite?
@@ -105,11 +108,19 @@ def main():
         "WEIGHT_DECAY": options.weight_decay,
         "LOG": not options.no_log,
         "ENCODER": options.encoder,
-        "DECODER": options.decoder
+        "DECODER": options.decoder,
+        "C": options.c
     }
 
     for key in params_local:
         params[key] = params_local[key]
+
+    if params["LOG"]:
+        logger_name = 'SS/{}_{}_{}_{}_{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), options.dataset, params["C"], str(uuid.uuid4())[:4])
+        global_logger["lg"] = VisdomLogger(logger_name)
+        # global_logger["lg"].parameters_summary()
+        print("visdom logger OK")
+        # quit()
 
     params["CUDA"] = (not params["NO_CUDA"]) and torch.cuda.is_available()
     del params["NO_CUDA"]

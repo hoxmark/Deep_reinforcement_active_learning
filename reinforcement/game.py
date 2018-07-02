@@ -32,8 +32,8 @@ class Game:
         for i in range(0, num_samples):
             current = self.order[(-1*(i + 1))]
             model.add_index(current)
-        # TODO: delete used init samples (?)
-        timer(model.train_model, (data["active"], opt.num_epochs))
+
+        # timer(model.train_model, (data["active"], opt.num_epochs))
 
     def get_state(self, model):
         with torch.no_grad():
