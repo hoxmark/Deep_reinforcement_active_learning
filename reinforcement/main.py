@@ -21,17 +21,18 @@ def main():
     parser = argparse.ArgumentParser(description="-----[Reinforced Visual Semantic Embedding ]-----")
     if dataset == 'vse':
         # Common params, but specifying each under each dataset-if to make the default values different
-        parser.add_argument("--hidden_size",        default=512,     type=int,   help="Size of hidden layer in deep RL")
+        parser.add_argument("--hidden_size",        default=512,     type=int,  help="Size of hidden layer in deep RL")
         parser.add_argument("--episodes",           default=10000,  type=int,   help="number of episodes")
-        parser.add_argument("--learning_rate_rl",   default=0.1,   type=float, help="learning rate")
+        parser.add_argument("--learning_rate_rl",   default=0.1,   type=float,  help="learning rate")
         parser.add_argument('--margin',             default=0.2,    type=float, help='Rank loss margin.')
         parser.add_argument('--num_epochs',         default=20,     type=int,   help='Number of reward calculation epochs.')
         parser.add_argument('--full_epochs',        default=30,     type=int,   help='Number of training epochs.')
-        parser.add_argument('--init_samples',       default=1120,    type=int,   help='number of random inital training data')
+        parser.add_argument('--init_samples',       default=1120,    type=int,  help='number of random inital training data')
         parser.add_argument('--batch_size',         default=128,    type=int,   help='Size of a training mini-batch.')
         parser.add_argument('--budget',             default=1120,   type=int,   help='Our labeling budget')
         parser.add_argument('--selection_radius',   default=16,     type=int,   help='Selection radius')
         parser.add_argument("--reward_threshold",   default=0,      type=float, help="Reward threshold")
+        parser.add_argument('--scorefn',            default='intra',type=str,   help='Score FN for traditional active learning')
         parser.add_argument('--w2v',                action='store_true',        help='Use w2v embeddings')
 
         # VSE specific params
@@ -171,7 +172,10 @@ def main():
         load_word2vec()
 
     from train import train
-    train(model)
+    from train_scoring import active_train
+    # train(model)
+    opt.n_average = 10
+    active_train(model)
 
 if __name__ == "__main__":
     main()
