@@ -22,8 +22,6 @@ def download_vse_env(env):
     rsi = ['r1i', 'r5i', 'r10i']
     rs = ['r1', 'r5', 'r10']
 
-    # TODO idk. Dirty fix
-    added_cap_labels = []
     for key in d:
         try:
             x = list(d[key]["content"]["data"][0]["x"])
