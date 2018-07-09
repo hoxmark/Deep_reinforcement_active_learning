@@ -459,9 +459,9 @@ class VSE(nn.Module):
         return similar_indices
 
     def add_index(self, index):
-        image = data["train"][0][index]
-        caption = data["train"][1][index]
-        length = data["train"][2][index]
+        image = data["train_deleted"][0][index]
+        caption = data["train_deleted"][1][index]
+        length = data["train_deleted"][2][index]
         data["active"][0].append(image)
         data["active"][1].append(caption)
         data["active"][2].append(length)

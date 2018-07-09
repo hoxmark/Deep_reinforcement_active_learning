@@ -47,7 +47,7 @@ def train(classifier):
             reward, next_state, terminal = game.feedback(action, model)
             if not terminal:
                 agent.update(state, action, reward, next_state, terminal)
-                
+
             cum_reward += reward
             if (action == 1):
                 print("> State {:2} Action {:2} - reward {:.4f} - performance {:.4f}".format(game.current_state, action, reward, game.performance))
