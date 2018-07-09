@@ -28,7 +28,7 @@ def active_train(classifier):
 
         # Init validation
         model.reset()
-        indices = random_scorefn(model, 1120)
+        indices = random_scorefn(model, opt.init_samples)
         for idx in indices:
             model.add_index(idx)
         # Delete the data from train_deleted
@@ -40,15 +40,15 @@ def active_train(classifier):
 
         metrics = model.validate(data["dev"])
         for key in metrics:
-            if key in avg_scores[rnd]:
-                avg_scores[rnd][key].append(metrics[key])
+            if key in avg_scores[0]:
+                avg_scores[0][key].append(metrics[key])
             else:
-                avg_scores[rnd][key] = [metrics[key]]
+                avg_scores[0][key] = [metrics[key]]
 
         for rnd in range(1, n_rounds):
 
             # Get and add indices according to scorefn
-            indices = scorefn(model)
+            indices = scorefn(model, opt.selection_radius)
             for idx in indices:
                 model.add_index(idx)
             # Delete the data from train_deleted
@@ -56,7 +56,6 @@ def active_train(classifier):
             for i, d in enumerate(new_data):
                 new_data[i] = np.delete(new_data[i], indices, axis=0)
             data["train_deleted"] = new_data
-            print(len(data["train_deleted"][0]))
 
             # Reset and train model
             model.reset()
@@ -69,8 +68,6 @@ def active_train(classifier):
                     avg_scores[rnd][key].append(metrics[key])
                 else:
                     avg_scores[rnd][key] = [metrics[key]]
-                print("adding {} at round {}".format(key, rnd))
-                print(len(avg_scores[rnd][key]))
 
         for id, round_metric in enumerate(avg_scores):
             for key in round_metric:
@@ -79,12 +76,12 @@ def active_train(classifier):
                 lg.scalar_summary(tag, avg, id*5*32)
 
 
-def random_scorefn(model, n_samples=160):
+def random_scorefn(model, n_samples=32):
     dataset = data["train_deleted"]
-    indices = random.sample(list(range(0, len(dataset[0]))), n_samples)
+    indices = random.sample(list(range(0, len(dataset[0]))), n_samples * 5)
     return indices
 
-def intra_scorefn(model):
+def intra_scorefn(model, n_samples=32):
     """ Encodes data from data["train"] to use in the episode calculations """
     dataset = data["train_deleted"]
     torch.set_grad_enabled(False)
@@ -112,11 +109,8 @@ def intra_scorefn(model):
     all_dist = intra_cap_distance[select_indices_row, select_indices_col]
     all_dist = all_dist.view(len(data["train_deleted"][0]), opt.topk, opt.topk -1)
     all_dist = all_dist.mean(dim=2).mean(dim=1)
-    indices = torch.topk(all_dist, 32 * 5, 0, largest=True)[1]
-    print(len(indices))
+    indices = torch.topk(all_dist, n_samples * 5, 0, largest=True)[1]
 
-    # print(all_dist.size())
-    # data["all_states"] = torch.cat((torch.Tensor(data["train"][0]), all_dist.cpu(), data["image_caption_distances_topk"].cpu()), dim=1).cpu()
     del intra_cap_distance
     del img_embs
     del cap_embs
