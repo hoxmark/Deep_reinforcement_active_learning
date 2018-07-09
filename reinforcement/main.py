@@ -21,17 +21,17 @@ def main():
     parser = argparse.ArgumentParser(description="-----[Reinforced Visual Semantic Embedding ]-----")
     if dataset == 'vse':
         # Common params, but specifying each under each dataset-if to make the default values different
-        parser.add_argument('--hidden_size',        default=124,    type=int,   help='Size of hidden layer in deep RL')
-        parser.add_argument('--episodes',           default=10000,  type=int,   help='number of episodes')
-        parser.add_argument('--learning_rate_rl',   default=0.1,    type=float, help='learning rate')
+        parser.add_argument("--hidden_size",        default=512,     type=int,   help="Size of hidden layer in deep RL")
+        parser.add_argument("--episodes",           default=10000,  type=int,   help="number of episodes")
+        parser.add_argument("--learning_rate_rl",   default=0.1,   type=float, help="learning rate")
         parser.add_argument('--margin',             default=0.2,    type=float, help='Rank loss margin.')
-        parser.add_argument('--num_epochs',         default=15,     type=int,   help='Number of training epochs.')
-        parser.add_argument('--full_epochs',        default=15,     type=int,   help='Number of training epochs.')
-        parser.add_argument('--init_samples',       default=480,    type=int,   help='number of random inital training data')
+        parser.add_argument('--num_epochs',         default=20,     type=int,   help='Number of reward calculation epochs.')
+        parser.add_argument('--full_epochs',        default=30,     type=int,   help='Number of training epochs.')
+        parser.add_argument('--init_samples',       default=1120,    type=int,   help='number of random inital training data')
         parser.add_argument('--batch_size',         default=128,    type=int,   help='Size of a training mini-batch.')
         parser.add_argument('--budget',             default=1120,   type=int,   help='Our labeling budget')
         parser.add_argument('--selection_radius',   default=16,     type=int,   help='Selection radius')
-        parser.add_argument('--reward_threshold',   default=0,      type=float, help='Reward threshold')
+        parser.add_argument("--reward_threshold",   default=0,      type=float, help="Reward threshold")
         parser.add_argument('--w2v',                action='store_true',        help='Use w2v embeddings')
 
         # VSE specific params
@@ -46,8 +46,8 @@ def main():
         parser.add_argument('--log_step',           default=10,     type=int,   help='Number of steps to print and record the log.')
         parser.add_argument('--val_step',           default=500,    type=int,   help='Number of steps to run validation.')
         parser.add_argument('--img_dim',            default=4096,   type=int,   help='Dimensionality of the image embedding.')
-        parser.add_argument('--cnn_type',           default='vgg19',type=str,   help='The CNN used for image encoder(e.g. vgg19, resnet152)')
-        parser.add_argument('--topk',               default=20,     type=int,   help='Topk similarity to use for state')
+        parser.add_argument('--cnn_type',           default='vgg19',type=str,   help="""The CNN used for image encoder(e.g. vgg19, resnet152)""")
+        parser.add_argument('--topk',               default=10,     type=int,   help='Topk similarity to use for state')
         parser.add_argument('--topk_image',         default=0,      type=int,   help='Topk similarity images to use for state')
         parser.add_argument('--data_name',          default='f8k_precomp',      help='{coco,f8k,f30k,10crop}_precomp|coco|f8k|f30k')
         parser.add_argument('--measure',            default='cosine',           help='Similarity measure used (cosine|order)')
@@ -100,6 +100,17 @@ def main():
         parser.add_argument('--budget',             default=224,    type=int,   help='Our labeling budget')
         parser.add_argument('--selection_radius',   default=32,     type=int,   help='Selection radius')
         parser.add_argument('--reward_threshold',   default=0,      type=float, help='Reward threshold')
+        parser.add_argument('--w2v',                action='store_true',        help='Use w2v embeddings')
+
+    elif dataset == 'test':
+        parser.add_argument("--hidden_size",        default=4,      type=int,   help="Size of hidden layer in deep RL")
+        parser.add_argument("--episodes",           default=10000,  type=int,   help="number of episodes")
+        parser.add_argument("--learning_rate_rl",   default=0.1,    type=float, help="learning rate")
+        parser.add_argument('--budget',             default=50,     type=int,   help='Our labeling budget')
+        parser.add_argument('--init_samples',       default=0,      type=int,   help='number of random inital training data')
+        parser.add_argument('--num_epochs',         default=0,      type=int,   help='Number of training epochs.')
+        parser.add_argument('--full_epochs',        default=0,      type=int,   help='Number of training epochs.')
+        parser.add_argument("--reward_threshold",   default=0.6,    type=float, help="Reward threshold")
         parser.add_argument('--w2v',                action='store_true',        help='Use w2v embeddings')
 
     # Global params all datasets use

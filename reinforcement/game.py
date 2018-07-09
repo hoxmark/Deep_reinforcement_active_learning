@@ -21,7 +21,7 @@ class Game:
         self.budget = opt.budget
         self.queried_times = 0
         self.current_state = 0
-        data["train_deleted"] = copy.deepcopy(data["train"])
+        # data["train_deleted"] = copy.deepcopy(data["train"])
         self.init_train_k_random(model, opt.init_samples)
         timer(model.encode_episode_data, ())
         metrics = model.validate(data["dev"])
@@ -39,7 +39,6 @@ class Game:
         with torch.no_grad():
             current_idx = self.order[self.current_state]
             state = model.get_state(current_idx)
-            state = state.view(1, -1)
             return state
 
     def feedback(self, action, model):
@@ -49,14 +48,12 @@ class Game:
             added_indices = timer(self.query, (model,))
             new_performance = self.get_performance(model)
             diff = new_performance - self.performance
-            # print(diff)
-            diff -= opt.reward_threshold
-            reward = 1 if diff > 0 else -1 if diff < 0 else 0
-            # reward = diff
-            # if opt.reward_clip:
-                # reward = np.tanh(reward / 100)
+            diff = diff - opt.reward_threshold
+            reward = diff
+            if opt.reward_clip:
+                reward = 1 if diff > 0 else -1 if diff < 0 else 0
             self.performance = new_performance
-            self.delete_data(added_indices)
+            # self.delete_data(added_indices)
             timer(model.encode_episode_data, ())
             self.queried_times += len(added_indices)
         else:

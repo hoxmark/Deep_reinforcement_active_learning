@@ -39,10 +39,17 @@ class Memory:  # stored as ( s, a, r, s_ ) in SumTree
             idxs.append(idx)
 
         sampling_probabilities = priorities / self.tree.total()
-        is_weight = np.power(self.tree.n_entries * sampling_probabilities, -self.beta)
-        is_weight /= is_weight.max()
+        try:
+            is_weight = np.power(self.tree.n_entries * sampling_probabilities, -self.beta)
+            is_weight /= is_weight.max()
 
-        return batch, idxs, is_weight
+            return batch, idxs, is_weight
+        except:
+            print("HERE \n\n\n")
+            print(self.tree.n_entries)
+            print(sampling_probabilities)
+            print(self.beta)
+            exit()
 
     def update(self, idx, error):
         p = self._get_priority(error)
