@@ -284,8 +284,6 @@ class ContrastiveLoss(nn.Module):
         # compare every diagonal score to scores in its row
         # image retrieval
         cost_im = (self.margin + scores - d2).clamp(min=0)
-        print(cost_s)
-
         # clear diagonals
         mask = torch.eye(scores.size(0)) > .5
         I = mask
@@ -445,17 +443,19 @@ class VSE(nn.Module):
         return loss
 
     def query(self, index):
-        # current_dist_vector = data["image_caption_distances_topk"][index].view(1, -1)
-        # all_dist_vectors = data["image_caption_distances_topk"]
+        # current_vector = torch.Tensor(data["train_deleted"][0][index]).view(1, -1)
+        # all_vectors = torch.Tensor(data["train_deleted"][0])
+        # current_vector = all_vectors[index].view(1, -1)
+        # if opt.cuda:
+            # all_vectors, current_vector = all_vectors.cuda(), current_vector.cuda()
 
-        current_dist_vector = data["all_states"][index].view(1, -1)
-        all_dist_vectors = data["all_states"]
-        current_all_dist = pairwise_distances(current_dist_vector, all_dist_vectors)
+        current_state = data["all_states"][index].view(1, -1)
+        all_states = data["all_states"]
+        current_all_dist = pairwise_distances(current_state, all_states)
         similar_indices = torch.topk(current_all_dist, opt.selection_radius * 5, 1, largest=False)[1]
         similar_indices = similar_indices.data[0].cpu().numpy()
         for idx in similar_indices:
             self.add_index(idx)
-        # print(similar_indices)
         return similar_indices
 
     def add_index(self, index):
@@ -531,11 +531,11 @@ class VSE(nn.Module):
         img_embs, cap_embs = self.encode_data(dataset)
         (r1, r5, r10, r1i, r5i, r10i) = t2i2t(img_embs, cap_embs)
 
-        # performance = r1 + r5 + r10 + r1i + r5i + r10i
+        sum = r1 + r5 + r10 + r1i + r5i + r10i
         performance = r1 + r5 + r10
         metrics = {
             "performance": performance,
-            "sum": performance,
+            "sum": sum,
             "r1": r1,
             "r5": r5,
             "r10": r10,
@@ -547,10 +547,11 @@ class VSE(nn.Module):
         return metrics
 
     def encode_episode_data(self):
+        # pass
         """ Encodes data from data["train"] to use in the episode calculations """
-
+        #
         torch.set_grad_enabled(False)
-        dataset = data["train_deleted"]
+        dataset = data["train"]
         img_embs, cap_embs = timer(self.encode_data, (dataset,))
         if opt.cuda:
             img_embs = img_embs.cuda()
@@ -573,9 +574,18 @@ class VSE(nn.Module):
             select_indices_col.extend(permutations_list[1])
 
         all_dist = intra_cap_distance[select_indices_row, select_indices_col]
-        all_dist = all_dist.view(len(data["train_deleted"][0]), opt.topk, opt.topk -1)
+        all_dist = all_dist.view(len(data["train"][0]), opt.topk, opt.topk -1)
         all_dist = all_dist.mean(dim=2)
-        data["all_states"] = torch.cat((img_embs, data["image_caption_distances_topk"], all_dist), 1).cpu()
+        # all_img = torch.Tensor(data["train_deleted"][0])
+        # print(all_img.size())
+        # print(data["image_caption_distances_topk"].size())
+        # print(all_dist.size())
+        # data["all_states"] = torch.cat((all_img, data["image_caption_distances_topk"].cpu(), all_dist.cpu()), 1)
+        # print(data["all_states"].size())
+        print(data["image_caption_distances_topk"].size())
+        # data["all_states"] = torch.cat((img_embs, all_dist, data["image_caption_distances_topk"]), dim=1).cpu()
+        data["all_states"] = torch.cat((torch.Tensor(data["train"][0]), all_dist.cpu(), data["image_caption_distances_topk"].cpu()), dim=1).cpu()
+        print(data["all_states"].size())
         # data["images_embed_all"] = img_embs.data.cpu()
         # data["captions_embed_all"] = cap_embs.data.cpu()
         # all_dist = all_dist.cpu()
@@ -594,13 +604,18 @@ class VSE(nn.Module):
         # print(top_cap_mean_intra_dist)
         # print(data["all_states"][test_idx])
 
-
         del intra_cap_distance
         del img_embs
         del cap_embs
         torch.set_grad_enabled(True)
 
     def get_state(self, index):
+        with torch.no_grad():
+            # state = torch.Tensor(data["train_deleted"][0][index]
+            state = data["all_states"][index].view(1, -1)
+            if opt.cuda:
+                state = state.cuda()
+            return state
         # index = index * 5
         # with torch.no_grad():
         #     # Distances to topk closest captions
@@ -640,12 +655,12 @@ class VSE(nn.Module):
         #         state = state.cuda()
         #     return state
         # print(data["all_states"].size())
-        state = data["all_states"][index].view(1, -1)
+        # state = data["all_states"][index].view(1, -1)
         # print(state)
         # print(state.size())
-        if opt.cuda:
-            state = state.cuda()
-        return state
+            # if opt.cuda:
+            #     state = state.cuda()
+            # return state
 
 
     def adjust_learning_rate(self, optimizer, epoch):

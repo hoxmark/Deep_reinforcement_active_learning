@@ -48,7 +48,8 @@ class DQNTargetAgent():
         self.epsilon = 1.0
         self.epsilon_min = 0.01
         self.explore_step = 5000
-        self.train_start = 200
+        # self.train_start = 200
+        self.train_start = opt.batch_size_rl
         self.epsilon_decay = (self.epsilon - self.epsilon_min) / self.explore_step
         self.batch_size = opt.batch_size_rl
 
@@ -64,8 +65,7 @@ class DQNTargetAgent():
             self.policynetwork, self.targetnetwork = self.policynetwork.cuda(), self.targetnetwork.cuda()
 
 
-        self.optimizer = optim.Adam(self.policynetwork.parameters(),
-                                    lr=self.learning_rate)
+        self.optimizer = optim.RMSprop(self.policynetwork.get_params())
 
         # initialize target model
         self.update_target_model()
@@ -74,7 +74,7 @@ class DQNTargetAgent():
     def weights_init(self, m):
         classname = m.__class__.__name__
         if classname.find('Linear') != -1:
-            torch.nn.init.xavier_uniform(m.weight)
+            torch.nn.init.xavier_uniform_(m.weight)
 
     # after some time interval update the target model to be same with model
     def update_target_model(self):
@@ -117,7 +117,6 @@ class DQNTargetAgent():
         if not batch_state.requires_grad:
             batch_state = batch_state.data
         batch_next_state = torch.cat(batch_next_state)
-        batch_next_state.volatile = True
 
         batch_action = torch.LongTensor(list(batch_action)).unsqueeze(1)
         batch_reward = torch.FloatTensor(list(batch_reward))
@@ -137,7 +136,7 @@ class DQNTargetAgent():
         if opt.cuda:
             expected_q_values = expected_q_values.cuda()
 
-        loss = F.mse_loss(current_q_values, expected_q_values)
+        loss = F.smooth_l1_loss(current_q_values, expected_q_values)
         errors = torch.abs(current_q_values - expected_q_values).data.cpu().numpy()
         # update priority
         for i in range(self.batch_size):
