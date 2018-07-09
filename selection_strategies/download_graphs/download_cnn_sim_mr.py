@@ -10,15 +10,8 @@ def download_env(env):
     data = vis.get_window_data(env=env)
     d = json.loads(data)
     
-    x_axis = []
-    sum = []
-    num_0_actions = []
-    cap_recall = []
-    image_recall = []
     test_acc_avg = []
-    rsi = ['r1i', 'r5i', 'r10i']
-    rs = ['r1', 'r5', 'r10']
-
+    
     for key in d:
         try:
             #1 for MR 0 for UMICH
