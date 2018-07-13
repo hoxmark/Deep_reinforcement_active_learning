@@ -80,7 +80,7 @@ class CNN(nn.Module):
 
     def get_sentence_representation(self, inp):
         x = self.embed(inp).view(-1, 1, self.WORD_DIM * self.MAX_SENT_LEN)
-        x = self.dropout_embed(x)
+        # x = self.dropout_embed(x)
         # x = (25 x 1 x 17700) - mini_batch_size x embedding_for_each_sentence
 
         conv_results = [
