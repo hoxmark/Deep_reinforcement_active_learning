@@ -21,7 +21,7 @@ class Game:
         self.budget = opt.budget
         self.queried_times = 0
         self.current_state = 0
-        # data["train_deleted"] = copy.deepcopy(data["train"])
+        data["train_deleted"] = copy.deepcopy(data["train"])
         self.init_train_k_random(model, opt.init_samples)
         timer(model.encode_episode_data, ())
         metrics = model.validate(data["dev"])

@@ -69,7 +69,7 @@ def download_vse_sim(env, env2):
         handle, = plt.plot(x_axis, line, label=label)
         handles.append(handle)
     plt.legend(handles=handles)
-    plt.xlabel('Episodes')
+    plt.xlabel('Amount of labeled samples')
     plt.ylabel('Image recall')
     plt.savefig('{}/image_recall.png'.format(path), dpi=600)
 
@@ -86,7 +86,7 @@ def download_vse_sim(env, env2):
         handle, = plt.plot(x_axis, line, label=label)
         handles.append(handle)
     plt.legend(handles=handles)
-    plt.xlabel('Episodes')
+    plt.xlabel('Amount of labeled samples')
     plt.ylabel('Caption recall')
     plt.savefig('{}/caption_recall.png'.format(path), dpi=600)
 
@@ -100,7 +100,7 @@ def download_vse_sim(env, env2):
         handle, = plt.plot(x_axis, line, label=label)
         handles.append(handle)
     plt.legend(handles=handles)
-    plt.xlabel('Episodes')
+    plt.xlabel('Amount of labeled samples')
     plt.ylabel('Sum of recalls')
     plt.savefig('{}/sum.png'.format(path), dpi=600)
 

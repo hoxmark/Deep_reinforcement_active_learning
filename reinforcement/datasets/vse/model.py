@@ -551,7 +551,7 @@ class VSE(nn.Module):
         """ Encodes data from data["train"] to use in the episode calculations """
         #
         torch.set_grad_enabled(False)
-        dataset = data["train"]
+        dataset = data["train_deleted"]
         img_embs, cap_embs = timer(self.encode_data, (dataset,))
         if opt.cuda:
             img_embs = img_embs.cuda()
@@ -574,7 +574,7 @@ class VSE(nn.Module):
             select_indices_col.extend(permutations_list[1])
 
         all_dist = intra_cap_distance[select_indices_row, select_indices_col]
-        all_dist = all_dist.view(len(data["train"][0]), opt.topk, opt.topk -1)
+        all_dist = all_dist.view(len(data["train_deleted"][0]), opt.topk, opt.topk -1)
         all_dist = all_dist.mean(dim=2)
         # all_img = torch.Tensor(data["train_deleted"][0])
         # print(all_img.size())
@@ -584,7 +584,7 @@ class VSE(nn.Module):
         # print(data["all_states"].size())
         print(data["image_caption_distances_topk"].size())
         # data["all_states"] = torch.cat((img_embs, all_dist, data["image_caption_distances_topk"]), dim=1).cpu()
-        data["all_states"] = torch.cat((torch.Tensor(data["train"][0]), all_dist.cpu(), data["image_caption_distances_topk"].cpu()), dim=1).cpu()
+        data["all_states"] = torch.cat((torch.Tensor(data["train_deleted"][0]), all_dist.cpu(), data["image_caption_distances_topk"].cpu()), dim=1).cpu()
         print(data["all_states"].size())
         # data["images_embed_all"] = img_embs.data.cpu()
         # data["captions_embed_all"] = cap_embs.data.cpu()
