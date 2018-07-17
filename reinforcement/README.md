@@ -1,5 +1,19 @@
 # Active reinforcement learning for visual semantic embedding
 
+## Download datasets and w2v
+We use the Flickr8k dataset. Splits produced by [Andrej Karpathy](http://cs.stanford.edu/people/karpathy/deepimagesent/). The precomputed image features are from [here](https://github.com/ryankiros/visual-semantic-embedding/) and [here](https://github.com/ivendrov/order-embedding).
+
+To download the precomputed image-features and the vocabulary:
+```
+wget http://www.cs.toronto.edu/~faghri/vsepp/vocab.tar
+wget http://www.cs.toronto.edu/~faghri/vsepp/data.tar
+```
+
+Download w2v
+```
+wget -c "https://s3.amazonaws.com/dl4j-distribution/GoogleNews-vectors-negative300.bin.gz"
+```
+
 ## Running
 The first argument has to be which dataset to run the experiment on. This is so we can split on that and conditionally add parameters to the parser depending on which dataset is being used. After the dataset argument, the following arguments are allowed, depending on dataset
 
@@ -130,24 +144,6 @@ The first argument has to be which dataset to run the experiment on. This is so 
                       Reward threshold
 --w2v                 Use w2v embeddings
 ```
-
-### `game.py`
-
-
-## Download datasets and w2v
-We use the Flickr8k dataset. Splits produced by [Andrej Karpathy](http://cs.stanford.edu/people/karpathy/deepimagesent/). The precomputed image features are from [here](https://github.com/ryankiros/visual-semantic-embedding/) and [here](https://github.com/ivendrov/order-embedding).
-
-To download the precomputed image-features and the vocabulary:
-```
-wget http://www.cs.toronto.edu/~faghri/vsepp/vocab.tar
-wget http://www.cs.toronto.edu/~faghri/vsepp/data.tar
-```
-
-Download w2v
-```
-wget -c "https://s3.amazonaws.com/dl4j-distribution/GoogleNews-vectors-negative300.bin.gz"
-```
-
 
 ## Implementation of custom datasets
 To implement and train the agent on your own datasets, create a folder within `datasets` with the following files:
