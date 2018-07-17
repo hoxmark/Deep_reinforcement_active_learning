@@ -19,130 +19,90 @@ The first argument has to be which dataset to run the experiment on. This is so 
 
 ### Flickr8k
 ```
---hidden_size HIDDEN_SIZE
-                      Size of hidden layer in deep RL
---episodes EPISODES   number of episodes
---learning_rate_rl LEARNING_RATE_RL
-                      learning rate
---margin MARGIN       Rank loss margin.
---num_epochs NUM_EPOCHS
-                      Number of reward calculation epochs.
---full_epochs FULL_EPOCHS
-                      Number of training epochs.
---init_samples INIT_SAMPLES
-                      number of random inital training data
---batch_size BATCH_SIZE
-                      Size of a training mini-batch.
---budget BUDGET       Our labeling budget
---selection_radius SELECTION_RADIUS
-                      Selection radius
---reward_threshold REWARD_THRESHOLD
-                      Reward threshold
---scorefn SCOREFN     Score FN for traditional active learning
---w2v                 Use w2v embeddings
---embed_size EMBED_SIZE
-                      Dimensionality of the joint embedding.
---word_dim WORD_DIM   Dimensionality of the word embedding.
---num_layers NUM_LAYERS
-                      Number of GRU layers.
---grad_clip GRAD_CLIP
-                      Gradient clipping threshold.
---crop_size CROP_SIZE
-                      Size of an image crop as the CNN input.
---learning_rate_vse LEARNING_RATE_VSE
-                      Initial learning rate.
---lr_update LR_UPDATE
-                      Number of epochs to update the learning rate.
---workers WORKERS     Number of data loader workers.
---log_step LOG_STEP   Number of steps to print and record the log.
---val_step VAL_STEP   Number of steps to run validation.
---img_dim IMG_DIM     Dimensionality of the image embedding.
---cnn_type CNN_TYPE   The CNN used for image encoder(e.g. vgg19, resnet152)
---topk TOPK           Topk similarity to use for state
---topk_image TOPK_IMAGE
-                      Topk similarity images to use for state
---data_name DATA_NAME
-                      {coco,f8k,f30k,10crop}_precomp|coco|f8k|f30k
---measure MEASURE     Similarity measure used (cosine|order)
---intra_caption       Include closest captions intra distance in state
---max_violation       Use max instead of sum in the rank loss.
---image_distance      Include image distance in the state
---use_abs             Take the absolute value of embedding vectors.
---no_imgnorm          Do not normalize the image embeddings.
---finetune            Fine-tune the image encoder.
---use_restval         Use the restval data for training on MSCOCO.
+--hidden_size HIDDEN_SIZE               Size of hidden layer in deep RL
+--episodes EPISODES                     Number of episodes
+--learning_rate_rl LEARNING_RATE_RL     Learning rate
+--margin MARGIN                         Rank loss margin.
+--num_epochs NUM_EPOCHS                 Number of reward calculation epochs.
+--full_epochs FULL_EPOCHS               Number of training epochs.
+--init_samples INIT_SAMPLES             Number of random inital training data
+--batch_size BATCH_SIZE                 Size of a training mini-batch.
+--budget BUDGET                         Labeling budget
+--selection_radius SELECTION_RADIUS     Selection radius
+--reward_threshold REWARD_THRESHOLD     Reward threshold
+--scorefn SCOREFN                       Score FN for traditional active learning
+--w2v                                   Use w2v embeddings
+--embed_size EMBED_SIZE                 Dimensionality of the joint embedding.
+--word_dim WORD_DIM                     Dimensionality of the word embedding.
+--num_layers NUM_LAYERS                 Number of GRU layers.
+--grad_clip GRAD_CLIP                   Gradient clipping threshold.
+--crop_size CROP_SIZE                   Size of an image crop as the CNN input.
+--learning_rate_vse LEARNING_RATE_VSE   Initial learning rate.
+--lr_update LR_UPDATE                   Number of epochs to update the learning rate.
+--workers WORKERS                       Number of data loader workers.
+--log_step LOG_STEP                     Number of steps to print and record the log.
+--val_step VAL_STEP                     Number of steps to run validation.
+--img_dim IMG_DIM                       Dimensionality of the image embedding.
+--cnn_type CNN_TYPE                     The CNN used for image encoder(e.g. vgg19, resnet152)
+--topk TOPK                             Topk similarity to use for state
+--topk_image TOPK_IMAGE                 Topk similarity images to use for state
+--data_name DATA_NAME                   {coco,f8k,f30k,10crop}_precomp|coco|f8k|f30k
+--measure MEASURE                       Similarity measure used (cosine|order)
+--intra_caption                         Include closest captions intra distance in state
+--max_violation                         Use max instead of sum in the rank loss.
+--image_distance                        Include image distance in the state
+--use_abs                               Take the absolute value of embedding vectors.
+--no_imgnorm                            Do not normalize the image embeddings.
+--finetune                              Fine-tune the image encoder.
+--use_restval                           Use the restval data for training on MSCOCO.
 ```
 
 ### MR
 ```
---hidden_size HIDDEN_SIZE
-                      Size of hidden layer in deep RL
---episodes EPISODES   Number of episodes
---learning_rate_rl LEARNING_RATE_RL
-                      learning rate
---margin MARGIN       Rank loss margin.
---num_epochs NUM_EPOCHS
-                      Number of training epochs.
---full_epochs FULL_EPOCHS
-                      Number of training epochs.
---init_samples INIT_SAMPLES
-                      Number of random inital training data
---batch_size BATCH_SIZE
-                      Size of a training mini-batch.
---budget BUDGET       Our labeling budget
---selection_radius SELECTION_RADIUS
-                      Selection radius
---reward_threshold REWARD_THRESHOLD
-                      Reward threshold
---w2v                 Use w2v embeddings
+--hidden_size HIDDEN_SIZE           Size of hidden layer in deep RL
+--episodes EPISODES                 Number of episodes
+--learning_rate_rl LEARNING_RATE_RL learning rate
+--margin MARGIN                     Rank loss margin.
+--num_epochs NUM_EPOCHS             Number of training epochs.
+--full_epochs FULL_EPOCHS           Number of training epochs.
+--init_samples INIT_SAMPLES         Number of random inital training data
+--batch_size BATCH_SIZE             Size of a training mini-batch.
+--budget BUDGET                     Our labeling budget
+--selection_radius SELECTION_RADIUS Selection radius
+--reward_threshold REWARD_THRESHOLD Reward threshold
+--w2v                               Use w2v embeddings
 ```
 
 ### MNIST
 ```
---hidden_size HIDDEN_SIZE
-                      Size of hidden layer in deep RL
---episodes EPISODES   Number of episodes
---learning_rate_rl LEARNING_RATE_RL
-                      Learning rate
---margin MARGIN       Rank loss margin.
---num_epochs NUM_EPOCHS
-                      Number of training epochs.
---full_epochs FULL_EPOCHS
-                      Number of training epochs.
---init_samples INIT_SAMPLES
-                      number of random inital training data
---batch_size BATCH_SIZE
-                      Size of a training mini-batch.
---budget BUDGET       Our labeling budget
---selection_radius SELECTION_RADIUS
-                      Selection radius
---reward_threshold REWARD_THRESHOLD
-                      Reward threshold
---w2v                 Use w2v embeddings
+--hidden_size HIDDEN_SIZE           Size of hidden layer in deep RL
+--episodes EPISODES                 Number of episodes
+--learning_rate_rl LEARNING_RATE_RL Learning rate
+--margin MARGIN                     Rank loss margin.
+--num_epochs NUM_EPOCHS             Number of training epochs.
+--full_epochs FULL_EPOCHS           Number of training epochs.
+--init_samples INIT_SAMPLES         number of random inital training data
+--batch_size BATCH_SIZE             Size of a training mini-batch.
+--budget BUDGET                     Our labeling budget
+--selection_radius SELECTION_RADIUS Selection radius
+--reward_threshold REWARD_THRESHOLD Reward threshold
+--w2v                               Use w2v embeddings
 ```
 
 ### Digits
 ```
---hidden_size HIDDEN_SIZE
-                      Size of hidden layer in deep RL
---episodes EPISODES   Number of episodes
---learning_rate_rl LEARNING_RATE_RL
-                      learning rate
---margin MARGIN       Rank loss margin.
---num_epochs NUM_EPOCHS
-                      Number of training epochs.
---full_epochs FULL_EPOCHS
-                      Number of training epochs.
---init_samples INIT_SAMPLES
-                      Number of random inital training data
---batch_size BATCH_SIZE
-                      Size of a training mini-batch.
---budget BUDGET       Our labeling budget
---selection_radius SELECTION_RADIUS
-                      Selection radius
---reward_threshold REWARD_THRESHOLD
-                      Reward threshold
---w2v                 Use w2v embeddings
+--hidden_size HIDDEN_SIZE           Size of hidden layer in deep RL
+--episodes EPISODES                 Number of episodes
+--learning_rate_rl LEARNING_RATE_RL learning rate
+--margin MARGIN                     Rank loss margin.
+--num_epochs NUM_EPOCHS             Number of training epochs.
+--full_epochs FULL_EPOCHS           Number of training epochs.
+--init_samples INIT_SAMPLES         Number of random inital training data
+--batch_size BATCH_SIZE             Size of a training mini-batch.
+--budget BUDGET                     Our labeling budget
+--selection_radius SELECTION_RADIUS Selection radius
+--reward_threshold REWARD_THRESHOLD Reward threshold
+--w2v                               Use w2v embeddings
 ```
 
 ## Implementation of custom datasets
