@@ -73,6 +73,6 @@ if __name__ == "__main__":
     plt.plot(*test_acc_avg_full[4], color='#2ca02c')#
 
     plt.legend(legden,
-           loc='upper right')
+           loc='lower right')
     plt.savefig('results/CNN_UMICH.png' , dpi=600)
     # plt.show()
