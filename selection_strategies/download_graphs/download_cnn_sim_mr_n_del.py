@@ -34,12 +34,12 @@ def download_env(env):
 
 if __name__ == "__main__":
     # print(len(sys.argv))
-    source = [  "SS_bjornhox_03-07-18_11:37_MR_cnn_sim_0.10_8a3f", 
-                "SS_bjornhox_03-07-18_13:20_MR_cnn_sim_0.12_ef2b",
-                "SS_bjornhox_03-07-18_11:50_MR_cnn_sim_0.15_b7f9"]
+    source = [  "SS_bjornhox_11-07-18_11:29_MR_cnn_sim_0.05_c907", 
+                "SS_bjornhox_11-07-18_11:30_MR_cnn_sim_0.08_3b54",
+                "SS_bjornhox_10-07-18_10:44_MR_cnn_sim_0.12_896d"]
     
     
-    legden = ["0.10", "0.12", "0.15"]
+    legden = ["0.05", "0.08", "0.12"]
 
     path = './results/'
 
