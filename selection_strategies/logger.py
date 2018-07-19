@@ -74,11 +74,11 @@ class Logger(object):
         self.writer.flush()
 
 class VisdomLogger(object):
-    def __init__(self, logger_name):
+    def __init__(self, logger_name, ledge_name):
         self.vis = Visdom('http://logserver.duckdns.org', port=5010)
         # self.vis = Visdom('http://localhost', port=8097)
         self.logger_name = logger_name
-
+        self.ledge_name = ledge_name
     def dict_scalar_summary(self, prefix, values, step):
         for key in values:
             tag = "{}/{}".format(prefix, key)
@@ -92,7 +92,7 @@ class VisdomLogger(object):
             X = np.array([step]),
             env = self.logger_name,
             win = tag,
-            name = "agent",
+            name = self.ledge_name,
             update = update,
             opts = dict(
                 title = tag

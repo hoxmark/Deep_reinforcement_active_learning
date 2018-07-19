@@ -33,14 +33,12 @@ def download_env(env):
     return n_deleted, test_acc_avg
 
 if __name__ == "__main__":
-    # print(len(sys.argv))
-    source = [  "SS_bjornhox_03-07-18_11:37_MR_cnn_sim_0.10_8a3f", 
-                "SS_bjornhox_03-07-18_13:20_MR_cnn_sim_0.12_ef2b",
-                "SS_bjornhox_03-07-18_11:50_MR_cnn_sim_0.15_b7f9"]
-    
-    
-    legden = ["0.10", "0.12", "0.15"]
 
+    source = [ "SS_bjornhox_11-07-18_14:22_UMICH_cnn_sim_0.08_28ef",
+                "SS_bjornhox_11-07-18_14:34_UMICH_cnn_sim_0.12_2366",
+                "SS_bjornhox_11-07-18_14:34_UMICH_cnn_sim_0.14_2f39"]
+
+    legden = ["0.08", "0.12", "0.14"]
     path = './results/'
 
     pathlib.Path(path).mkdir(parents=True, exist_ok=True)
@@ -61,7 +59,7 @@ if __name__ == "__main__":
         test_acc_avg.append(res2)
 
     plt.figure(1)
-    plt.axis([0,250,0,9000])
+    plt.axis([0,250,0,1100])
     plt.subplot(111)
 
     new_plot = []
@@ -86,5 +84,5 @@ if __name__ == "__main__":
 
     plt.legend(legden,
            loc='center right')
-    plt.savefig('results/CNN_MR_N_DEL.png' , dpi=600)
+    plt.savefig('results/CNN_UMICH_N_DEL.png' , dpi=600)
     plt.show()

@@ -117,7 +117,7 @@ def main():
 
     if params["LOG"]:
         logger_name = 'SS/{}_{}_{}_{}_{}'.format(getpass.getuser(), datetime.datetime.now().strftime("%d-%m-%y_%H:%M"), options.dataset, params["C"], str(uuid.uuid4())[:4])
-        global_logger["lg"] = VisdomLogger(logger_name)
+        global_logger["lg"] = VisdomLogger(logger_name, "{}_{}".format(params["SIMILARITY_THRESHOLD"], params["SIMILARITY_REPRESENTATION"]))
         # global_logger["lg"].parameters_summary()
         print("visdom logger OK")
         # quit()

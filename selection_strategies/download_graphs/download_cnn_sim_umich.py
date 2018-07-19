@@ -21,16 +21,21 @@ def download_env(env):
                 test_acc_avg = (x,y)
 
         except:
-            pass
+            pass 
 
 
     return test_acc_avg
 
 if __name__ == "__main__":
     # print(len(sys.argv))
-    source = [  "SS_bjornhox_05-07-18_10:48_UMICH_self_cnn_sim_0.14_d231",
-                "SS_bjornhox_04-07-18_09:20_UMICH_self_cnn_sim_0.0_a31c",  
+    source = [  "SS_bjornhox_12-07-18_09:29_UMICH_cnn_sim_0.0_233e",  
+                "SS_bjornhox_11-07-18_14:22_UMICH_cnn_sim_0.08_28ef",
+                "SS_bjornhox_11-07-18_14:34_UMICH_cnn_sim_0.12_2366",
+                "SS_bjornhox_11-07-18_14:34_UMICH_cnn_sim_0.14_2f39",
                 "SS_bjornhox_03-07-18_14:22_UMICH_UMICH_BASELINE_12cf"]
+
+
+                
 
 
     path = './results/'
@@ -40,7 +45,7 @@ if __name__ == "__main__":
     test_acc_avg_full = []
     
     legden = [] 
-    legden = ["0.14", "0.0", "random"]
+    legden = ["0.0", "0.08", "0.12", "0.14", "random"]
     # for i in sys.argv[1:]:
         # legden.append(i.split("_")[7])
         # legden.append(i.split("_")[6])
@@ -58,7 +63,14 @@ if __name__ == "__main__":
     for line in test_acc_avg_full:        
         line[0].insert(0,0)
         line[1].insert(0,50)
-        plt.plot(*line) 
+        # plt.plot(*line) 
+
+    
+    plt.plot(*test_acc_avg_full[0], color='#ff7f0e') #
+    plt.plot(*test_acc_avg_full[1], dashes=[4, 2], color='#9467bd') #
+    plt.plot(*test_acc_avg_full[2], color='#1f77b4') #
+    plt.plot(*test_acc_avg_full[3], dashes=[6, 2], color='#17becf')#
+    plt.plot(*test_acc_avg_full[4], color='#2ca02c')#
 
     plt.legend(legden,
            loc='upper right')
