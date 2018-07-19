@@ -67,7 +67,8 @@ if __name__ == "__main__":
     for i in range(0,len(n_deleted)):
         # print(test_acc_avg[i])
         # print(n_deleted[i])
-        new = (test_acc_avg[i][0][0:8], n_deleted[i][1][0:8])
+        # # new = (test_acc_avg[i][0][0:8], n_deleted[i][1][0:8])
+        new = (test_acc_avg[i][0][0:15], n_deleted[i][1][0:15])
 
         new[0].insert(0,0) 
         new[1].insert(0,0)
