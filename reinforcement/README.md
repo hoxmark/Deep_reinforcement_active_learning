@@ -1,133 +1,130 @@
+# Active reinforcement learning for visual semantic embedding
 
-# Active Deep Learning for Sentence Classification using CNN and RNN in pytorch
+## Download datasets and w2v
+We use the Flickr8k dataset. Splits produced by [Andrej Karpathy](http://cs.stanford.edu/people/karpathy/deepimagesent/). The precomputed image features are from [here](https://github.com/ryankiros/visual-semantic-embedding/) and [here](https://github.com/ivendrov/order-embedding).
 
-This is the implementation of "Active Discriminative Text Representation Learning" (http://www.aaai.org/ocs/index.php/AAAI/AAAI17/paper/download/14174/14265) with modification. it is implmented using **Pytorch**.
-
-This model is based on pre-trained Word2vec([GoogleNews-vectors-negative300.bin](https://drive.google.com/uc?id=0B7XkCwpI5KDYNlNUTTlSS21pQmM&export=download)) by T.Mikolov et al.
-
-
-## Results
-
-Below are results corresponding to RNN and CNN using out 3 different selection scores, random, entropy and EGL. We are using a dataset with 500 samples.
-
-(Measure: Accuracy)
-
-| Model        | Selection score    | MR        | TREC  |
-|--------------|:------------------:|:---------:|:-----:|
-| CNN          | Random             | 73.29     |82.05  | 
-|              | Entropy            | 74.57     |82.82  |
-|              | EGL                | **76.80** |79.30  |
-| RNN          | Random             | 72.60     |78.07  |
-|              | Entropy            | 75.87     |75.65  |
-|              | EGL                | **77.77** |74.0   |
-
-
-
-## Development Environment
-- OS: Ubuntu Ubuntu 16.04.2 LTS (64bit)
-- Language: Python 3.5.2
-- GPU: 2xTesla P100
-
-
-
-## Installing and running the project 
-
-1. Clone this github repo to you machine. 
-
-2.  Download [GoogleNews-vectors-negative300.bin] and place it in the root folder.
-
-```sh
-$ wget -c "https://s3.amazonaws.com/dl4j-distribution/GoogleNews-vectors-negative300.bin.gz"
-$ gunzip GoogleNews-vectors-negative300.bin.gz
+To download the precomputed image-features and the vocabulary:
+```
+wget http://www.cs.toronto.edu/~faghri/vsepp/vocab.tar
+wget http://www.cs.toronto.edu/~faghri/vsepp/data.tar
 ```
 
-3.  Install pytorch, we are running python 3.5.2 and cuda so we used the following command: 
-
-```sh
-$ pip3 install http://download.pytorch.org/whl/cu80/torch-0.3.0.post4-cp35-cp35m-linux_x86_64.whl 
+Download w2v
+```
+wget -c "https://s3.amazonaws.com/dl4j-distribution/GoogleNews-vectors-negative300.bin.gz"
 ```
 
-  if you are using a different version, we do not know if it will work as intended, head over to http://pytorch.org to download it. 
+## Running
+The first argument has to be which dataset to run the experiment on. This is so we can split on that and conditionally add parameters to the parser depending on which dataset is being used. After the dataset argument, the following arguments are allowed, depending on dataset
 
-4. I nstall all the rquired python dependecies using pip3. 
-
-```sh
-$ pip3 install -r /path/to/requirements.txt
+### Flickr8k
+```
+--hidden_size HIDDEN_SIZE               Size of hidden layer in deep RL
+--episodes EPISODES                     Number of episodes
+--learning_rate_rl LEARNING_RATE_RL     Learning rate
+--margin MARGIN                         Rank loss margin.
+--num_epochs NUM_EPOCHS                 Number of reward calculation epochs.
+--full_epochs FULL_EPOCHS               Number of training epochs.
+--init_samples INIT_SAMPLES             Number of random inital training data
+--batch_size BATCH_SIZE                 Size of a training mini-batch.
+--budget BUDGET                         Labeling budget
+--selection_radius SELECTION_RADIUS     Selection radius
+--reward_threshold REWARD_THRESHOLD     Reward threshold
+--scorefn SCOREFN                       Score FN for traditional active learning
+--w2v                                   Use w2v embeddings
+--embed_size EMBED_SIZE                 Dimensionality of the joint embedding.
+--word_dim WORD_DIM                     Dimensionality of the word embedding.
+--num_layers NUM_LAYERS                 Number of GRU layers.
+--grad_clip GRAD_CLIP                   Gradient clipping threshold.
+--crop_size CROP_SIZE                   Size of an image crop as the CNN input.
+--learning_rate_vse LEARNING_RATE_VSE   Initial learning rate.
+--lr_update LR_UPDATE                   Number of epochs to update the learning rate.
+--workers WORKERS                       Number of data loader workers.
+--log_step LOG_STEP                     Number of steps to print and record the log.
+--val_step VAL_STEP                     Number of steps to run validation.
+--img_dim IMG_DIM                       Dimensionality of the image embedding.
+--cnn_type CNN_TYPE                     The CNN used for image encoder(e.g. vgg19, resnet152)
+--topk TOPK                             Topk similarity to use for state
+--topk_image TOPK_IMAGE                 Topk similarity images to use for state
+--data_name DATA_NAME                   {coco,f8k,f30k,10crop}_precomp|coco|f8k|f30k
+--measure MEASURE                       Similarity measure used (cosine|order)
+--intra_caption                         Include closest captions intra distance in state
+--max_violation                         Use max instead of sum in the rank loss.
+--image_distance                        Include image distance in the state
+--use_abs                               Take the absolute value of embedding vectors.
+--no_imgnorm                            Do not normalize the image embeddings.
+--finetune                              Fine-tune the image encoder.
+--use_restval                           Use the restval data for training on MSCOCO.
 ```
 
-## Execution
-TODO: you need to set the correct data_path. 
-
-Example: 
-```sh
-$ python  main.py  --embedding static --scorefn entropy --model cnn --average 10 
+### MR
+```
+--hidden_size HIDDEN_SIZE           Size of hidden layer in deep RL
+--episodes EPISODES                 Number of episodes
+--learning_rate_rl LEARNING_RATE_RL learning rate
+--margin MARGIN                     Rank loss margin.
+--num_epochs NUM_EPOCHS             Number of training epochs.
+--full_epochs FULL_EPOCHS           Number of training epochs.
+--init_samples INIT_SAMPLES         Number of random inital training data
+--batch_size BATCH_SIZE             Size of a training mini-batch.
+--budget BUDGET                     Our labeling budget
+--selection_radius SELECTION_RADIUS Selection radius
+--reward_threshold REWARD_THRESHOLD Reward threshold
+--w2v                               Use w2v embeddings
 ```
 
-The help commpand if you want to run it with different hyperparamters. 
-
-```sh
-$ python  main.py  --help 
-
-usage: main.py
-  [-h] 
-  [--mode MODE] 
-  [--model MODEL] 
-  [--embedding EMBEDDING]
-  [--dataset DATASET] 
-  [--batch-size BATCH_SIZE]
-  [--selection-size SELECTION_SIZE] 
-  [--save_model SAVE_MODEL]
-  [--early_stopping EARLY_STOPPING] 
-  [--epoch EPOCH]
-  [--learning_rate LEARNING_RATE] 
-  [--dropout_embed DROPOUT_EMBED]
-  [--dropout_model DROPOUT_MODEL] 
-  [--device DEVICE] 
-  [--no-cuda]
-  [--scorefn SCOREFN] 
-  [--average AVERAGE] 
-  [--hnodes HNODES]
-  [--hlayers HLAYERS] 
-  [--weight_decay WEIGHT_DECAY] 
-  [--no-log]
-  [--minibatch]
-
-...
-optional arguments:
-  -h, --help            show this help message and exit
-  --mode MODE           train: train (with test) a model / test: test saved
-                        models
-  --model MODEL         Type of model to use. Default: CNN. Available models:
-                        CNN, RNN
-  --embedding EMBEDDING
-                        available embedings: random, static
-  --dataset DATASET     available datasets: MR, TREC
-  --batch-size BATCH_SIZE
-                        batch size for training [default: 25]
-  --selection-size SELECTION_SIZE
-                        selection size for selection function [default: 25]
-  --save_model SAVE_MODEL
-                        whether saving model or not (T/F)
-  --early_stopping EARLY_STOPPING
-                        whether to apply early stopping(T/F)
-  --epoch EPOCH         number of max epoch
-  --learning_rate LEARNING_RATE
-                        learning rate
-  --dropout_embed DROPOUT_EMBED
-                        Dropout embed probability. Default: 0.2
-  --dropout_model DROPOUT_MODEL
-                        Dropout model probability. Default: 0.4
-  --device DEVICE       Cuda device to run on
-  --no-cuda             disable the gpu
-  --scorefn SCOREFN     available scoring functions: entropy, random, egl
-  --average AVERAGE     Number of runs to average [default: 1]
-  --hnodes HNODES       Number of nodes in the hidden layer(s)
-  --hlayers HLAYERS     Number of hidden layers
-  --weight_decay WEIGHT_DECAY
-                        Value of weight_decay
-  --no-log              Disable logging
-  --minibatch           Use minibatch training, default true
-  ...
-
+### MNIST
+```
+--hidden_size HIDDEN_SIZE           Size of hidden layer in deep RL
+--episodes EPISODES                 Number of episodes
+--learning_rate_rl LEARNING_RATE_RL Learning rate
+--margin MARGIN                     Rank loss margin.
+--num_epochs NUM_EPOCHS             Number of training epochs.
+--full_epochs FULL_EPOCHS           Number of training epochs.
+--init_samples INIT_SAMPLES         number of random inital training data
+--batch_size BATCH_SIZE             Size of a training mini-batch.
+--budget BUDGET                     Our labeling budget
+--selection_radius SELECTION_RADIUS Selection radius
+--reward_threshold REWARD_THRESHOLD Reward threshold
+--w2v                               Use w2v embeddings
 ```
 
+### Digits
+```
+--hidden_size HIDDEN_SIZE           Size of hidden layer in deep RL
+--episodes EPISODES                 Number of episodes
+--learning_rate_rl LEARNING_RATE_RL learning rate
+--margin MARGIN                     Rank loss margin.
+--num_epochs NUM_EPOCHS             Number of training epochs.
+--full_epochs FULL_EPOCHS           Number of training epochs.
+--init_samples INIT_SAMPLES         Number of random inital training data
+--batch_size BATCH_SIZE             Size of a training mini-batch.
+--budget BUDGET                     Our labeling budget
+--selection_radius SELECTION_RADIUS Selection radius
+--reward_threshold REWARD_THRESHOLD Reward threshold
+--w2v                               Use w2v embeddings
+```
+
+## Implementation of custom datasets
+To implement and train the agent on your own datasets, create a folder within `datasets` with the following files:
+
+- `dataset.py `
+Contains a single function, `load_data()`, that is responsible for loading the dataset and returning one tuple for train_data, dev_data and test_data, in that order. Each tuple is on the form (x, y), where the label for x[0] is y[0], and so on. Import opt from config, set the following properties of it
+    - `data_sizes` Length of each element in the state vector presented to the reinforcement agent
+    - `data_len` Length of the training data, e.g. `len(train_data[0])`
+
+
+- `model.py`
+Has to implement the following functions
+    - `reset(self)` Reset the models parameters to initial values
+    - `train_model(self, train_data, epochs)` Train the model using labeled data. Typically what you previously added in `data['active']`.
+    - `validate(self, data)` Fast validation function that validates `data`, and will be run to determine reward used for the reinforcement agent.
+        - Returns a dictionary with the following required items
+            - `performance` What to use to measure increase in performance. Higher performance is beneficial, so if using something negative, e.g. loss, as performance, negate it
+    - `performance_validate(self, data)` Can be a more heavier performance validation function that only runs at the end of each episode.
+    - `get_state(self, index)` Given index, calculate the state for the reinforcement agent using `data['train'][0][index]`.
+    - `query(self, index)` 'Label' the current datapoint in the stream. Typically appends `data['train_deleted'][0][index]` to `data['active'][0]` and `data['train_deleted'][1][index]` to `data['active'][1]`. If wanted, add other indices, maybe by computing similarity measures. Has to return which indices were added, so they can be removed from the stream.
+    - `encode_episode_data(self)` If necessary, perform computation here so that you don't have to do it every time in `get_state()`. This method is called each time the model is trained, so that whatever you calculate is representative of the latest model state.
+
+- `__init__.py`
+Include logic for exposing the previous 2 files. Has to expose the `load_data()` and the model described above.
