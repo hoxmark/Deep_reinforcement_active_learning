@@ -11,7 +11,7 @@ def download_env(env):
     d = json.loads(data)
     
     test_acc_avg = []
-    
+
     for key in d:
         try:
             #1 for MR 0 for UMICH
@@ -21,16 +21,18 @@ def download_env(env):
                 test_acc_avg = (x,y)
 
         except:
-            pass
+            pass 
 
 
     return test_acc_avg
 
 if __name__ == "__main__":
-    # print(len(sys.argv))
-    source = [  "SS_bjornhox_06-07-18_12:26_MR_w2v_0.56_8147", 
-                "SS_bjornhox_04-07-18_14:32_MR_W2V_sim_0.0_e3cf", 
-                "SS_bjornhox_03-07-18_14:22_MR_UMICH_BASELINE_cb11"]
+    source = [  "SS_bjornhox_04-07-18_14:32_UMICH_W2V_sim_0.0_8821",
+                "SS_bjornhox_02-07-18_09:24_UMICH_w2v_0.37_df48", 
+                "SS_bjornhox_02-07-18_09:24_UMICH_w2v_0.39_d60d",                 
+                "SS_bjornhox_19-07-18_16:02_UMICH_w2v_0.42_bd01", 
+                "SS_bjornhox_03-07-18_14:22_UMICH_UMICH_BASELINE_12cf"]
+
 
     path = './results/'
 
@@ -39,7 +41,7 @@ if __name__ == "__main__":
     test_acc_avg_full = []
     
     legden = [] 
-    legden = ["0.56", "0.0", "random"]
+    legden = ["0.0", "0.37", "0.39", "0.42", "random"]
     # for i in sys.argv[1:]:
         # legden.append(i.split("_")[7])
         # legden.append(i.split("_")[6])
@@ -51,15 +53,22 @@ if __name__ == "__main__":
         test_acc_avg_full.append(res)
 
     plt.figure(1)
-    plt.axis([0,250,50,80])
+    plt.axis([0,250,50,100])
     plt.subplot(111)
 
     for line in test_acc_avg_full:        
         line[0].insert(0,0)
         line[1].insert(0,50)
-        plt.plot(*line) 
+        # plt.plot(*line) 
+
+    
+    plt.plot(*test_acc_avg_full[0], color='#ff7f0e') #
+    plt.plot(*test_acc_avg_full[1], dashes=[4, 2], color='#9467bd') #
+    plt.plot(*test_acc_avg_full[2], color='#1f77b4') #
+    plt.plot(*test_acc_avg_full[3], dashes=[6, 2], color='#17becf')#
+    plt.plot(*test_acc_avg_full[4], color='#2ca02c')#
 
     plt.legend(legden,
-           loc='upper right')
-    plt.savefig('results/W2V_MR.png' , dpi=600)
+           loc='lower right')
+    plt.savefig('results/W2V/W2V_UMICH.png' , dpi=600)
     # plt.show()
