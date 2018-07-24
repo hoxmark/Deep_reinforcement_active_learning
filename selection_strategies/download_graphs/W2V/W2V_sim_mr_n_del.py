@@ -39,7 +39,7 @@ if __name__ == "__main__":
                 "SS_bjornhox_06-07-18_13:01_MR_w2v_0.58_8753"]
     
     
-    legden = ["0.54", "0.56", "0.56"]
+    legend = ["0.54", "0.56", "0.58"]
 
     path = './results/'
 
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     plt.plot(*new_plot[1], color='#1f77b4')
     plt.plot(*new_plot[2], dashes=[6, 2], color='#17becf')
 
-    plt.legend(legden,
+    plt.legend(legend,
            loc='center right')
     plt.savefig('results/W2V/W2V_MR_N_DEL.png' , dpi=600)
     plt.show()

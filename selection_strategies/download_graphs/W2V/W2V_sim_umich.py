@@ -40,12 +40,7 @@ if __name__ == "__main__":
 
     test_acc_avg_full = []
     
-    legden = [] 
-    legden = ["0.0", "0.37", "0.39", "0.42", "random"]
-    # for i in sys.argv[1:]:
-        # legden.append(i.split("_")[7])
-        # legden.append(i.split("_")[6])
-        # legden.append(i.split("_")[8])
+    legend = ["0.0", "0.37", "0.39", "0.42", "random"]
 
     for i in range(0, len(source)):        
         env = source[i]
@@ -68,7 +63,7 @@ if __name__ == "__main__":
     plt.plot(*test_acc_avg_full[3], dashes=[6, 2], color='#17becf')#
     plt.plot(*test_acc_avg_full[4], color='#2ca02c')#
 
-    plt.legend(legden,
+    plt.legend(legend,
            loc='lower right')
-    plt.savefig('results/W2V/W2V_UMICH.png' , dpi=600)
+    plt.savefig('results/W2V/W2V_UMICH2.png' , dpi=600)
     # plt.show()

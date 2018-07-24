@@ -39,7 +39,7 @@ if __name__ == "__main__":
                 "SS_bjornhox_10-07-18_10:44_MR_cnn_sim_0.12_896d"]
     
     
-    legden = ["0.05", "0.08", "0.12"]
+    legend = ["0.05", "0.08", "0.12"]
 
     path = './results/'
 
@@ -50,9 +50,9 @@ if __name__ == "__main__":
     
      
     # for i in sys.argv[1:]:
-        # legden.append(i.split("_")[7])
-        # legden.append(i.split("_")[6])
-        # legden.append(i.split("_")[8])
+        # legend.append(i.split("_")[7])
+        # legend.append(i.split("_")[6])
+        # legend.append(i.split("_")[8])
 
     for i in range(0, len(source)):        
         env = source[i]
@@ -84,7 +84,7 @@ if __name__ == "__main__":
     plt.plot(*new_plot[1], color='#1f77b4')
     plt.plot(*new_plot[2], dashes=[6, 2], color='#17becf')
 
-    plt.legend(legden,
+    plt.legend(legend,
            loc='center right')
     plt.savefig('results/CNN_MR_N_DEL.png' , dpi=600)
     plt.show()

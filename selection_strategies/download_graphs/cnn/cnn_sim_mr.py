@@ -51,14 +51,14 @@ if __name__ == "__main__":
 
     test_acc_avg_full = []
     
-    legden = [] 
-    # legden = ["0.0", "0.10", "0.12", "0.15", "random"]
-    legden = ["0.0", "0.05", "0.08", "0.12", "random"]
-    # legden = ["0.0", "0.08", "random"]
+    legend = [] 
+    # legend = ["0.0", "0.10", "0.12", "0.15", "random"]
+    legend = ["0.0", "0.05", "0.08", "0.12", "random"]
+    # legend = ["0.0", "0.08", "random"]
     # for i in sys.argv[1:]:
-        # legden.append(i.split("_")[7])
-        # legden.append(i.split("_")[6])
-        # legden.append(i.split("_")[8])
+        # legend.append(i.split("_")[7])
+        # legend.append(i.split("_")[6])
+        # legend.append(i.split("_")[8])
 
     for i in range(0, len(source)):        
         env = source[i]
@@ -88,7 +88,7 @@ if __name__ == "__main__":
     # # plt.plot(*test_acc_avg_full[3], dashes=[6, 2], color='#17becf')#
     # plt.plot(*test_acc_avg_full[2], color='#2ca02c')#
 
-    plt.legend(legden,
+    plt.legend(legend,
            loc='lower right')
     plt.savefig('results/CNN_MR.png' , dpi=600)
     # plt.show()

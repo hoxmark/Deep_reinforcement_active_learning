@@ -42,7 +42,7 @@ if __name__ == "__main__":
     test_acc_avg_full = []
     
     
-    legden = ["0.0", "0.54", "0.56", "0.56", "random"]
+    legend = ["0.0", "0.54", "0.56", "0.58", "random"]
    
 
     for i in range(0, len(source)):        
@@ -67,13 +67,8 @@ if __name__ == "__main__":
     plt.plot(*test_acc_avg_full[4], color='#2ca02c')#
 
 
-    # plt.plot(*test_acc_avg_full[0], color='#ff7f0e') #
-    # # plt.plot(*test_acc_avg_full[1], dashes=[4, 2], color='#9467bd') #
-    # plt.plot(*test_acc_avg_full[1], color='#1f77b4') #
-    # # plt.plot(*test_acc_avg_full[3], dashes=[6, 2], color='#17becf')#
-    # plt.plot(*test_acc_avg_full[2], color='#2ca02c')#
 
-    plt.legend(legden,
+    plt.legend(legend,
            loc='lower right')
     plt.savefig('results/W2V/W2V_MR.png' , dpi=600)
     # plt.show()
