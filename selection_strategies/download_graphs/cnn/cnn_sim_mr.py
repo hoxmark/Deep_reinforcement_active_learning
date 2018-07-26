@@ -69,6 +69,9 @@ if __name__ == "__main__":
     plt.axis([0,250,50,80])
     plt.subplot(111)
 
+    plt.xlabel("Amount of labeled data")
+    plt.ylabel("% accuracy")
+
     for line in test_acc_avg_full:        
         line[0].insert(0,0)
         line[1].insert(0,50)
@@ -82,12 +85,7 @@ if __name__ == "__main__":
     plt.plot(*test_acc_avg_full[4], color='#2ca02c')#
 
 
-    # plt.plot(*test_acc_avg_full[0], color='#ff7f0e') #
-    # # plt.plot(*test_acc_avg_full[1], dashes=[4, 2], color='#9467bd') #
-    # plt.plot(*test_acc_avg_full[1], color='#1f77b4') #
-    # # plt.plot(*test_acc_avg_full[3], dashes=[6, 2], color='#17becf')#
-    # plt.plot(*test_acc_avg_full[2], color='#2ca02c')#
-
+    
     plt.legend(legend,
            loc='lower right')
     plt.savefig('results/CNN_MR.png' , dpi=600)

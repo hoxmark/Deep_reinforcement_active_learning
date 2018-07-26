@@ -56,6 +56,9 @@ if __name__ == "__main__":
     plt.axis([0,250,0,1100])
     plt.subplot(111)
 
+    plt.xlabel("Amount of labeled data")
+    plt.ylabel("Number of deleted samples")
+
     new_plot = []
 
     for i in range(0,len(n_deleted)):

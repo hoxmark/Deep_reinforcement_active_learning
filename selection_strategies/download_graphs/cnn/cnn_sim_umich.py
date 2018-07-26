@@ -60,6 +60,9 @@ if __name__ == "__main__":
     plt.axis([0,250,50,100])
     plt.subplot(111)
 
+    plt.xlabel("Amount of labeled data")
+    plt.ylabel("% accuracy")
+    
     for line in test_acc_avg_full:        
         line[0].insert(0,0)
         line[1].insert(0,50)
