@@ -38,5 +38,5 @@ tensorboardX==0.8
 tensorflow==1.4.1
 tensorflow-tensorboard==0.4.0rc3
 traitlets==4.3.2
-urllib3==1.22
+urllib3==1.26.5
 Werkzeug==0.13
