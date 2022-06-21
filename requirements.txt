@@ -18,7 +18,7 @@ jsonschema==2.6.0
 jupyter-core==4.4.0
 Markdown==2.6.10
 nbformat==4.4.0
-numpy==1.13.3
+numpy==1.22.0
 olefile==0.44
 Pillow==4.3.0
 plotly==2.2.3
