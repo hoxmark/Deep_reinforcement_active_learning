@@ -2,7 +2,7 @@ nltk==3.2.5
 numpy==1.14.1
 Pillow==5.0.0
 pkg-resources==0.0.0
-protobuf==3.5.1
+protobuf==3.18.3
 PyYAML==3.12
 scipy==1.0.0
 six==1.11.0
